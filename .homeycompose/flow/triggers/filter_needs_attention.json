@@ -1,0 +1,11 @@
+{
+  "title": { "en": "A filter needs attention", "ko": "필터 점검이 필요할 때" },
+  "titleFormatted": { "en": "A filter needs attention", "ko": "필터 점검이 필요할 때" },
+  "hint": {
+    "en": "Fires when the appliance stops reporting its filter as normal — washable filters ask to be washed, others to be replaced.",
+    "ko": "가전이 필터 상태를 정상으로 보고하지 않게 될 때 실행됩니다. 세척형은 세척, 그 외는 교체를 요청합니다."
+  },
+  "args": [
+    { "name": "device", "type": "device", "filter": "driver_id=appliance" }
+  ]
+}

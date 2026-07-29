@@ -64,6 +64,8 @@
   .result-sub { color: var(--muted); font-size: 12px; margin-top: 2px; word-break: break-all; }
   .result button { margin: 0; padding: 7px 13px; font-size: 13px; flex: 0 0 auto; }
   .result.unknown { opacity: .75; }
+  .others-title { margin-top: 16px; font-size: 12.5px; font-weight: 600; color: var(--muted); }
+  .others-line { font-size: 12px; color: var(--muted); margin-top: 4px; }
   .meta { color: var(--muted); font-size: 12.5px; margin-top: 14px; }
   a { color: var(--blue); font-size: 13px; }
   .hidden { display: none; }
@@ -84,6 +86,7 @@
     <button id="btn-search"><span id="t-search"></span></button>
     <div id="search-msg" class="msg"></div>
     <div id="results"></div>
+    <div id="others"></div>
     <p class="meta" id="t-manual-toggle-hint"></p>
     <a href="#" id="btn-manual"><span id="t-manual"></span></a>
   </div>
@@ -134,6 +137,10 @@
       unknownType: 'Unsupported type',
       unknownSub: '{0} · {1} resources · cannot be added yet',
       manualHint: 'Not listed? Some units answer only on ports this scan skips.',
+      othersTitle: '{0} other devices answered but could not be identified',
+      otherSamsung: '{0} — a Samsung device this app cannot talk to (older firmware, most likely)',
+      otherUnknown: '{0} — probably another vendor\u2019s device (MAC {1})',
+      otherNoMac: '{0} — could not be identified',
       manual: 'Enter an IP address instead',
       hostTitle: 'Add an appliance',
       hostLede: 'Enter the appliance’s IP address. The port is detected automatically. Find the address in your router’s client list, or in the SmartThings app under the appliance’s network information.',
@@ -169,6 +176,10 @@
       unknownType: '미지원 종류',
       unknownSub: '{0} · 리소스 {1}개 · 아직 추가할 수 없습니다',
       manualHint: '목록에 없나요? 이 검색이 건너뛴 포트만 응답하는 기기가 있을 수 있습니다.',
+      othersTitle: '응답했지만 확인되지 않은 기기 {0}대',
+      otherSamsung: '{0} — 삼성 기기이지만 이 앱이 통신할 수 없습니다 (구형 펌웨어일 가능성이 높습니다)',
+      otherUnknown: '{0} — 다른 제조사 기기로 보입니다 (MAC {1})',
+      otherNoMac: '{0} — 확인할 수 없었습니다',
       manual: '대신 IP 주소 직접 입력',
       hostTitle: '가전 추가',
       hostLede: '가전의 IP 주소를 입력하세요. 포트는 자동으로 찾습니다. 주소는 공유기의 접속 기기 목록이나 SmartThings 앱의 네트워크 정보에서 확인할 수 있습니다.',
@@ -298,9 +309,27 @@
     if (pollTimer) { clearTimeout(pollTimer); pollTimer = null; }
   }
 
+  function renderOthers(others) {
+    var box = document.getElementById('others');
+    if (!others || !others.length) { box.innerHTML = ''; return; }
+    var lines = others.map(function (o) {
+      // 'is_samsung: false' means "not in our OUI list", which is not the same as
+      // "not Samsung" — the list cannot be complete, so the wording hedges.
+      if (o.is_samsung === true) return t('otherSamsung', o.host);
+      if (o.oui) return t('otherUnknown', o.host, o.oui);
+      return t('otherNoMac', o.host);
+    });
+    box.innerHTML = '<div class="others-title">'
+      + t('othersTitle', others.length).replace(/</g, '&lt;') + '</div>'
+      + lines.map(function (l) {
+          return '<div class="others-line">' + l.replace(/</g, '&lt;') + '</div>';
+        }).join('');
+  }
+
   function renderState(state) {
     var found = (state && state.appliances) || [];
     if (found.length) renderResults(found);
+    if (!state || !state.running) renderOthers(state && state.unidentified);
 
     if (state && state.running) {
       if (state.phase === 'identifying' && state.total) {

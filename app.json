@@ -99,6 +99,107 @@
     "url": "https://github.com/moKorean/com.lomohome.localthings/issues"
   },
   "source": "https://github.com/moKorean/com.lomohome.localthings",
+  "flow": {
+    "triggers": [
+      {
+        "title": {
+          "en": "An alarm was raised",
+          "ko": "알람이 발생했을 때"
+        },
+        "titleFormatted": {
+          "en": "An alarm was raised",
+          "ko": "알람이 발생했을 때"
+        },
+        "hint": {
+          "en": "Fires when the appliance reports a fault or maintenance code, and again when it clears. The code is the appliance's own, not a translation.",
+          "ko": "가전이 고장·점검 코드를 보고하거나 해제할 때 실행됩니다. 코드는 가전이 사용하는 원래 값입니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance"
+          }
+        ],
+        "tokens": [
+          {
+            "name": "code",
+            "type": "string",
+            "title": {
+              "en": "Alarm code",
+              "ko": "알람 코드"
+            },
+            "example": "FilterAlarm"
+          }
+        ],
+        "id": "alarm_raised"
+      },
+      {
+        "title": {
+          "en": "A cycle finished",
+          "ko": "동작이 끝났을 때"
+        },
+        "titleFormatted": {
+          "en": "A cycle finished",
+          "ko": "동작이 끝났을 때"
+        },
+        "hint": {
+          "en": "For appliances that run cycles — washer, dryer, dishwasher, air dresser. Fires on the transition to finished, not repeatedly while idle.",
+          "ko": "세탁기·건조기·식기세척기·에어드레서처럼 코스를 돌리는 가전용입니다. 완료로 바뀌는 순간에만 실행되며, 대기 중에 반복 실행되지 않습니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance"
+          }
+        ],
+        "id": "cycle_finished"
+      },
+      {
+        "title": {
+          "en": "A filter needs attention",
+          "ko": "필터 점검이 필요할 때"
+        },
+        "titleFormatted": {
+          "en": "A filter needs attention",
+          "ko": "필터 점검이 필요할 때"
+        },
+        "hint": {
+          "en": "Fires when the appliance stops reporting its filter as normal — washable filters ask to be washed, others to be replaced.",
+          "ko": "가전이 필터 상태를 정상으로 보고하지 않게 될 때 실행됩니다. 세척형은 세척, 그 외는 교체를 요청합니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance"
+          }
+        ],
+        "id": "filter_needs_attention"
+      }
+    ],
+    "conditions": [
+      {
+        "title": {
+          "en": "State !{{is|is not}} arriving by push",
+          "ko": "상태가 푸시로 !{{수신됨|수신되지 않음}}"
+        },
+        "hint": {
+          "en": "Push means the appliance notifies the app the moment something changes. Polling is the fallback, and state can then be up to the poll interval old.",
+          "ko": "푸시는 가전이 변화 즉시 앱에 알리는 방식입니다. 폴링은 대체 방식이며, 이 경우 상태가 폴링 간격만큼 오래된 값일 수 있습니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance"
+          }
+        ],
+        "id": "is_pushing"
+      }
+    ]
+  },
   "drivers": [
     {
       "name": {

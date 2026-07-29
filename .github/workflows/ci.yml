@@ -1,0 +1,34 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+
+      # 3.14 is what Homey's Python runtime ships, so the tests run on the same
+      # interpreter the app will.
+      - name: Install
+        run: |
+          uv venv --python 3.14
+          uv pip install 'smartthings-local>=0.1.1' pytest ruff
+
+      - name: Lint
+        run: uv run ruff check . --exclude python_packages
+
+      - name: Test
+        run: uv run pytest tests/ -q
+
+      # The reference checkout is optional: tests that need it skip themselves, but
+      # having it present means the coverage gate actually runs.
+      - name: Check coverage against the reference integration
+        run: |
+          git clone --depth 1 https://github.com/mbillow/localthings.git ../localthings-reference
+          uv run python scripts/check_reference_coverage.py

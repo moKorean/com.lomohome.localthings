@@ -16,9 +16,9 @@ from pathlib import Path
 # The Homey runner may not put the app directory on sys.path.
 sys.path.insert(0, str(Path(__file__).parent))
 
-from homey import app as homey_app  # noqa: E402
+from homey import app as homey_app
 
-from lib import selfcheck  # noqa: E402
+from lib import selfcheck
 
 
 class LocalThingsApp(homey_app.App):

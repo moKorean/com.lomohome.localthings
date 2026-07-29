@@ -1,5 +1,6 @@
 """UDP liveness sweep and the /device/0 probe used during pairing."""
 
+import contextlib
 import ipaddress
 import socket
 import zlib
@@ -59,7 +60,7 @@ def find_live_ports(
             try:
                 sock.recv(4096)
                 candidates.append(port)
-            except socket.timeout:
+            except TimeoutError:
                 candidates.append(port)
             except ConnectionRefusedError:
                 pass
@@ -121,8 +122,6 @@ def probe(host: str, leaf_cert_pem: str, leaf_key_pem: str) -> dict:
             last_error = exc
         finally:
             if session is not None:
-                try:
+                with contextlib.suppress(Exception):
                     session.close()
-                except Exception:
-                    pass
     raise ConnectionError(f"No port on {host} completed a session: {last_error}")

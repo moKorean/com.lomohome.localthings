@@ -65,8 +65,12 @@ def _fan_name_to_code(rep: dict) -> dict[str, str]:
     names = rep.get(FIELD_MODES_NAME)
     if not isinstance(codes, list) or not isinstance(names, list):
         return {}
+    if len(codes) != len(names):
+        # Parallel arrays of different lengths mean the pairing is unknowable; a
+        # truncating zip would silently map some speeds to the wrong code.
+        return {}
     mapping = {}
-    for code, name in zip(codes, names):
+    for code, name in zip(codes, names, strict=True):
         alias = FAN_ALIASES.get(str(name).strip().lower())
         if alias:
             mapping[alias] = str(code)

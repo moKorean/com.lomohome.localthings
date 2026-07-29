@@ -12,8 +12,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-from lib import cert, compat  # noqa: E402
-from lib.const import (  # noqa: E402
+from lib import cert, compat
+from lib.const import (
     SETTING_LEAF_CERT,
     SETTING_LEAF_KEY,
     SETTING_PAIR_ENV,
@@ -144,7 +144,8 @@ async def diagnostics(homey, **kwargs):
         except Exception as exc:
             report[label] = f"raised {type(exc).__name__}: {exc}"
             return
-        report[label] = value if isinstance(value, (str, int, float, bool, type(None))) else repr(value)[:200]
+        scalar = isinstance(value, (str, int, float, bool, type(None)))
+        report[label] = value if scalar else repr(value)[:200]
 
     record("i18n.get_language", lambda: homey.i18n.get_language())
     record("i18n.get_strings.keys", lambda: sorted((homey.i18n.get_strings() or {}).keys()))
@@ -153,7 +154,9 @@ async def diagnostics(homey, **kwargs):
 
     cert_pem, key_pem = await _stored(homey)
     report["credentials"] = {"cert_bytes": len(cert_pem), "key_bytes": len(key_pem)}
-    report["pair_env"] = await compat.setting_get(homey, SETTING_PAIR_ENV) or "(not reported yet)"
+    report["pair_env"] = (
+        await compat.setting_get(homey, SETTING_PAIR_ENV) or "(not reported yet)"
+    )
     report["devices"] = _device_report(homey)
     return report
 

@@ -12,10 +12,10 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parents[2]))
 
-from homey import driver  # noqa: E402
+from homey import driver
 
-from lib import compat, discovery, probe, registry  # noqa: E402
-from lib.const import (  # noqa: E402
+from lib import compat, discovery, probe, registry
+from lib.const import (
     SETTING_LEAF_CERT,
     SETTING_LEAF_KEY,
     SETTING_PAIR_ENV,
@@ -23,13 +23,22 @@ from lib.const import (  # noqa: E402
     STORE_PORT,
     STORE_SERIAL,
 )
-from lib.resources import read_identity  # noqa: E402
+from lib.resources import read_identity
 
 
 class Driver(driver.Driver):
 
     async def on_init(self) -> None:
         self.log("LocalThings appliance driver init")
+        try:
+            card = self.homey.flow.get_condition_card("is_pushing")
+            card.register_run_listener(self._on_is_pushing)
+        except Exception as exc:
+            self.log(f"registering flow cards failed: {exc}")
+
+    async def _on_is_pushing(self, card_arguments, **_) -> bool:
+        device = (card_arguments or {}).get("device")
+        return bool(device is not None and device.is_pushing())
 
     # --- pairing ----------------------------------------------------------
 
@@ -109,6 +118,7 @@ class Driver(driver.Driver):
             "index": 0,
             "total": 0,
             "appliances": [],
+            "unidentified": [],
             "scanned": None,
             "error": None,
         }
@@ -130,7 +140,12 @@ class Driver(driver.Driver):
             self.homey
         )
         self._reset_discovery()
-        asyncio.create_task(self._run_discovery(cert_pem, key_pem, language))
+        # Held in an attribute: a task referenced only by the loop's transient set can
+        # be garbage-collected, which would abandon a scan halfway with the view still
+        # polling a job that no longer runs.
+        self._discovery_task = asyncio.create_task(
+            self._run_discovery(cert_pem, key_pem, language)
+        )
         return self._snapshot()
 
     async def _on_discover_status(self, data=None, **_) -> dict:
@@ -165,6 +180,16 @@ class Driver(driver.Driver):
                     entry = await self._identify(host, cert_pem, key_pem, language)
                 except Exception as exc:
                     self.log(f"discovery: {host}:{port} not identified: {exc}")
+                    # Reported rather than dropped. A responder that will not complete
+                    # a handshake is usually another vendor's DTLS device, but it can
+                    # also be a Samsung appliance this app cannot talk to, and the
+                    # user can only tell those apart with the hint.
+                    state["unidentified"].append({
+                        "host": host,
+                        "port": port,
+                        "reason": str(exc)[:200],
+                        **await self._vendor_hint(host),
+                    })
                     continue
                 # Re-checked here rather than trusting the pre-sweep host list: a
                 # device created moments ago may not be back from get_devices() yet,
@@ -186,6 +211,16 @@ class Driver(driver.Driver):
             state["phase"] = "done"
             state["host"] = None
             state["running"] = False
+
+    async def _vendor_hint(self, host: str) -> dict:
+        """MAC prefix for a host, via Homey's ARP lookup. Best effort."""
+        try:
+            mac = self.homey.arp.get_mac(host)
+            if hasattr(mac, "__await__"):
+                mac = await mac
+        except Exception:
+            return {"oui": "", "is_samsung": None}
+        return discovery.vendor_hint(mac)
 
     async def _identify(self, host: str, cert_pem: str, key_pem: str,
                         language: str) -> dict:

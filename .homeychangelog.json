@@ -1,6 +1,6 @@
 {
   "0.1.0": {
-    "en": "Initial scaffold",
-    "ko": "최초 골격"
+    "en": "First release. Local control of Samsung appliances over DTLS/CoAP, with no SmartThings cloud involved. Verified on air conditioners and an induction cooktop; state arrives by push where the appliance supports it.",
+    "ko": "첫 릴리스. SmartThings 클라우드 없이 삼성 가전을 DTLS/CoAP로 직접 제어합니다. 에어컨과 인덕션에서 검증했고, 가전이 지원하면 상태를 푸시로 받습니다."
   }
 }

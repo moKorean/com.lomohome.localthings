@@ -57,7 +57,7 @@ def load_reference_tables():
 def _parse_dict(source: str, name: str, values: bool = True) -> dict:
     """Pull `name = { 'a': 'b', ... }` out of source, ignoring comments."""
     match = re.search(
-        rf"^{re.escape(name)}[^=]*=\s*\{{(.*?)^\}}", source, re.S | re.M
+        rf"^{re.escape(name)}[^=]*=\s*\{{(.*?)^\}}", source, re.DOTALL | re.MULTILINE
     )
     if not match:
         return {}

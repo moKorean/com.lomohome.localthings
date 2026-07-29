@@ -46,7 +46,7 @@ def _reference_tokens() -> dict:
     if not source.is_file():
         pytest.skip("reference checkout not present")
     text = source.read_text()
-    match = re.search(r"^_BOARD_TOKEN_TO_KEY[^=]*=\s*\{(.*?)^\}", text, re.S | re.M)
+    match = re.search(r"^_BOARD_TOKEN_TO_KEY[^=]*=\s*\{(.*?)^\}", text, re.DOTALL | re.MULTILINE)
     body = re.sub(r"#[^\n]*", "", match.group(1))
     return dict(re.findall(r"'([^']+)'\s*:\s*'([^']+)'", body))
 

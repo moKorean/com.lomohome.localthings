@@ -17,7 +17,7 @@ don't-guess rule, so does this. Nothing that applies heat is writable.
 """
 
 from . import shared
-from .base import Registry, Spec, as_float, as_int, first_item
+from .base import Registry, Spec, as_float, as_int
 
 # --- washer ---------------------------------------------------------------
 
@@ -214,7 +214,7 @@ DEHUMIDIFIER = Registry(
              lambda rep, _r: as_float(rep.get("x.com.samsung.da.desiredHumidity")),
              lambda value, _rep: (
                  ["humidity", "vs", "0"],
-                 {"x.com.samsung.da.desiredHumidity": str(int(round(float(value))))},
+                 {"x.com.samsung.da.desiredHumidity": str(round(float(value)))},
              )),
         Spec("localthings_filter_usage", "/filter/airdustfilter/vs/0",
              shared._filter_percent),

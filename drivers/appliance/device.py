@@ -18,27 +18,27 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parents[2]))
 
-from homey import device  # noqa: E402
+from homey import device
 
-from lib import compat, discovery, probe, registry  # noqa: E402
-from lib.const import (  # noqa: E402
+from lib import compat, discovery, probe, registry
+from lib.const import (
     OBSERVE_GRACE_S,
-    RELOCATE_AFTER_FAILURES,
-    STORE_SERIAL,
-    PUSH_HEALTH_WINDOW_S,
     OBSERVE_REFRESH_S,
     OBSERVE_RETRY_S,
     OBSERVE_SUCCESS_FRACTION,
     OBSERVE_SWEEP_INTERVAL_S,
     POLL_INTERVAL_S,
+    PUSH_HEALTH_WINDOW_S,
+    RELOCATE_AFTER_FAILURES,
     SETTING_LEAF_CERT,
     SETTING_LEAF_KEY,
     STORE_HOST,
     STORE_PORT,
+    STORE_SERIAL,
     WRITE_SETTLE_S,
 )
-from lib.resources import read_serial  # noqa: E402
-from lib.session import Session  # noqa: E402
+from lib.resources import read_serial
+from lib.session import Session
 
 
 class Device(device.Device):
@@ -52,6 +52,10 @@ class Device(device.Device):
         self._registry = None
         self._resources: dict = {}
         self._poll_task = None
+        # Retained so the event loop keeps a strong reference: a task held only by
+        # the loop's transient set can be garbage-collected mid-flight, which would
+        # silently drop a pushed update.
+        self._tasks: set = set()
 
         # Push state. Starts in poll mode; observe is entered only once enough
         # initial notifications have actually arrived.
@@ -84,6 +88,10 @@ class Device(device.Device):
             self.register_capability_listener(
                 capability, self._make_listener(capability)
             )
+
+        # Previous values, so flow triggers fire on a transition rather than on every
+        # poll that happens to see the same state.
+        self._previous: dict = {}
 
         self.log(f"{self.get_name()} init ({self._host}:{self._port})")
         self._poll_task = asyncio.create_task(self._poll_loop())
@@ -206,8 +214,11 @@ class Device(device.Device):
             return
         merged = self._resources.setdefault(href, {})
         merged.update(rep)
-        # Fire and forget: this is a callback, not a coroutine the loop awaits.
-        asyncio.create_task(self._apply_href(href))
+        # A callback, not a coroutine the loop awaits — so the task is kept in a set
+        # and discarded on completion rather than left unreferenced.
+        task = asyncio.create_task(self._apply_href(href))
+        self._tasks.add(task)
+        task.add_done_callback(self._tasks.discard)
 
     async def _apply_href(self, href: str) -> None:
         if self._registry is None:
@@ -219,9 +230,9 @@ class Device(device.Device):
 
     async def _poll_loop(self) -> None:
         # Back off on repeated failure rather than hammering a device that is
-        # unplugged or asleep; the appliance firmware drops requests when hit
-        # faster than its ceiling.
-        failures = 0
+        # unplugged or asleep; the appliance firmware drops requests when hit faster
+        # than its ceiling. The counter lives on the instance because relocation
+        # reads it too.
         while True:
             try:
                 await self._poll_once()
@@ -326,7 +337,7 @@ class Device(device.Device):
             return False
 
         loop = asyncio.get_running_loop()
-        for host, port in candidates:
+        for host, _port in candidates:
             if host == self._host:
                 continue
             try:
@@ -415,7 +426,7 @@ class Device(device.Device):
             except Exception as exc:
                 self.log(f"capability options for {capability} failed: {exc}")
 
-    async def _apply(self, resources: dict, only_href: str = None) -> None:
+    async def _apply(self, resources: dict, only_href: str | None = None) -> None:
         """Push every readable value into its capability.
 
         A spec returning None is skipped rather than written as null: a missing
@@ -439,6 +450,43 @@ class Device(device.Device):
                 continue
             if self.get_capability_value(spec.capability) != value:
                 await self.set_capability_value(spec.capability, value)
+            await self._maybe_trigger(spec.capability, value)
+
+    async def _maybe_trigger(self, capability: str, value) -> None:
+        """Fire the flow triggers this capability drives, on change only.
+
+        Anchored on the previous value rather than the capability's current one: a
+        capability that is set to the same value still returns it, so comparing
+        against Homey's copy would fire nothing, while firing unconditionally would
+        fire on every poll.
+        """
+        previous = self._previous.get(capability, "__unset__")
+        self._previous[capability] = value
+        if previous == "__unset__" or previous == value:
+            return
+
+        base = capability.split(".")[0]
+        try:
+            if base == "localthings_alarm_code":
+                await self._trigger("alarm_raised", {"code": str(value)})
+            elif base == "localthings_alarm_filter" and value:
+                await self._trigger("filter_needs_attention", {})
+            elif base == "localthings_cycle_active" and previous and not value:
+                # The transition out of running is the interesting one; a device
+                # sitting idle must not keep announcing that it finished.
+                await self._trigger("cycle_finished", {})
+        except Exception as exc:
+            self.log(f"trigger for {capability} failed: {exc}")
+
+    async def _trigger(self, card_id: str, tokens: dict) -> None:
+        card = self.homey.flow.get_device_trigger_card(card_id)
+        result = card.trigger(self, tokens, {})
+        if hasattr(result, "__await__"):
+            await result
+
+    def is_pushing(self) -> bool:
+        """Backs the 'state is arriving by push' flow condition."""
+        return bool(self._observing)
 
     # --- writes -----------------------------------------------------------
 

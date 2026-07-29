@@ -12,11 +12,10 @@ that module's docstring.
 """
 
 import re
-from typing import Optional
 
+from ..resources import read_identity
 from . import airconditioner, appliances, induction_cooktop
 from .base import Registry
-from ..resources import read_identity
 
 _REGISTRY_BY_KEY: dict[str, Registry] = {
     "airconditioner": airconditioner.REGISTRY,
@@ -71,7 +70,7 @@ def _board_tokens(value: str, cut_at: str) -> list[str]:
     return [t for t in _TOKEN_SPLIT_RE.split(head) if t]
 
 
-def _board_family_key(value: str, cut_at: str) -> Optional[str]:
+def _board_family_key(value: str, cut_at: str) -> str | None:
     for token in _board_tokens(value, cut_at):
         key = _BOARD_TOKEN_TO_KEY.get(token)
         if key is not None:
@@ -79,7 +78,7 @@ def _board_family_key(value: str, cut_at: str) -> Optional[str]:
     return None
 
 
-def _consumer_model_key(description: str) -> Optional[str]:
+def _consumer_model_key(description: str) -> str | None:
     """Registry key from the consumer-model token in `description`.
 
     Segments are scanned from the end rather than assuming the last is the model: the
@@ -98,7 +97,7 @@ def _consumer_model_key(description: str) -> Optional[str]:
     return None
 
 
-def resolve(resources: dict) -> Optional[Registry]:
+def resolve(resources: dict) -> Registry | None:
     """Registry for a parsed /device/0 dump, or None if unrecognised.
 
     Narrowest evidence first: the board token in `modelNum`, then the same token in

@@ -7,8 +7,9 @@ capability-centric: each Spec owns a Homey capability id, the resource it reads
 from, and optionally how to write it back.
 """
 
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any, Callable, Optional
+from typing import Any
 
 
 @dataclass(frozen=True)
@@ -25,20 +26,20 @@ class Spec:
     capability: str
     href: str
     read: Callable[[dict, dict], Any]
-    write: Optional[Callable[[Any, dict], tuple[list[str], dict]]] = None
+    write: Callable[[Any, dict], tuple[list[str], dict]] | None = None
     # Presence gate for capabilities that only apply to some units of a type —
     # a three-burner cooktop must not be given a fourth burner's controls. The
     # reference calls the same thing exists_fn. Declaring a generous superset and
     # gating it here is what lets one registry cover hardware variants.
-    exists: Optional[Callable[[dict, dict], bool]] = None
+    exists: Callable[[dict, dict], bool] | None = None
     # Per-language title for a sub-capability (e.g. burner 2), which Homey needs
     # supplied per device via capabilitiesOptions rather than in the manifest.
-    titles: Optional[dict] = None
+    titles: dict | None = None
     # (rep, resources) -> extra capabilityOptions for this capability. Ranges have
     # to come from the device: a slider offering values the appliance rejects looks
     # like the app is broken. Homey only accepts these per device, not in the
     # manifest, because they differ per unit.
-    options: Optional[Callable[[dict, dict], dict]] = None
+    options: Callable[[dict, dict], dict] | None = None
 
     @property
     def writable(self) -> bool:
@@ -112,7 +113,7 @@ class Registry:
                 result[spec.capability] = entry
         return result
 
-    def spec_for(self, capability: str) -> Optional[Spec]:
+    def spec_for(self, capability: str) -> Spec | None:
         for spec in self.specs:
             if spec.capability == capability:
                 return spec
@@ -122,7 +123,7 @@ class Registry:
 # --- shared field readers -------------------------------------------------
 
 
-def as_float(value) -> Optional[float]:
+def as_float(value) -> float | None:
     """Device fields are CBOR text strings far more often than numbers."""
     try:
         return float(str(value).strip())
@@ -130,7 +131,7 @@ def as_float(value) -> Optional[float]:
         return None
 
 
-def as_int(value) -> Optional[int]:
+def as_int(value) -> int | None:
     parsed = as_float(value)
     return None if parsed is None else int(parsed)
 

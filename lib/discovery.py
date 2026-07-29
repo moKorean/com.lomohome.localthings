@@ -57,7 +57,7 @@ async def _probe(host: str, port: int, sem: asyncio.Semaphore, timeout: float):
             try:
                 await asyncio.wait_for(loop.sock_recv(sock, 2048), timeout)
                 return host, port
-            except (asyncio.TimeoutError, ConnectionRefusedError, OSError):
+            except (TimeoutError, ConnectionRefusedError, OSError):
                 return None
         except (ConnectionRefusedError, OSError):
             return None
@@ -66,7 +66,7 @@ async def _probe(host: str, port: int, sem: asyncio.Semaphore, timeout: float):
 
 
 async def sweep(
-    subnet: str = None,
+    subnet: str | None = None,
     ports=None,
     timeout: float = REPLY_TIMEOUT_S,
     skip=(),
@@ -97,3 +97,41 @@ async def sweep(
         if item and item[0] not in found:
             found[item[0]] = item[1]
     return sorted(found.items(), key=lambda kv: [int(p) for p in kv[0].split(".")])
+
+
+# Samsung OUI prefixes seen on appliances here plus well-known Samsung blocks. This
+# list is *deliberately not* used to decide whether to probe an address: it is
+# necessarily incomplete, and skipping a host because its prefix is missing would
+# hide a real appliance. It only labels a responder that failed to identify, so the
+# user can tell "not a Samsung appliance" from "a Samsung appliance this app can't
+# talk to" — two very different situations that look identical otherwise.
+SAMSUNG_OUIS = frozenset({
+    "34:55:e5", "34:fc:99", "1c:e8:9e",   # observed on appliances
+    "00:12:fb", "00:15:b9", "00:16:32", "00:17:c9", "00:1a:8a", "00:21:19",
+    "00:24:54", "08:08:c2", "10:2b:41", "24:4b:81", "38:16:d1", "40:16:3b",
+    "4c:3c:16", "50:32:75", "54:88:0e", "5c:0a:5b", "5c:49:7d", "68:27:37",
+    "6c:2f:2c", "70:2a:d5", "78:1f:db", "78:bd:bc", "84:25:db", "8c:71:f8",
+    "8c:c8:cd", "94:35:0a", "9c:02:98", "a0:07:98", "a8:db:03", "ac:5f:3e",
+    "b4:79:a7", "bc:14:85", "c0:bd:d1", "c8:19:f7", "cc:07:ab", "d0:22:be",
+    "d4:e8:b2", "e8:50:8b", "ec:1f:72", "f0:5a:03", "f4:7b:5e", "fc:8f:90",
+})
+
+
+def oui(mac: str) -> str:
+    """Normalised three-octet prefix, or '' if this isn't a MAC."""
+    parts = str(mac or "").strip().lower().replace("-", ":").split(":")
+    if len(parts) < 3:
+        return ""
+    return ":".join(part.zfill(2) for part in parts[:3])
+
+
+def vendor_hint(mac: str) -> dict:
+    """{oui, is_samsung} for a responder that would not identify.
+
+    `is_samsung` False means "not in our list", not "not Samsung" — the wording shown
+    to the user has to keep that distinction, because the list cannot be complete.
+    """
+    prefix = oui(mac)
+    if not prefix:
+        return {"oui": "", "is_samsung": None}
+    return {"oui": prefix, "is_samsung": prefix in SAMSUNG_OUIS}

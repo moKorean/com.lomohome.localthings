@@ -102,7 +102,7 @@ def inspect_leaf(cert_pem: str, key_pem: str) -> dict:
     return {
         "uuid": uuid,
         "expires": expires.date().isoformat(),
-        "expired": expires <= datetime.datetime.now(datetime.timezone.utc),
+        "expired": expires <= datetime.datetime.now(datetime.UTC),
         "chain_length": len(blocks),
     }
 
@@ -122,9 +122,8 @@ def fetch_samsung_uuid(timeout: float = 15.0) -> str:
     ctx.verify_mode = ssl.CERT_NONE
     with socket.create_connection(
         (SAMSUNG_CLOUD_HOST, SAMSUNG_CLOUD_PORT), timeout=timeout
-    ) as raw:
-        with ctx.wrap_socket(raw, server_hostname=SAMSUNG_CLOUD_HOST) as tls:
-            der = tls.getpeercert(binary_form=True)
+    ) as raw, ctx.wrap_socket(raw, server_hostname=SAMSUNG_CLOUD_HOST) as tls:
+        der = tls.getpeercert(binary_form=True)
     uuid = _uuid_from_subject(x509.load_der_x509_certificate(der))
     if not uuid:
         raise RuntimeError(
