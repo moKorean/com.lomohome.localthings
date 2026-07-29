@@ -227,6 +227,8 @@ class Driver(driver.Driver):
                 "host": host,
                 "port": str(result["port"]),
                 "model": model,
+                "serial": str(result["serial"]),
+                "status": "",
                 "poll_interval": 30,
             },
             "capabilities": reg.capabilities(resources),

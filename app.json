@@ -138,7 +138,11 @@
                 "en": "IP address",
                 "ko": "IP 주소"
               },
-              "value": ""
+              "value": "",
+              "hint": {
+                "en": "Kept up to date automatically. If the appliance gets a new address from your router, the app finds it again by serial number and updates this.",
+                "ko": "자동으로 갱신됩니다. 공유기가 가전에 새 IP를 주면 앱이 시리얼로 다시 찾아 이 값을 고칩니다."
+              }
             },
             {
               "id": "port",
@@ -157,6 +161,32 @@
                 "ko": "모델"
               },
               "value": ""
+            },
+            {
+              "id": "serial",
+              "type": "label",
+              "label": {
+                "en": "Serial number",
+                "ko": "시리얼 번호"
+              },
+              "value": "",
+              "hint": {
+                "en": "The appliance identity this device is bound to. It does not change when the IP address does.",
+                "ko": "IP가 바뀌어도 변하지 않는, 이 기기가 묶여 있는 가전 식별자입니다."
+              }
+            },
+            {
+              "id": "status",
+              "type": "label",
+              "label": {
+                "en": "Connection",
+                "ko": "연결 상태"
+              },
+              "value": "",
+              "hint": {
+                "en": "Push means state arrives the moment it changes. Polling is the fallback when the appliance will not subscribe.",
+                "ko": "푸시는 상태가 바뀌는 즉시 반영됩니다. 폴링은 가전이 구독을 받아주지 않을 때의 대체 방식입니다."
+              }
             },
             {
               "id": "poll_interval",

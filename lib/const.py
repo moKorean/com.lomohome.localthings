@@ -79,5 +79,10 @@ WRITE_SETTLE_S = 4.0
 # silence is the signal, not per-resource silence.
 PUSH_HEALTH_WINDOW_S = 600.0
 
+# Consecutive poll failures before searching the network for this appliance by
+# serial. Three rather than one: a single timeout is usually the appliance being
+# briefly busy, and a full sweep is far more expensive than waiting one interval.
+RELOCATE_AFTER_FAILURES = 3
+
 SAMSUNG_CLOUD_HOST = "connect-v2.samsungiotcloud.com"
 SAMSUNG_CLOUD_PORT = 443

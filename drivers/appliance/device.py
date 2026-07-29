@@ -20,9 +20,11 @@ sys.path.insert(0, str(Path(__file__).parents[2]))
 
 from homey import device  # noqa: E402
 
-from lib import compat, registry  # noqa: E402
+from lib import compat, discovery, probe, registry  # noqa: E402
 from lib.const import (  # noqa: E402
     OBSERVE_GRACE_S,
+    RELOCATE_AFTER_FAILURES,
+    STORE_SERIAL,
     PUSH_HEALTH_WINDOW_S,
     OBSERVE_REFRESH_S,
     OBSERVE_RETRY_S,
@@ -35,6 +37,7 @@ from lib.const import (  # noqa: E402
     STORE_PORT,
     WRITE_SETTLE_S,
 )
+from lib.resources import read_serial  # noqa: E402
 from lib.session import Session  # noqa: E402
 
 
@@ -44,6 +47,8 @@ class Device(device.Device):
         store = self.get_store()
         self._host = store.get(STORE_HOST)
         self._port = int(store.get(STORE_PORT))
+        self._serial = str(store.get(STORE_SERIAL) or "")
+        self._failures = 0
         self._registry = None
         self._resources: dict = {}
         self._poll_task = None
@@ -220,16 +225,134 @@ class Device(device.Device):
         while True:
             try:
                 await self._poll_once()
-                failures = 0
+                self._failures = 0
                 delay = self._poll_interval()
             except asyncio.CancelledError:
                 raise
             except Exception as exc:
-                failures += 1
-                delay = min(self._poll_interval() * min(failures, 6), 300)
-                self.log(f"poll failed ({failures}): {exc}; retrying in {delay:.0f}s")
+                self._failures += 1
+                delay = min(self._poll_interval() * min(self._failures, 6), 300)
+                self.log(
+                    f"poll failed ({self._failures}): {exc}; retrying in {delay:.0f}s"
+                )
                 await self.set_unavailable(str(exc))
+                # Repeated failure is what a DHCP move looks like from here, so
+                # search for the appliance by serial before settling into backoff.
+                if self._failures == RELOCATE_AFTER_FAILURES:
+                    try:
+                        if await self._relocate():
+                            delay = 1.0
+                            self._failures = 0
+                    except Exception as relocate_error:
+                        self.log(f"relocation failed: {relocate_error}")
             await asyncio.sleep(delay)
+
+    def _identity_is_verifiable(self) -> bool:
+        """Whether the stored serial can actually prove identity.
+
+        read_serial falls back to "host:port" for firmware that reports a
+        placeholder serial, and that fallback stops being meaningful the moment the
+        address changes — so those devices are relocated but not identity-checked.
+        """
+        return bool(self._serial) and ":" not in self._serial
+
+    async def _remember_location(self, host: str, port: int) -> None:
+        """Persist a new address and reflect it in the settings the user sees."""
+        self._host, self._port = host, port
+        for setter, args in (
+            ("set_store_value", (STORE_HOST, host)),
+            ("set_store_value", (STORE_PORT, port)),
+        ):
+            method = getattr(self, setter, None)
+            if callable(method):
+                try:
+                    result = method(*args)
+                    if hasattr(result, "__await__"):
+                        await result
+                except Exception as exc:
+                    self.log(f"storing {args[0]} failed: {exc}")
+
+    async def _sync_settings(self) -> None:
+        """Keep the advanced settings showing what is actually in use.
+
+        They were previously written only at pairing, so after an address change the
+        panel would keep showing the old one — the value a user goes there to check.
+        """
+        mode = "push" if self._observing else "polling"
+        detail = f"{mode}, {self._session.subscription_count} subscriptions" \
+            if self._observing else mode
+        wanted = {
+            "host": str(self._host),
+            "port": str(self._port),
+            "serial": self._serial,
+            "status": detail,
+        }
+        try:
+            current = self.get_settings() or {}
+        except Exception:
+            current = {}
+        changed = {k: v for k, v in wanted.items() if str(current.get(k, "")) != v}
+        if not changed:
+            return
+        try:
+            result = self.set_settings(changed)
+            if hasattr(result, "__await__"):
+                await result
+        except Exception as exc:
+            self.log(f"updating settings failed: {exc}")
+
+    async def _relocate(self) -> bool:
+        """Find this appliance again after its address changed.
+
+        Identity is the serial, not the address, so a DHCP move is recoverable
+        without re-pairing. Sweeping is cheap; the handshake per candidate is not, so
+        candidates already known to be paired elsewhere are not re-probed here —
+        being wrong about that would only cost time, whereas skipping the serial
+        check would risk binding to the wrong appliance.
+        """
+        cert_pem = await compat.setting_get(self.homey, SETTING_LEAF_CERT)
+        key_pem = await compat.setting_get(self.homey, SETTING_LEAF_KEY)
+        if not cert_pem or not key_pem:
+            return False
+        if not self._identity_is_verifiable():
+            self.log("cannot relocate: this appliance reports no usable serial")
+            return False
+
+        self.log(f"looking for {self._serial} after losing {self._host}")
+        try:
+            candidates = await discovery.sweep()
+        except Exception as exc:
+            self.log(f"relocation sweep failed: {exc}")
+            return False
+
+        loop = asyncio.get_running_loop()
+        for host, port in candidates:
+            if host == self._host:
+                continue
+            try:
+                result = await loop.run_in_executor(
+                    None, probe.probe, host, cert_pem, key_pem
+                )
+            except Exception:
+                continue
+            if str(result["serial"]) != self._serial:
+                continue
+            self.log(f"found at {host}:{result['port']}; updating")
+            await self._session.close()
+            await self._remember_location(host, result["port"])
+            self._session = Session(
+                self._host, self._port, cert_pem, key_pem,
+                log=self.log, on_notification=self._on_notification,
+            )
+            # Subscriptions belonged to the old session.
+            self._observing = False
+            self._observe_pending = False
+            self._observe_attempted_at = 0.0
+            await self._sync_settings()
+            return True
+
+        self.log(f"{self._serial} not found on the network")
+        return False
 
     async def _poll_once(self) -> None:
         if not await compat.setting_get(self.homey, SETTING_LEAF_CERT):
@@ -240,6 +363,19 @@ class Device(device.Device):
                 "Settings -> Apps -> LocalThings."
             )
         self._resources = await self._session.read_device0()
+
+        # Confirm this is still the appliance we were paired with. Two devices
+        # swapping addresses over DHCP would otherwise leave each one silently
+        # driving the other — worse than being unavailable.
+        if self._identity_is_verifiable():
+            seen = read_serial(self._resources, self._host, self._port)
+            if seen != self._serial:
+                self._resources = {}
+                raise RuntimeError(
+                    f"{self._host} is a different appliance now "
+                    f"(expected {self._serial}, found {seen})"
+                )
+
         if self._registry is None:
             self._registry = registry.resolve(self._resources)
             if self._registry is None:
@@ -253,6 +389,7 @@ class Device(device.Device):
         await self.set_available()
         self._evaluate_observe()
         await self._try_observe()
+        await self._sync_settings()
 
     async def _apply(self, resources: dict, only_href: str = None) -> None:
         """Push every readable value into its capability.
