@@ -14,8 +14,8 @@
   ],
   "brandColor": "#1428A0",
   "name": {
-    "en": "LocalThings",
-    "ko": "로컬띵스"
+    "en": "LocalThings community",
+    "ko": "로컬띵스 커뮤니티"
   },
   "description": {
     "en": "Control Samsung appliances directly on your LAN, without SmartThings",
@@ -54,6 +54,24 @@
     ]
   },
   "permissions": [],
+  "api": {
+    "get_status": {
+      "method": "GET",
+      "path": "/status"
+    },
+    "check_uuid": {
+      "method": "GET",
+      "path": "/check-uuid"
+    },
+    "save_credentials": {
+      "method": "POST",
+      "path": "/credentials"
+    },
+    "clear_credentials": {
+      "method": "POST",
+      "path": "/credentials-clear"
+    }
+  },
   "images": {
     "small": "/assets/images/small.png",
     "large": "/assets/images/large.png",

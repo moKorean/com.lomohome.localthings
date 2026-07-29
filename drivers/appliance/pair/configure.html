@@ -1,163 +1,253 @@
-<script type="text/javascript" src="/homey.js" data-origin="pair"></script>
-
 <style>
-  body { font-family: -apple-system, "Segoe UI", Roboto, sans-serif; }
-  .step { display: none; }
-  .step.active { display: block; }
-  label { display: block; margin: 14px 0 4px; font-weight: 600; font-size: 13px; }
-  input[type=text], textarea {
-    width: 100%; box-sizing: border-box; padding: 8px;
-    border: 1px solid #ccc; border-radius: 6px; font-size: 13px;
+  /* The pairing webview mixes in its own base styles, so colours are pinned
+     rather than following prefers-color-scheme. */
+  :root {
+    --blue: #1428A0;
+    --bg: #f2f2f5;
+    --card: #ffffff;
+    --text: #1b1b1f;
+    --muted: #66666e;
+    --border: #e2e2e8;
+    --ok: #1e8449;
+    --warn: #b9770e;
+    --err: #c0392b;
   }
-  textarea { font-family: ui-monospace, Menlo, monospace; font-size: 11px; height: 110px; }
-  .hint { color: #666; font-size: 12px; margin-top: 4px; line-height: 1.45; }
-  .error { color: #c0392b; font-size: 13px; margin-top: 12px; white-space: pre-wrap; }
-  .ok { color: #1e8449; font-size: 13px; margin-top: 12px; }
+  * { box-sizing: border-box; }
+  html, body { background: var(--bg) !important; }
+  body {
+    margin: 0; color: var(--text); font-size: 14px; line-height: 1.5;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+  .wrap { max-width: 520px; margin: 0 auto; padding: 16px 16px 32px; }
+  .card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 10px; padding: 16px;
+  }
+  h2 { font-size: 17px; margin: 0 0 6px; }
+  p { margin: 0 0 10px; color: var(--muted); }
+  ol { padding-left: 20px; color: var(--muted); margin: 0; }
+  li { margin-bottom: 7px; }
+  code {
+    font-family: ui-monospace, Menlo, monospace; font-size: 12px;
+    background: #eeeef2; padding: 1px 5px; border-radius: 5px; color: var(--text);
+  }
+  label { display: block; font-weight: 600; margin: 12px 0 4px; font-size: 13px; }
+  input[type=text] {
+    width: 100%; padding: 9px; font-size: 15px;
+    border: 1px solid var(--border); border-radius: 6px;
+  }
   button {
-    margin-top: 18px; padding: 10px 18px; border: 0; border-radius: 6px;
-    background: #1428A0; color: #fff; font-size: 14px; cursor: pointer;
+    margin-top: 16px; padding: 10px 18px; border: 0; border-radius: 6px;
+    background: var(--blue); color: #fff; font-size: 15px; cursor: pointer;
   }
   button[disabled] { opacity: .55; cursor: default; }
-  .summary { background: #f4f5f7; border-radius: 6px; padding: 12px; margin-top: 14px; font-size: 13px; }
-  .summary div { margin: 3px 0; }
+  .msg { margin-top: 13px; font-size: 13px; white-space: pre-wrap; }
+  .msg.ok { color: var(--ok); } .msg.err { color: var(--err); }
+  .msg.warn { color: var(--warn); }
+  .spinner {
+    display: inline-block; width: 12px; height: 12px; margin-right: 7px;
+    border: 2px solid #c9c9d2; border-top-color: var(--blue);
+    border-radius: 50%; animation: spin .8s linear infinite; vertical-align: -2px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .summary {
+    background: #f4f5f7; border-radius: 8px; padding: 11px;
+    margin-top: 13px; font-size: 13px;
+  }
+  .hidden { display: none; }
 </style>
 
-<div id="step-ca" class="step">
-  <h2 data-i18n="ca_title">CA credentials</h2>
-  <p class="hint" id="ca-intro"></p>
+<div class="wrap">
+  <!-- Shown when the app has no certificate yet. Pairing cannot work until it
+       does, so this explains where to go rather than failing at Connect. -->
+  <div id="setup" class="card hidden">
+    <h2 id="t-setup-title"></h2>
+    <p id="t-setup-lede"></p>
+    <ol id="setup-steps"></ol>
+  </div>
 
-  <label data-i18n="ca_cert_label">CA certificate (PEM)</label>
-  <textarea id="ca-cert" spellcheck="false" placeholder="-----BEGIN CERTIFICATE-----"></textarea>
+  <div id="host-step" class="card hidden">
+    <h2 id="t-host-title"></h2>
+    <p id="t-host-lede"></p>
+    <label id="t-host-label"></label>
+    <input type="text" id="host" placeholder="192.168.1.90" inputmode="decimal" autocomplete="off" />
+    <button id="btn-connect"><span id="t-connect"></span></button>
+    <div id="msg" class="msg"></div>
+    <div id="summary" class="summary hidden"></div>
+  </div>
 
-  <label data-i18n="ca_key_label">CA private key (PEM)</label>
-  <textarea id="ca-key" spellcheck="false" placeholder="-----BEGIN PRIVATE KEY-----"></textarea>
-
-  <p class="hint" id="ca-hint"></p>
-  <button id="ca-save" data-i18n="ca_save">Save and continue</button>
-  <div id="ca-error" class="error"></div>
+  <!-- Visible from the start so a failure before init can never leave the view
+       blank; replaced by one of the cards above as soon as init runs. -->
+  <div id="boot" class="card">
+    <p><span class="spinner"></span><span id="t-boot"></span></p>
+  </div>
 </div>
 
-<div id="step-host" class="step">
-  <h2 data-i18n="host_title">Appliance address</h2>
-  <p class="hint" id="host-intro"></p>
+<script type="text/javascript">
+  var H = null;
+  var started = false;
+  var LANG = 'en';
 
-  <label data-i18n="host_label">IP address</label>
-  <input type="text" id="host" placeholder="192.168.1.90" inputmode="decimal" />
-
-  <button id="host-probe" data-i18n="host_probe">Connect</button>
-  <div id="host-error" class="error"></div>
-  <div id="host-status" class="ok"></div>
-  <div id="host-summary" class="summary" style="display:none"></div>
-</div>
-
-<script>
-  // The pairing view has no i18n of its own, so carry both languages here and
-  // pick with the language the driver reports.
-  const STRINGS = {
+  var STRINGS = {
     en: {
-      ca_title: 'CA credentials',
-      ca_intro: 'Needed once. Every appliance you add afterwards only asks for an IP address.',
-      ca_cert_label: 'CA certificate (PEM)',
-      ca_key_label: 'CA private key (PEM)',
-      ca_hint: 'Paste the AC14K_M intermediate CA. See docs/CA-SETUP.md in the app repository for how to obtain it. The key is stored on your Homey and never leaves it.',
-      ca_save: 'Save and continue',
-      host_title: 'Appliance address',
-      host_intro: 'Enter the appliance’s IP address. The DTLS port is detected automatically.',
-      host_label: 'IP address',
-      host_probe: 'Connect',
-      probing: 'Minting certificate, scanning ports and reading device state…',
-      unrecognised: 'Connected, but this appliance type is not supported yet.',
-      creating: 'Connected. Adding the device…',
+      boot: 'Loading…',
+      setupTitle: 'Set up required',
+      setupLede: 'This app needs a client certificate before it can reach your appliances. It is a one-time setup and covers every Samsung appliance on your network.',
+      setupSteps: [
+        'Close this window.',
+        'Go to <b>Settings → Apps → LocalThings</b>.',
+        'Follow the instructions there to obtain and paste a certificate.',
+        'Come back to <b>Devices → Add device → LocalThings</b>.',
+      ],
+      hostTitle: 'Add an appliance',
+      hostLede: 'Enter the appliance’s IP address. The port is detected automatically. Find the address in your router’s client list, or in the SmartThings app under the appliance’s network information.',
+      hostLabel: 'IP address',
+      connect: 'Connect',
+      probing: 'Scanning ports and reading appliance state… this can take up to a minute.',
+      needHost: 'Enter the appliance’s IP address.',
+      unsupported: 'Connected successfully, but this appliance type is not supported yet.',
+      unsupportedHint: 'Model {0}, {1} resources. Please open an issue with this model number so support can be added.',
+      creating: 'Connected. Adding the appliance…',
+      capabilities: '{0} controls available',
     },
     ko: {
-      ca_title: 'CA 자격증명',
-      ca_intro: '최초 1회만 입력합니다. 이후 추가하는 가전은 IP 주소만 물어봅니다.',
-      ca_cert_label: 'CA 인증서 (PEM)',
-      ca_key_label: 'CA 개인키 (PEM)',
-      ca_hint: 'AC14K_M 중간 CA를 붙여넣으세요. 획득 방법은 앱 저장소의 docs/CA-SETUP.md를 참고하세요. 키는 Homey에만 저장되며 외부로 전송되지 않습니다.',
-      ca_save: '저장하고 계속',
-      host_title: '가전 주소',
-      host_intro: '가전의 IP 주소를 입력하세요. DTLS 포트는 자동으로 찾습니다.',
-      host_label: 'IP 주소',
-      host_probe: '연결',
-      probing: '인증서 발급, 포트 탐색, 기기 상태 읽는 중…',
-      unrecognised: '연결은 됐지만 아직 지원되지 않는 가전 종류입니다.',
-      creating: '연결됨. 기기를 추가하는 중…',
+      boot: '불러오는 중…',
+      setupTitle: '설정이 필요합니다',
+      setupLede: '가전에 연결하려면 클라이언트 인증서가 먼저 필요합니다. 최초 1회만 하면 되고, 집 안 모든 삼성 가전에 적용됩니다.',
+      setupSteps: [
+        '이 창을 닫습니다.',
+        '<b>설정 → 앱 → 로컬띵스</b>로 이동합니다.',
+        '거기 안내에 따라 인증서를 발급해 붙여넣습니다.',
+        '다시 <b>기기 → 기기 추가 → 로컬띵스</b>로 돌아옵니다.',
+      ],
+      hostTitle: '가전 추가',
+      hostLede: '가전의 IP 주소를 입력하세요. 포트는 자동으로 찾습니다. 주소는 공유기의 접속 기기 목록이나 SmartThings 앱의 네트워크 정보에서 확인할 수 있습니다.',
+      hostLabel: 'IP 주소',
+      connect: '연결',
+      probing: '포트를 찾고 기기 상태를 읽는 중… 최대 1분 정도 걸릴 수 있습니다.',
+      needHost: '가전의 IP 주소를 입력하세요.',
+      unsupported: '연결은 성공했지만 아직 지원되지 않는 가전 종류입니다.',
+      unsupportedHint: '모델 {0}, 리소스 {1}개. 지원 추가를 위해 이 모델명으로 이슈를 등록해 주세요.',
+      creating: '연결됨. 가전을 추가하는 중…',
+      capabilities: '사용 가능한 항목 {0}개',
     },
   };
 
-  let T = STRINGS.en;
+  function t(key) {
+    var s = STRINGS[LANG][key];
+    if (s === undefined) s = STRINGS.en[key];
+    for (var i = 1; i < arguments.length; i++) {
+      s = s.replace('{' + (i - 1) + '}', arguments[i]);
+    }
+    return s;
+  }
 
-  function show(id) {
-    document.querySelectorAll('.step').forEach(el => el.classList.remove('active'));
-    document.getElementById(id).classList.add('active');
+  function setText(id, value) {
+    var el = document.getElementById(id);
+    if (el) el.textContent = value;
+  }
+
+  function show(id, visible) {
+    document.getElementById(id).classList.toggle('hidden', !visible);
+  }
+
+  function message(kind, text, loading) {
+    var el = document.getElementById('msg');
+    el.className = 'msg ' + (kind || '');
+    el.innerHTML = (loading ? '<span class="spinner"></span>' : '')
+      + (text || '').replace(/</g, '&lt;');
   }
 
   function applyStrings() {
-    document.querySelectorAll('[data-i18n]').forEach(el => {
-      const key = el.getAttribute('data-i18n');
-      if (T[key]) el.textContent = T[key];
+    setText('t-boot', t('boot'));
+    setText('t-setup-title', t('setupTitle'));
+    setText('t-setup-lede', t('setupLede'));
+    setText('t-host-title', t('hostTitle'));
+    setText('t-host-lede', t('hostLede'));
+    setText('t-host-label', t('hostLabel'));
+    setText('t-connect', t('connect'));
+    var ol = document.getElementById('setup-steps');
+    ol.innerHTML = '';
+    STRINGS[LANG].setupSteps.forEach(function (step) {
+      var li = document.createElement('li');
+      li.innerHTML = step;
+      ol.appendChild(li);
     });
-    document.getElementById('ca-intro').textContent = T.ca_intro;
-    document.getElementById('ca-hint').textContent = T.ca_hint;
-    document.getElementById('host-intro').textContent = T.host_intro;
   }
 
-  Homey.emit('get_state', {})
-    .then(state => {
-      T = STRINGS[state.language] || STRINGS.en;
-      applyStrings();
-      show(state.has_ca ? 'step-host' : 'step-ca');
-    })
-    .catch(err => {
-      applyStrings();
-      show('step-ca');
-      document.getElementById('ca-error').textContent = String(err.message || err);
-    });
+  function connect() {
+    var button = document.getElementById('btn-connect');
+    var host = document.getElementById('host').value.trim();
+    if (!host) return message('err', t('needHost'));
 
-  document.getElementById('ca-save').addEventListener('click', () => {
-    const button = document.getElementById('ca-save');
-    const error = document.getElementById('ca-error');
-    error.textContent = '';
+    show('summary', false);
     button.disabled = true;
-    Homey.emit('save_ca', {
-      ca_cert_pem: document.getElementById('ca-cert').value,
-      ca_key_pem: document.getElementById('ca-key').value,
-    })
-      .then(() => { button.disabled = false; show('step-host'); })
-      .catch(err => { button.disabled = false; error.textContent = String(err.message || err); });
-  });
+    message('', t('probing'), true);
 
-  document.getElementById('host-probe').addEventListener('click', () => {
-    const button = document.getElementById('host-probe');
-    const error = document.getElementById('host-error');
-    const status = document.getElementById('host-status');
-    const summary = document.getElementById('host-summary');
-    error.textContent = '';
-    summary.style.display = 'none';
-    status.textContent = T.probing;
-    button.disabled = true;
-
-    Homey.emit('probe', { host: document.getElementById('host').value })
-      .then(result => {
+    H.emit('probe', { host: host })
+      .then(function (result) {
         button.disabled = false;
         if (!result.recognised) {
-          status.textContent = '';
-          error.textContent = T.unrecognised + '\n' + result.model
-            + ' (' + result.resource_count + ' resources)';
+          message('err', t('unsupported') + '\n'
+            + t('unsupportedHint', result.model, result.resource_count));
           return;
         }
-        status.textContent = T.creating;
-        summary.style.display = 'block';
-        summary.innerHTML =
-          '<div><b>' + result.model + '</b></div>' +
-          '<div>' + result.registry + ' &middot; ' + result.capability_count + ' capabilities</div>';
-        return Homey.createDevice(result.device).then(() => Homey.done());
+        message('ok', t('creating'), true);
+        var summary = document.getElementById('summary');
+        summary.textContent = result.model + ' · ' + t('capabilities', result.capability_count);
+        show('summary', true);
+        return H.createDevice(result.device).then(function () { return H.done(); });
       })
-      .catch(err => {
+      .catch(function (err) {
         button.disabled = false;
-        status.textContent = '';
-        error.textContent = String(err.message || err);
+        message('err', String((err && err.message) || err));
       });
-  });
+  }
+
+  function bootstrap() {
+    H.emit('get_state', {})
+      .then(function (state) {
+        if (state && state.language === 'ko') LANG = 'ko';
+        applyStrings();
+        show('boot', false);
+        show('setup', !state.has_credentials);
+        show('host-step', !!state.has_credentials);
+      })
+      .catch(function (err) {
+        // Falling back to the address form keeps the view usable; the real
+        // problem then surfaces from Connect with the driver's own message.
+        applyStrings();
+        show('boot', false);
+        show('host-step', true);
+        message('err', String((err && err.message) || err));
+      });
+  }
+
+  function init(homeyObj) {
+    if (started) return;
+    var ref = homeyObj || (typeof Homey !== 'undefined' ? Homey : null);
+    if (!ref) return;
+    if (!document.getElementById('host')) return;  // DOM not ready yet
+    started = true;
+    H = ref;
+    try { H.ready(); } catch (e) { /* ignore */ }
+    document.getElementById('btn-connect').addEventListener('click', connect);
+    document.getElementById('host').addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') connect();
+    });
+    bootstrap();
+  }
+
+  // The init contract varies by Homey version, so trigger through every
+  // mechanism and let the `started` guard collapse the duplicates. Relying on a
+  // single callback is what renders the view as a blank page when it doesn't
+  // fire.
+  function onHomeyReady(homeyObj) { init(homeyObj); }
+  document.addEventListener('DOMContentLoaded', function () { init(); });
+  window.addEventListener('load', function () { init(); });
+  (function poll(n) {
+    if (started || n <= 0) return;
+    init();
+    setTimeout(function () { poll(n - 1); }, 100);
+  })(60);
 </script>

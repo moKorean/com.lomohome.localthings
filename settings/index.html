@@ -1,0 +1,329 @@
+<script type="text/javascript" src="/homey.js" data-origin="settings"></script>
+
+<style>
+  :root {
+    --blue: #1428A0;
+    --bg: #f2f2f5;
+    --card: #ffffff;
+    --text: #1b1b1f;
+    --muted: #66666e;
+    --border: #e2e2e8;
+    --ok: #1e8449;
+    --warn: #b9770e;
+    --err: #c0392b;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 14px; line-height: 1.5;
+  }
+  .wrap { max-width: 640px; margin: 0 auto; padding: 18px 16px 40px; }
+  .card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 10px; padding: 16px; margin-bottom: 14px;
+  }
+  h1 { font-size: 19px; margin: 0 0 4px; }
+  h2 { font-size: 15px; margin: 0 0 10px; }
+  p { margin: 0 0 10px; color: var(--muted); }
+  ol { margin: 0 0 4px; padding-left: 20px; color: var(--muted); }
+  li { margin-bottom: 8px; }
+  code, pre {
+    font-family: ui-monospace, Menlo, Consolas, monospace;
+    background: #eeeef2; border-radius: 5px;
+  }
+  code { padding: 1px 5px; font-size: 12px; color: var(--text); }
+  pre {
+    padding: 10px; font-size: 11.5px; overflow-x: auto;
+    white-space: pre; margin: 8px 0 0; color: var(--text);
+  }
+  label { display: block; font-weight: 600; margin: 14px 0 4px; font-size: 13px; }
+  textarea {
+    width: 100%; height: 104px; padding: 8px;
+    border: 1px solid var(--border); border-radius: 6px;
+    font-family: ui-monospace, Menlo, monospace; font-size: 11px;
+    resize: vertical;
+  }
+  button {
+    margin-top: 14px; padding: 9px 16px; border: 0; border-radius: 6px;
+    background: var(--blue); color: #fff; font-size: 14px; cursor: pointer;
+  }
+  button.secondary { background: #6b6b76; margin-left: 8px; }
+  button[disabled] { opacity: .55; cursor: default; }
+  .status { display: flex; gap: 9px; align-items: flex-start; }
+  .dot { width: 9px; height: 9px; border-radius: 50%; margin-top: 6px; flex: 0 0 auto; }
+  .dot.ok { background: var(--ok); } .dot.warn { background: var(--warn); }
+  .dot.err { background: var(--err); } .dot.idle { background: #b8b8c0; }
+  .msg { margin-top: 12px; font-size: 13px; white-space: pre-wrap; }
+  .msg.ok { color: var(--ok); } .msg.err { color: var(--err); }
+  .meta { font-size: 12.5px; color: var(--muted); margin-top: 3px; }
+  .hidden { display: none; }
+</style>
+
+<div class="wrap">
+  <div class="card">
+    <h1 id="t-title">LocalThings</h1>
+    <p id="t-lede"></p>
+    <div class="status">
+      <div id="dot" class="dot idle"></div>
+      <div>
+        <div id="status-text"><span id="t-checking"></span></div>
+        <div id="status-meta" class="meta"></div>
+      </div>
+    </div>
+    <button id="btn-check" class="secondary hidden"><span id="t-check"></span></button>
+  </div>
+
+  <div class="card">
+    <h2 id="t-how"></h2>
+    <p id="t-how-lede"></p>
+    <ol id="steps"></ol>
+    <pre id="cmd"></pre>
+    <p class="meta" id="t-how-note"></p>
+  </div>
+
+  <div class="card">
+    <h2 id="t-creds"></h2>
+    <label id="t-cert-label"></label>
+    <textarea id="cert" spellcheck="false" placeholder="-----BEGIN CERTIFICATE-----"></textarea>
+    <label id="t-key-label"></label>
+    <textarea id="key" spellcheck="false" placeholder="-----BEGIN PRIVATE KEY-----"></textarea>
+    <button id="btn-save"><span id="t-save"></span></button>
+    <button id="btn-clear" class="secondary hidden"><span id="t-clear"></span></button>
+    <div id="msg" class="msg"></div>
+  </div>
+</div>
+
+<script type="text/javascript">
+  var H = null;
+  var started = false;
+  var LANG = 'en';
+
+  var STRINGS = {
+    en: {
+      lede: 'Controls Samsung appliances directly on your network, without SmartThings. Before adding an appliance, this app needs a client certificate.',
+      checking: 'Checking…',
+      notConfigured: 'Not set up yet — add a certificate below before adding appliances.',
+      valid: 'Ready.',
+      invalid: 'The stored certificate has a problem.',
+      expired: 'The stored certificate has expired. Mint a new one and paste it below.',
+      metaFmt: 'Identity uuid:{0} · expires {1} · {2} certificates in chain',
+      check: 'Check against Samsung’s gateway',
+      checking2: 'Checking…',
+      uuidOk: 'The stored identity still matches what appliances expect.',
+      uuidBad: 'Identity mismatch — stored uuid:{0}, appliances now expect uuid:{1}. Mint a new certificate.',
+      how: 'How to get a certificate',
+      howLede: 'One-time setup. The certificate is not tied to a specific appliance, so a single one works for every Samsung appliance on your network.',
+      steps: [
+        'On a computer with Python 3 and <code>openssl</code>, clone <code>QuiteYellow/SmartThings-Local</code>.',
+        'Install <code>pyOpenSSL</code> and run <code>setup_cert.py</code> with the command below. It fetches the public AC14K_M CA bundle, reads the identity from Samsung’s gateway, and signs a fresh key of its own.',
+        'Open the two files it writes in <code>certs/</code> and paste their contents into the fields below: <code>client_fullchain.pem</code> and <code>client.key</code>.',
+      ],
+      howNote: 'Only these two files are needed. The CA private key used to sign them stays on your computer and is never sent to Homey. Keep client.key private — anyone holding it can control your appliances from your network.',
+      creds: 'Client certificate',
+      certLabel: 'Certificate chain (client_fullchain.pem)',
+      keyLabel: 'Private key (client.key)',
+      save: 'Save',
+      clear: 'Remove',
+      saving: 'Validating…',
+      saved: 'Saved. You can now add appliances under Devices.',
+      cleared: 'Certificate removed.',
+      needBoth: 'Paste both the certificate chain and the private key.',
+    },
+    ko: {
+      lede: 'SmartThings 없이 삼성 가전을 집 안 네트워크에서 직접 제어합니다. 가전을 추가하기 전에 클라이언트 인증서가 필요합니다.',
+      checking: '확인 중…',
+      notConfigured: '아직 설정되지 않았습니다 — 가전을 추가하기 전에 아래에서 인증서를 등록하세요.',
+      valid: '준비 완료.',
+      invalid: '저장된 인증서에 문제가 있습니다.',
+      expired: '저장된 인증서가 만료되었습니다. 새로 발급해 아래에 붙여넣으세요.',
+      metaFmt: '식별자 uuid:{0} · 만료 {1} · 체인 인증서 {2}개',
+      check: '삼성 게이트웨이와 대조',
+      checking2: '확인 중…',
+      uuidOk: '저장된 식별자가 가전이 기대하는 값과 일치합니다.',
+      uuidBad: '식별자 불일치 — 저장값 uuid:{0}, 현재 기대값 uuid:{1}. 인증서를 다시 발급하세요.',
+      how: '인증서 발급 방법',
+      howLede: '최초 1회만 하면 됩니다. 인증서는 특정 가전에 묶이지 않으므로 하나로 집 안 모든 삼성 가전에 사용됩니다.',
+      steps: [
+        'Python 3과 <code>openssl</code>이 있는 컴퓨터에서 <code>QuiteYellow/SmartThings-Local</code>을 클론합니다.',
+        '<code>pyOpenSSL</code>을 설치하고 아래 명령으로 <code>setup_cert.py</code>를 실행합니다. 공개된 AC14K_M CA 번들을 받아 삼성 게이트웨이에서 식별자를 읽고, 새로 만든 키에 서명합니다.',
+        '<code>certs/</code>에 생성된 두 파일을 열어 아래 칸에 붙여넣습니다: <code>client_fullchain.pem</code>, <code>client.key</code>.',
+      ],
+      howNote: '이 두 파일만 필요합니다. 서명에 쓰인 CA 개인키는 컴퓨터에 남고 Homey로 전송되지 않습니다. client.key는 비밀로 관리하세요 — 이 키를 가진 사람은 같은 네트워크에서 가전을 제어할 수 있습니다.',
+      creds: '클라이언트 인증서',
+      certLabel: '인증서 체인 (client_fullchain.pem)',
+      keyLabel: '개인키 (client.key)',
+      save: '저장',
+      clear: '삭제',
+      saving: '검증 중…',
+      saved: '저장되었습니다. 이제 기기 화면에서 가전을 추가할 수 있습니다.',
+      cleared: '인증서를 삭제했습니다.',
+      needBoth: '인증서 체인과 개인키를 모두 붙여넣으세요.',
+    },
+  };
+
+  var CMD = [
+    'git clone https://github.com/QuiteYellow/SmartThings-Local.git',
+    'cd SmartThings-Local',
+    'python3 -m venv .venv && .venv/bin/pip install pyOpenSSL',
+    '',
+    '# TARGET_IP is optional: it verifies the certificate against a real',
+    '# appliance before you paste it. Use any Samsung appliance IP.',
+    'OUT_DIR=./certs TARGET_IP=192.168.1.90 \\',
+    '  .venv/bin/python setup_cert.py --test',
+  ].join('\n');
+
+  function t(key) {
+    var s = STRINGS[LANG][key];
+    if (s === undefined) s = STRINGS.en[key];
+    for (var i = 1; i < arguments.length; i++) {
+      s = s.replace('{' + (i - 1) + '}', arguments[i]);
+    }
+    return s;
+  }
+
+  function setText(id, value) {
+    var el = document.getElementById(id);
+    if (el) el.textContent = value;
+  }
+
+  function applyStrings() {
+    setText('t-lede', t('lede'));
+    setText('t-checking', t('checking'));
+    setText('t-check', t('check'));
+    setText('t-how', t('how'));
+    setText('t-how-lede', t('howLede'));
+    setText('t-how-note', t('howNote'));
+    setText('t-creds', t('creds'));
+    setText('t-cert-label', t('certLabel'));
+    setText('t-key-label', t('keyLabel'));
+    setText('t-save', t('save'));
+    setText('t-clear', t('clear'));
+    document.getElementById('cmd').textContent = CMD;
+    var ol = document.getElementById('steps');
+    ol.innerHTML = '';
+    STRINGS[LANG].steps.forEach(function (step) {
+      var li = document.createElement('li');
+      li.innerHTML = step;
+      ol.appendChild(li);
+    });
+  }
+
+  function setStatus(kind, text, meta) {
+    document.getElementById('dot').className = 'dot ' + kind;
+    document.getElementById('status-text').textContent = text;
+    document.getElementById('status-meta').textContent = meta || '';
+  }
+
+  function show(id, visible) {
+    document.getElementById(id).classList.toggle('hidden', !visible);
+  }
+
+  function message(kind, text) {
+    var el = document.getElementById('msg');
+    el.className = 'msg ' + (kind || '');
+    el.textContent = text || '';
+  }
+
+  function api(method, path, body) {
+    return new Promise(function (resolve, reject) {
+      H.api(method, path, body || null, function (err, result) {
+        if (err) return reject(err instanceof Error ? err : new Error(String(err)));
+        resolve(result);
+      });
+    });
+  }
+
+  function refresh() {
+    return api('GET', '/status')
+      .then(function (s) {
+        if (!s.configured) {
+          setStatus('warn', t('notConfigured'));
+          show('btn-check', false);
+          show('btn-clear', false);
+          return;
+        }
+        if (!s.valid) {
+          setStatus('err', t('invalid'), s.error);
+          show('btn-check', false);
+          show('btn-clear', true);
+          return;
+        }
+        var meta = t('metaFmt', s.uuid, s.expires, s.chain_length);
+        setStatus(s.expired ? 'err' : 'ok', s.expired ? t('expired') : t('valid'), meta);
+        show('btn-check', true);
+        show('btn-clear', true);
+      })
+      .catch(function (err) {
+        setStatus('err', String(err.message || err));
+      });
+  }
+
+  function init(homeyObj) {
+    if (started) return;
+    var ref = homeyObj || (typeof Homey !== 'undefined' ? Homey : null);
+    if (!ref) return;
+    if (!document.getElementById('cert')) return;
+    started = true;
+    H = ref;
+
+    try {
+      var lang = H.getLanguage && H.getLanguage();
+      if (lang === 'ko') LANG = 'ko';
+    } catch (e) { /* default en */ }
+
+    applyStrings();
+
+    document.getElementById('btn-save').addEventListener('click', function () {
+      var button = this;
+      var certPem = document.getElementById('cert').value.trim();
+      var keyPem = document.getElementById('key').value.trim();
+      if (!certPem || !keyPem) return message('err', t('needBoth'));
+      button.disabled = true;
+      message('', t('saving'));
+      api('POST', '/credentials', { cert_pem: certPem, key_pem: keyPem })
+        .then(function () {
+          button.disabled = false;
+          message('ok', t('saved'));
+          document.getElementById('key').value = '';
+          return refresh();
+        })
+        .catch(function (err) {
+          button.disabled = false;
+          message('err', String(err.message || err));
+        });
+    });
+
+    document.getElementById('btn-clear').addEventListener('click', function () {
+      api('POST', '/credentials-clear', {})
+        .then(function () { message('ok', t('cleared')); return refresh(); })
+        .catch(function (err) { message('err', String(err.message || err)); });
+    });
+
+    document.getElementById('btn-check').addEventListener('click', function () {
+      message('', t('checking2'));
+      api('GET', '/check-uuid')
+        .then(function (r) {
+          if (r.error) return message('err', r.error);
+          message(r.ok ? 'ok' : 'err',
+            r.ok ? t('uuidOk') : t('uuidBad', r.stored, r.live));
+        })
+        .catch(function (err) { message('err', String(err.message || err)); });
+    });
+
+    try { H.ready(); } catch (e) { /* ignore */ }
+    refresh();
+  }
+
+  // The init contract varies by Homey version, so trigger through every
+  // mechanism and let the `started` guard collapse the duplicates. Without this
+  // a view that misses its one callback renders as a blank page.
+  function onHomeyReady(homeyObj) { init(homeyObj); }
+  document.addEventListener('DOMContentLoaded', function () { init(); });
+  window.addEventListener('load', function () { init(); });
+  (function poll(n) {
+    if (started || n <= 0) return;
+    init();
+    setTimeout(function () { poll(n - 1); }, 100);
+  })(60);
+</script>

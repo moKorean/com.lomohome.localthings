@@ -17,9 +17,9 @@ from homey import device  # noqa: E402
 from lib import registry  # noqa: E402
 from lib.const import (  # noqa: E402
     POLL_INTERVAL_S,
+    SETTING_LEAF_CERT,
+    SETTING_LEAF_KEY,
     STORE_HOST,
-    STORE_LEAF_CERT,
-    STORE_LEAF_KEY,
     STORE_PORT,
 )
 from lib.session import Session  # noqa: E402
@@ -35,11 +35,14 @@ class Device(device.Device):
         self._resources: dict = {}
         self._poll_task = None
 
+        # The certificate lives at app level, not in the device store, so
+        # rotating it repairs every paired appliance at once instead of needing
+        # each one re-paired.
         self._session = Session(
             self._host,
             self._port,
-            store.get(STORE_LEAF_CERT),
-            store.get(STORE_LEAF_KEY),
+            self.homey.settings.get(SETTING_LEAF_CERT) or "",
+            self.homey.settings.get(SETTING_LEAF_KEY) or "",
             log=self.log,
         )
 
@@ -84,6 +87,13 @@ class Device(device.Device):
             await asyncio.sleep(delay)
 
     async def _poll_once(self) -> None:
+        if not self.homey.settings.get(SETTING_LEAF_CERT):
+            # Distinct from a network failure, and fixable in one place, so say
+            # where rather than reporting a bare connection error.
+            raise RuntimeError(
+                "No client certificate configured. Set one up in "
+                "Settings -> Apps -> LocalThings."
+            )
         self._resources = await self._session.read_device0()
         if self._registry is None:
             self._registry = registry.resolve(self._resources)

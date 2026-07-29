@@ -5,17 +5,19 @@ against real hardware, not preferences — see docs/PORTING.md before changing a
 of them.
 """
 
-# App-level settings keys. The CA is stored once for the whole app and reused
-# for every appliance; only the per-device leaf lives on the device.
-SETTING_CA_CERT = "ca_cert_pem"
-SETTING_CA_KEY = "ca_key_pem"
+# App-level settings keys. The client certificate is stored once for the whole
+# app: its UUID comes from Samsung's cloud gateway rather than from any
+# appliance, so one certificate authenticates to every appliance on the network.
+# The AC14K_M CA that signed it is never given to the app.
+SETTING_LEAF_CERT = "leaf_cert_pem"
+SETTING_LEAF_KEY = "leaf_key_pem"
 
-# Per-device store keys.
+# Per-device store keys. Credentials are not duplicated here — the device reads
+# the app-level certificate at runtime, so rotating it fixes every device at once
+# instead of needing each one re-paired.
 STORE_HOST = "host"
 STORE_PORT = "port"
 STORE_SERIAL = "serial"
-STORE_LEAF_CERT = "leaf_cert_pem"
-STORE_LEAF_KEY = "leaf_key_pem"
 
 # The DTLS/CoAP local API binds somewhere in this ephemeral range; which port
 # depends on firmware. Newer builds answer on 49154/49155, but older ones have

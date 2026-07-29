@@ -1,86 +1,75 @@
-# CA 자격증명 준비
+# 클라이언트 인증서 준비
 
-앱이 가전과 DTLS 세션을 맺으려면 `AC14K_M` 중간 CA의 **인증서와 개인키**가 필요합니다. 이 저장소에는 포함되어 있지 않고, 앞으로도 포함하지 않습니다.
+앱이 가전과 DTLS 세션을 맺으려면 `AC14K_M` 중간 CA가 서명한 **클라이언트 인증서**가 필요합니다. 이 저장소에는 포함되어 있지 않고, 앞으로도 포함하지 않습니다.
 
 ## 왜 필요한가
 
-삼성 Tizen/RT-OCF 가전은 공장 ACL에서 특정 UUID에 `href=*`에 대한 `perm=31`(전체 권한)을 부여합니다. 그 UUID는 삼성 클라우드 게이트웨이의 TLS 서버 인증서 subject DN에 `uuid:<UUID>` 형태로 공개되어 있습니다. `AC14K_M` 중간 CA가 서명한 인증서에 이 UUID를 넣으면 가전이 정품 허브로 인식합니다.
+삼성 Tizen/RT-OCF 가전은 공장 ACL에서 특정 UUID에 `href=*`에 대한 `perm=31`(전체 권한)을 부여합니다. 그 UUID는 삼성 클라우드 게이트웨이의 TLS 서버 인증서 subject DN에 `uuid:<UUID>` 형태로 공개되어 있습니다. `AC14K_M`이 서명한 인증서에 이 UUID를 넣으면 가전이 정품 허브로 인식합니다.
 
-즉 **기기의 원본 인증서나 키는 필요 없습니다.** `AC14K_M`이 서명한 무언가만 있으면 되고, 서명은 우리가 직접 합니다.
+**기기의 원본 인증서나 키는 필요 없습니다.**
 
-## 절차
+## 앱은 CA 개인키를 받지 않습니다
 
-[`QuiteYellow/SmartThings-Local`](https://github.com/QuiteYellow/SmartThings-Local)의 `setup_cert.py`가 전 과정을 자동화합니다. 이 저장소는 `../smartthings-local-reference/`에 클론되어 있습니다.
+UUID는 **가전이 아니라 삼성 게이트웨이**에서 오는 값이므로 모든 기기·모든 사용자가 동일하고 호출마다 바뀌지 않습니다(실측 확인). 따라서 발급된 인증서 하나가 집 안 모든 삼성 가전에 통용됩니다 — **기기별이 아니라 설치별로 1개**입니다.
 
-### 사전 준비
+그래서 이 앱은 CA를 받아 직접 발급하지 않고, **이미 발급된 인증서만** 받습니다. CA 개인키는 사용자 컴퓨터에 남고 Homey로 전송되지 않습니다.
 
-- `openssl` CLI (스크립트가 서브프로세스로 호출합니다)
-- Python 3
-- `pyOpenSSL` — `--test`(4단계 실기기 검증)에만 필요
+> 레퍼런스 HA 통합은 CA를 받아 config entry마다 리프를 발급하지만, UUID가 동일하므로 결과물은 사실상 같습니다. 이 포트는 앱이 보관하는 민감 자료를 줄이는 쪽을 택했습니다.
 
-```sh
-cd ../smartthings-local-reference
-python3 -m venv .venv
-.venv/bin/pip install pyOpenSSL
-```
+## 사용자 절차
 
-### 실행
+앱 안에도 같은 안내가 있습니다: **설정 → 앱 → 로컬띵스 커뮤니티**. 인증서가 없으면 기기 추가 화면도 이 위치를 안내하고 멈춥니다.
 
-가전 IP를 알고 있다면 `--test`까지 한 번에 돌리는 것을 권합니다. 인증서 발급과 실기기 수락 여부를 동시에 확인합니다.
+### 1. 인증서 발급 (컴퓨터에서 1회)
+
+[`QuiteYellow/SmartThings-Local`](https://github.com/QuiteYellow/SmartThings-Local)의 `setup_cert.py`가 전 과정을 자동화합니다. Python 3과 `openssl` CLI가 필요합니다.
 
 ```sh
-cd ../smartthings-local-reference
-OUT_DIR=./certs \
-TARGET_IP=192.168.1.<가전IP> \
-TARGET_PORT=49154 \
-.venv/bin/python setup_cert.py --test
+git clone https://github.com/QuiteYellow/SmartThings-Local.git
+cd SmartThings-Local
+python3 -m venv .venv && .venv/bin/pip install pyOpenSSL
+
+# TARGET_IP는 선택입니다. 넣으면 붙여넣기 전에 실기기로 검증합니다.
+OUT_DIR=./certs TARGET_IP=192.168.1.90 \
+  .venv/bin/python setup_cert.py --test
 ```
 
-`TARGET_PORT`는 `nmap -Pn -sU -p 49152-49160`으로 확인한 포트를 넣습니다(기본값 49154).
-
-### 스크립트가 하는 일
+스크립트가 하는 일:
 
 | 단계 | 내용 |
 |---|---|
 | 1 | 공개 미러에서 `AC14K_M` 번들(개인키 1 + 인증서 4)을 받아 분리하고, cert와 key의 modulus가 짝인지 검증 |
-| 2 | `connect-v2.samsungiotcloud.com:443`에 TLS 접속해 서버 인증서 subject DN에서 `uuid:<UUID>` 추출 |
-| 3 | RSA-2048 키 생성 → CN/OU/SAN에 UUID를 담은 CSR → `AC14K_M`으로 **SHA-1** 서명 (기기 트러스트 체인이 SHA-1 기준) |
-| 4 | `--test`일 때 가전에 DTLS 핸드셰이크 후 `GET /oic/sec/acl`. **`2.05`가 오면 인증서가 수락된 것** (`4.01`이면 거부) |
+| 2 | `connect-v2.samsungiotcloud.com:443`에서 서버 인증서 subject의 `uuid:<UUID>` 추출 |
+| 3 | RSA-2048 키 생성 → CN/OU/SAN에 UUID를 담은 CSR → `AC14K_M`으로 **SHA-1** 서명 |
+| 4 | `--test`일 때 가전에 DTLS 핸드셰이크 후 `GET /oic/sec/acl`. **`2.05`면 인증서 수락됨** (`4.01`이면 거부) |
 
-### 결과물
+### 2. 앱에 붙여넣기
 
-```
-certs/
-  .bundle/ac14k_m.pem        ← 앱에 넣을 CA 인증서
-  .bundle/ac14k_m.key        ← 앱에 넣을 CA 개인키
-  .bundle/cert_1..4.pem      상위 체인
-  client.key                 스크립트가 발급한 클라이언트 키
-  client_fullchain.pem       스크립트가 발급한 클라이언트 인증서 + 체인
-  samsung_cloud_leaf.pem     참고용 삼성 서버 인증서
-```
+`certs/`에 생성된 파일 중 **두 개만** 필요합니다.
 
-**우리 앱에 필요한 것은 `.bundle/ac14k_m.pem`과 `.bundle/ac14k_m.key` 두 개입니다.** 앱은 레퍼런스 통합처럼 이 CA로 기기별 리프 인증서를 직접 발급하므로, CA만 1회 입력하면 이후 기기는 IP만 입력합니다. `client.*`는 스크립트가 브리지 직접 사용을 위해 만든 것이라 앱에는 쓰지 않지만, 4단계 검증을 통과했다면 체인 전체가 정상이라는 증거입니다.
+| 파일 | 앱 입력란 |
+|---|---|
+| `client_fullchain.pem` | 인증서 체인 |
+| `client.key` | 개인키 |
 
-### 실패 시 우회
+`client.pem`(리프 단독)은 **안 됩니다** — 가전이 리프를 검증할 체인이 필요합니다. 앱이 이 경우를 감지해 안내 메시지를 냅니다.
 
-라이브 조회가 막히면 스크립트가 환경변수 우회를 지원합니다.
+앱은 붙여넣은 값을 저장 전에 검증합니다: 인증서·키가 짝인지, subject에 `uuid:` 토큰이 있는지, 체인이 2개 이상인지, 만료되지 않았는지. 실패하면 이전 값을 유지합니다.
 
-```sh
-# UUID를 직접 지정
-openssl s_client -connect connect-v2.samsungiotcloud.com:443 \
-                 -servername connect-v2.samsungiotcloud.com \
-                 -showcerts < /dev/null 2>/dev/null \
-  | openssl x509 -noout -subject          # subject에서 OU=uuid:<UUID> 확인
-UUID=<uuid> .venv/bin/python setup_cert.py
+저장 후 설정 화면에 식별자 UUID·만료일·체인 길이가 표시되고, **삼성 게이트웨이와 대조** 버튼으로 저장된 UUID가 현재 기대값과 일치하는지 확인할 수 있습니다. 불일치는 네트워크 장애처럼 보이지만 실제로는 재발급이 필요한 유일한 실패 모드라서 별도로 노출했습니다.
 
-# 번들을 로컬 파일이나 다른 미러에서
-AC14K_M_CERT_BUNDLE=/path/to/cert.pem .venv/bin/python setup_cert.py
-BRAYSTORM_URL=https://<mirror>/cert.pem .venv/bin/python setup_cert.py
-```
+### 3. 가전 추가
+
+**기기 → 기기 추가 → 로컬띵스 커뮤니티** → 가전 IP 입력. 포트는 자동 탐색합니다.
 
 ## 보안상 알아둘 것
 
-- **이 CA 개인키는 공개된 값입니다.** 삼성이 전 기기 트러스트 스토어에 넣어 배포한 중간 CA이고 수년간 공개되어 있었습니다. 따라서 같은 LAN에 있는 누구든 같은 키로 가전을 제어할 수 있습니다. 이건 이 앱이 만드는 위험이 아니라 기기 펌웨어의 설계이며, 가전을 신뢰할 수 없는 네트워크에 두지 않는 것이 유일한 완화책입니다.
-- 이 자격증명으로 제어되는 범위는 **본인 소유 가전, 본인 LAN 안**입니다. 외부로 노출되는 경로는 없습니다.
-- `certs/`, `*.pem`, `*.key`는 이 저장소 `.gitignore`에 있습니다. 그래도 커밋 전 `git status`로 한 번 확인하세요.
-- 앱에 넣은 CA는 `homey.settings`에 앱 단위로 저장됩니다. 채팅·이슈·로그에 개인키를 붙여넣지 마세요.
+- **`AC14K_M` CA 개인키는 공개된 값입니다.** 삼성이 전 기기 트러스트 스토어에 넣어 배포한 중간 CA이고 수년간 공개되어 있었습니다. 따라서 같은 LAN에 있는 누구든 같은 방법으로 가전을 제어할 수 있습니다. 이건 이 앱이 만드는 위험이 아니라 기기 펌웨어의 설계이며, 가전을 신뢰할 수 없는 네트워크에 두지 않는 것이 유일한 완화책입니다.
+- **`client.key`는 비밀로 관리하세요.** 이 키를 가진 사람은 같은 네트워크에서 가전을 제어할 수 있습니다.
+- 제어 범위는 **본인 소유 가전, 본인 LAN 안**입니다. 외부로 나가는 경로는 없습니다.
+- `certs/`, `*.pem`, `*.key`는 이 저장소와 `SmartThings-Local` 저장소 모두 `.gitignore`에 있습니다. 그래도 커밋 전 `git status`로 확인하세요.
+- 앱은 저장된 PEM을 설정 화면으로 돌려주지 않습니다. 상태 표시에 필요한 메타데이터(UUID·만료일·체인 길이)만 노출합니다.
+
+## 배포 시 고려사항
+
+공식 Homey 앱스토어를 목표로 하는 경우, **사용자에게 개인키를 붙여넣게 하는 UI는 심사 리스크**입니다. 리프 전용 모델이 CA 개인키를 다루지 않는다는 점에서 유리하지만, 그래도 제출 전에 Athom에 문의하는 편이 안전합니다. 레퍼런스 통합이 HA 코어가 아니라 HACS로 배포하는 것도 같은 성격의 제약입니다.

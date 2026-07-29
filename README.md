@@ -1,10 +1,10 @@
-# LocalThings (로컬띵스)
+# LocalThings community (로컬띵스 커뮤니티)
 
 **SmartThings 클라우드 없이, 최신 삼성 가전을 집 안 네트워크에서 직접 제어하는 Homey 앱입니다.**
 
 Home Assistant 통합 [mbillow/localthings](https://github.com/mbillow/localthings)를 Homey로 포팅하는 프로젝트입니다. 가전과 DTLS-over-CoAP 세션을 직접 맺어 상태를 읽고 명령을 보내므로, 클라우드 왕복이 없습니다.
 
-> **상태: 초기 골격 (v0.1.0).** 파이썬 런타임 앱 구조와 의존성만 준비된 단계이며, 드라이버·레지스트리는 아직 구현되지 않았습니다. 설계와 남은 작업은 [`docs/PORTING.md`](docs/PORTING.md)를 참고하세요.
+> **상태: 개발 중 (v0.1.0).** 에어컨 1종이 페어링·폴링·제어까지 동작합니다. OBSERVE(푸시) 미구현으로 상태는 폴링으로만 갱신되며, 나머지 가전 15종은 미이식입니다. 설계와 남은 작업은 [`docs/PORTING.md`](docs/PORTING.md)를 참고하세요.
 
 ## 동작 방식
 
@@ -33,24 +33,28 @@ nmap -Pn -sU -p 49152-49160 "$APPLIANCE_IP"
 
 - **Homey Pro, 펌웨어 v13.0.0 이상.** 이 앱은 Homey의 파이썬 런타임(`"runtime": "python"`, Python 3.14)으로 동작하므로 v13 미만에서는 설치되지 않습니다.
 - LAN UDP가 필요하므로 `local` 플랫폼 전용입니다. Homey Cloud에서는 동작할 수 없습니다.
-- `AC14K_M` CA 인증서와 개인키 (저장소에 포함되어 있지 않습니다). 앱이 이 CA로 기기별 리프 인증서를 직접 발급하므로, 최초 1회만 입력하면 이후 추가하는 기기는 IP만 입력합니다.
+- **클라이언트 인증서** (저장소에 포함되어 있지 않습니다). `AC14K_M`이 서명한 인증서를 컴퓨터에서 1회 발급해 **설정 → 앱 → 로컬띵스 커뮤니티**에 붙여넣습니다. UUID가 가전이 아니라 삼성 게이트웨이에서 오는 값이라 **인증서 하나로 집 안 모든 삼성 가전에 통용**되며, 이후 가전 추가는 IP만 입력합니다. 절차는 [`docs/CA-SETUP.md`](docs/CA-SETUP.md).
+
+  앱은 **CA 개인키를 받지 않습니다** — 이미 발급된 인증서만 저장합니다.
 
 ## 구조
 
 ```
 app.py                        진입점 (homey.app.App 상속, homey_export로 내보냄)
+api.py                        설정 페이지 API (인증서 검증·저장·상태)
+settings/index.html           앱 설정 화면 — 인증서 등록과 발급 안내 (en/ko)
 lib/
   const.py                    실측 프로토콜 상수 (포트 범위, 타임아웃, 소스 포트 base)
-  cert.py                     UUID 조회 + 리프 인증서 발급 (순수 cryptography)
+  cert.py                     인증서 검증·설명, 게이트웨이 UUID 대조 (순수 cryptography)
   probe.py                    UDP 라이브니스 스윕 + 페어링 프로브
   session.py                  DtlsCoapSession의 asyncio 래퍼
   resources.py                /device/0 배치 파싱, 시리얼 처리
   registry/                   보드 토큰 라우팅 + 가전별 capability 맵
   selfcheck.py                런타임 자체 점검 (기동 시 1회)
 drivers/appliance/
-  driver.py                   페어링 (CA 1회 → IP만)
+  driver.py                   페어링 (IP만; 인증서는 앱 설정에서)
   device.py                   세션 유지, 폴링 루프, 쓰기
-  pair/configure.html         페어링 화면 (en/ko)
+  pair/configure.html         페어링 화면 (en/ko). 인증서 미설정 시 설정 위치를 안내
 tests/
   fixtures/                   실기기 /device/0 덤프 (민감정보 리댁션)
   test_registry.py            레지스트리 회귀 테스트
@@ -72,7 +76,7 @@ python_packages/              Homey CLI가 생성하는 아키텍처별 venv (�
 
 ## 참조 프로젝트
 
-두 프로젝트를 같은 상위 폴더에 클론해 두고 상시 레퍼런스로 사용합니다. 이 저장소에 포함되지는 않습니다.
+세 프로젝트를 같은 상위 폴더에 클론해 두고 상시 레퍼런스로 사용합니다. 이 저장소에 포함되지는 않습니다.
 
 ### 1. `../localthings-reference/` — [mbillow/localthings](https://github.com/mbillow/localthings)
 
@@ -84,7 +88,7 @@ python_packages/              Homey CLI가 생성하는 아키텍처별 venv (�
 
 | 파일 | 내용 |
 |---|---|
-| `config_flow.py` | 기기 추가: UUID 조회 → 리프 인증서 발급 → 포트 스윕 → `/device/0` 확인 |
+| `config_flow.py` | 기기 추가: UUID 조회 → 인증서 발급 → 포트 스윕 → `/device/0` 확인 |
 | `coordinator.py` | DTLS 세션 수명주기, 폴링, 쓰기 경로, 기기별 고정 소스 포트 |
 | `observe.py` | OBSERVE 구독, 실패 시 폴링 강등 및 복구 재시도 |
 | `registry/` | href → capability → 엔티티 매핑 (코드량의 대부분) |
@@ -99,7 +103,7 @@ cd ../localthings-reference && git pull   # 레퍼런스 최신화
 
 - `smartthings_local/protocol/dtls_session.py` — DTLS 핸드셰이크 + CoAP 세션. 협상 불가능한 wire 상수들의 근거 주석이 여기 있습니다
 - `smartthings_local/protocol/coap.py` — CoAP 인코딩/디코딩, Block2, OBSERVE
-- **`setup_cert.py`** — CA 자격증명 준비와 리프 인증서 발급 스크립트. 절차는 [`docs/CA-SETUP.md`](docs/CA-SETUP.md) 참고
+- **`setup_cert.py`** — 클라이언트 인증서 발급 스크립트. 사용자가 1회 실행합니다. 절차는 [`docs/CA-SETUP.md`](docs/CA-SETUP.md) 참고
 - `mqtt_demo/` — 라이브러리 사용 예시(브리지 구현). 세션 수명주기 참고용
 
 ### 3. `../homey-pythonscript-reference/` — [jaccoh/homey-pythonscript](https://github.com/jaccoh/homey-pythonscript)
