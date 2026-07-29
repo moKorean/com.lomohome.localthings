@@ -49,5 +49,25 @@ DTLS_LOCAL_PORT_BASE = 49700
 # How often to re-read the full /device/0 summary.
 POLL_INTERVAL_S = 30.0
 
+# --- OBSERVE (push) mode. Values follow the reference integration's observe.py.
+#
+# After subscribing, the device sends an initial notification per resource. If most
+# of them arrive inside the grace period, push is working and the summary poll
+# drops to a slow safety sweep; otherwise stay on polling and retry later. Starting
+# in poll mode and earning push is deliberate — a device that accepts a
+# subscription and then never notifies would otherwise look healthy while going
+# silently stale.
+OBSERVE_GRACE_S = 15.0
+OBSERVE_SUCCESS_FRACTION = 0.8
+OBSERVE_RETRY_S = 600.0
+# Summary sweep interval while push is healthy. Still polled, because a missed
+# notification is invisible otherwise.
+OBSERVE_SWEEP_INTERVAL_S = 300.0
+# Re-subscribe periodically; observations expire device-side.
+OBSERVE_REFRESH_S = 6 * 3600.0
+# After a write, ignore notifications for that resource this long, so a device that
+# settles slowly doesn't revert the value just set.
+WRITE_SETTLE_S = 4.0
+
 SAMSUNG_CLOUD_HOST = "connect-v2.samsungiotcloud.com"
 SAMSUNG_CLOUD_PORT = 443

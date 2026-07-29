@@ -1,13 +1,19 @@
 """One paired Samsung appliance.
 
-Holds a sustained DTLS session, polls /device/0 on an interval, and writes
-capability changes straight to the appliance. The equivalent of the reference
-integration's coordinator, minus the OBSERVE path (docs/PORTING.md milestone 6) —
-so state is poll-driven for now.
+Holds a sustained DTLS session, keeps capability values current, and writes
+changes straight to the appliance — the equivalent of the reference integration's
+coordinator plus its observe manager.
+
+State arrives by CoAP OBSERVE (push) once the device proves it actually notifies,
+and by polling until then. Push is earned rather than assumed: a device can accept
+a subscription and never notify, which would look healthy while going stale. A slow
+summary sweep continues even on push, because a missed notification is otherwise
+invisible.
 """
 
 import asyncio
 import sys
+import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parents[2]))
@@ -16,11 +22,17 @@ from homey import device  # noqa: E402
 
 from lib import compat, registry  # noqa: E402
 from lib.const import (  # noqa: E402
+    OBSERVE_GRACE_S,
+    OBSERVE_REFRESH_S,
+    OBSERVE_RETRY_S,
+    OBSERVE_SUCCESS_FRACTION,
+    OBSERVE_SWEEP_INTERVAL_S,
     POLL_INTERVAL_S,
     SETTING_LEAF_CERT,
     SETTING_LEAF_KEY,
     STORE_HOST,
     STORE_PORT,
+    WRITE_SETTLE_S,
 )
 from lib.session import Session  # noqa: E402
 
@@ -35,6 +47,17 @@ class Device(device.Device):
         self._resources: dict = {}
         self._poll_task = None
 
+        # Push state. Starts in poll mode; observe is entered only once enough
+        # initial notifications have actually arrived.
+        self._observing = False
+        self._notified: set = set()
+        self._observe_attempted_at = 0.0
+        self._subscribed_at = 0.0
+        # href -> monotonic deadline. A just-written resource ignores incoming
+        # notifications briefly, so a slow-settling device can't revert the value
+        # that was just set.
+        self._settling: dict = {}
+
         # The certificate lives at app level, not in the device store, so
         # rotating it repairs every paired appliance at once instead of needing
         # each one re-paired.
@@ -44,6 +67,7 @@ class Device(device.Device):
             await compat.setting_get(self.homey, SETTING_LEAF_CERT),
             await compat.setting_get(self.homey, SETTING_LEAF_KEY),
             log=self.log,
+            on_notification=self._on_notification,
         )
 
         for capability in self.get_capabilities():
@@ -62,10 +86,97 @@ class Device(device.Device):
     # --- polling ----------------------------------------------------------
 
     def _poll_interval(self) -> float:
+        if self._observing:
+            return OBSERVE_SWEEP_INTERVAL_S
         try:
             return float(self.get_settings().get("poll_interval") or POLL_INTERVAL_S)
         except (TypeError, ValueError):
             return POLL_INTERVAL_S
+
+    # --- push -------------------------------------------------------------
+
+    def _observable_hrefs(self) -> list:
+        """The distinct resources any bound capability reads from.
+
+        Subscribing to exactly these keeps the subscription count proportional to
+        what the device actually drives, rather than observing resources nothing
+        reads.
+        """
+        own = set(self.get_capabilities())
+        return sorted({
+            spec.href for spec in self._registry.specs
+            if spec.capability in own and spec.href in self._resources
+        })
+
+    async def _try_observe(self) -> None:
+        """Subscribe, then judge from the initial notifications whether push works.
+
+        Re-attempted on the retry interval while polling, and refreshed on the
+        refresh interval while observing, because observations expire device-side.
+        """
+        now = time.monotonic()
+        if self._observing:
+            if now - self._subscribed_at < OBSERVE_REFRESH_S:
+                return
+        elif self._observe_attempted_at and now - self._observe_attempted_at < OBSERVE_RETRY_S:
+            return
+
+        hrefs = self._observable_hrefs()
+        if not hrefs:
+            return
+
+        self._observe_attempted_at = now
+        self._notified.clear()
+        failed = 0
+        for href in hrefs:
+            try:
+                await self._session.subscribe(href.strip("/").split("/"))
+            except Exception as exc:
+                failed += 1
+                self.log(f"subscribe {href} failed: {exc}")
+        self._subscribed_at = time.monotonic()
+
+        await asyncio.sleep(OBSERVE_GRACE_S)
+
+        got = len(self._notified & set(hrefs))
+        needed = max(1, int(len(hrefs) * OBSERVE_SUCCESS_FRACTION))
+        if got >= needed:
+            if not self._observing:
+                self._observing = True
+                self.log(
+                    f"push mode: {got}/{len(hrefs)} resources notified; "
+                    f"summary sweep every {OBSERVE_SWEEP_INTERVAL_S:.0f}s"
+                )
+        else:
+            if self._observing:
+                self.log(f"push lost ({got}/{len(hrefs)} notified); back to polling")
+            else:
+                self.log(
+                    f"push unavailable ({got}/{len(hrefs)} notified, "
+                    f"{failed} subscribe errors); polling"
+                )
+            self._observing = False
+
+    def _on_notification(self, href: str, rep: dict) -> None:
+        """A pushed resource update. Called on the event loop by Session."""
+        self._notified.add(href)
+        deadline = self._settling.get(href)
+        if deadline and time.monotonic() < deadline:
+            # Mid-settle after a write: the device may still be reporting the old
+            # value, which would undo the optimistic one.
+            return
+        merged = self._resources.setdefault(href, {})
+        merged.update(rep)
+        # Fire and forget: this is a callback, not a coroutine the loop awaits.
+        asyncio.create_task(self._apply_href(href))
+
+    async def _apply_href(self, href: str) -> None:
+        if self._registry is None:
+            return
+        try:
+            await self._apply(self._resources, only_href=href)
+        except Exception as exc:
+            self.log(f"applying pushed update for {href} failed: {exc}")
 
     async def _poll_loop(self) -> None:
         # Back off on repeated failure rather than hammering a device that is
@@ -106,14 +217,18 @@ class Device(device.Device):
             )
         await self._apply(self._resources)
         await self.set_available()
+        await self._try_observe()
 
-    async def _apply(self, resources: dict) -> None:
+    async def _apply(self, resources: dict, only_href: str = None) -> None:
         """Push every readable value into its capability.
 
         A spec returning None is skipped rather than written as null: a missing
         field or a stub rep must not overwrite a good value with a wrong one.
+        `only_href` limits the work to one resource, for pushed updates.
         """
         for spec in self._registry.specs:
+            if only_href is not None and spec.href != only_href:
+                continue
             if spec.capability not in self.get_capabilities():
                 continue
             rep = resources.get(spec.href)
@@ -161,6 +276,9 @@ class Device(device.Device):
             return
 
         path_segs, body = payload
+        # Guard before sending: the notification for this write can arrive while
+        # the device is still reporting the old value.
+        self._settling["/" + "/".join(path_segs)] = time.monotonic() + WRITE_SETTLE_S
         self.log(f"write {capability}={value!r} -> /{'/'.join(path_segs)} {body}")
         response = await self._session.write(path_segs, body)
         if not Session.write_accepted(response):

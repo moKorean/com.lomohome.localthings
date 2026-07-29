@@ -20,7 +20,8 @@ from .resources import parse_device0
 class Session:
     """One sustained DTLS-CoAP session to one appliance."""
 
-    def __init__(self, host: str, port: int, cert_pem: str, key_pem: str, log=print):
+    def __init__(self, host: str, port: int, cert_pem: str, key_pem: str, log=print,
+                 on_notification=None):
         self._host = host
         self._port = port
         self._cert_pem = cert_pem
@@ -28,6 +29,11 @@ class Session:
         self._log = log
         self._session = None
         self._lock = asyncio.Lock()
+        # on_notification(href, rep) is invoked on the event loop, never on the
+        # library's reader thread.
+        self._on_notification = on_notification
+        self._loop = None
+        self._subscribed: set = set()
 
     @property
     def connected(self) -> bool:
@@ -40,9 +46,24 @@ class Session:
         async with self._lock:
             await self._connect_unlocked()
 
+    def _dispatch(self, href: str, payload: bytes) -> None:
+        """OBSERVE callback. Runs on the library's reader thread, so the decoded
+        update is handed to the event loop rather than acted on here."""
+        loop, callback = self._loop, self._on_notification
+        if loop is None or callback is None:
+            return
+        try:
+            rep = cbor2.loads(payload) if payload else None
+        except Exception:
+            return
+        if isinstance(rep, dict):
+            loop.call_soon_threadsafe(callback, href, rep)
+
     async def _connect_unlocked(self) -> None:
         if self._session is not None:
             return
+
+        self._loop = asyncio.get_running_loop()
 
         def build():
             session = DtlsCoapSession(
@@ -51,6 +72,7 @@ class Session:
                 cert_pem=self._cert_pem,
                 key_pem=self._key_pem,
                 local_port=local_source_port(self._host),
+                on_notification=self._dispatch,
             )
             session.connect()
             session.start_reader()
@@ -58,6 +80,17 @@ class Session:
 
         self._session = await self._run(build)
         self._log(f"DTLS session established to {self._host}:{self._port}")
+
+        # A fresh session carries no observations, so anything previously
+        # subscribed must be re-registered or it goes silently stale.
+        if self._subscribed:
+            paths = sorted(self._subscribed)
+            self._subscribed.clear()
+            for path in paths:
+                try:
+                    await self._subscribe_unlocked(list(path))
+                except Exception as exc:
+                    self._log(f"re-subscribe /{'/'.join(path)} failed: {exc}")
 
     async def close(self) -> None:
         async with self._lock:
@@ -73,6 +106,22 @@ class Session:
             await self._run(session.close)
         except Exception as exc:
             self._log(f"session close failed: {exc}")
+
+    async def subscribe(self, path_segs: list[str]) -> None:
+        """Register an OBSERVE. The initial notification and every later change
+        arrive through the on_notification callback."""
+        async with self._lock:
+            await self._connect_unlocked()
+            await self._subscribe_unlocked(path_segs)
+
+    async def _subscribe_unlocked(self, path_segs: list[str]) -> None:
+        session = self._session
+        await self._run(lambda: session.subscribe(list(path_segs)))
+        self._subscribed.add(tuple(path_segs))
+
+    @property
+    def subscription_count(self) -> int:
+        return len(self._subscribed)
 
     async def read_device0(self) -> dict:
         """Full {href: rep} snapshot. Reconnects once on a dropped session."""
