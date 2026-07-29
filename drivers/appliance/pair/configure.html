@@ -79,6 +79,23 @@
   .report-actions { display: flex; gap: 8px; flex-wrap: wrap; }
   button.secondary { background: #e8e8ee; color: var(--text); }
   #report-url { word-break: break-all; }
+  .manual-cta {
+    margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--border);
+  }
+  .manual-cta .meta { margin: 0; }
+  .manual-cta button { margin-top: 10px; }
+  .host-row { display: flex; align-items: stretch; gap: 0; }
+  .host-prefix {
+    display: flex; align-items: center; padding: 0 2px 0 10px;
+    border: 1px solid var(--border); border-right: 0;
+    border-radius: 6px 0 0 6px; background: #eeeef2; color: var(--muted);
+    font-family: ui-monospace, Menlo, monospace; font-size: 15px;
+    white-space: nowrap;
+  }
+  .host-prefix:not(.hidden) + #host {
+    border-radius: 0 6px 6px 0; font-family: ui-monospace, Menlo, monospace;
+  }
+  #host { min-width: 0; }
 </style>
 
 <div class="wrap">
@@ -97,15 +114,29 @@
     <div id="search-msg" class="msg"></div>
     <div id="results"></div>
     <div id="others"></div>
-    <p class="meta" id="t-manual-toggle-hint"></p>
-    <a href="#" id="btn-manual"><span id="t-manual"></span></a>
+    <!-- The sweep misses appliances often enough that entering an address by hand
+         is the reliable path, not the fallback. It gets its own button rather than
+         a line of small print under the results. -->
+    <div class="manual-cta">
+      <p class="meta" id="t-manual-toggle-hint"></p>
+      <button id="btn-manual" class="secondary"><span id="t-manual"></span></button>
+    </div>
   </div>
 
   <div id="host-step" class="card hidden">
     <h2 id="t-host-title"></h2>
     <p id="t-host-lede"></p>
     <label id="t-host-label"></label>
-    <input type="text" id="host" placeholder="192.168.1.90" inputmode="decimal" autocomplete="off" />
+    <!-- Split so only the last octet has to be typed. The prefix is the Homey's own
+         subnet, which is where an appliance on the same LAN necessarily is. Typing a
+         dot into the octet field switches it back to accepting a whole address, for
+         the case where it is not. -->
+    <div class="host-row">
+      <span id="host-prefix" class="host-prefix hidden"></span>
+      <input type="text" id="host" inputmode="numeric" autocomplete="off"
+             spellcheck="false" />
+    </div>
+    <p class="meta" id="t-host-note"></p>
     <button id="btn-connect"><span id="t-connect"></span></button>
     <div id="msg" class="msg"></div>
     <div id="summary" class="summary hidden"></div>
@@ -137,9 +168,15 @@
   var H = null;
   var started = false;
   var LANG = 'en';
+  // The Homey's own subnet base, e.g. '192.168.1'. Empty when detection failed, in
+  // which case the manual field asks for a whole address instead of an octet.
+  var SUBNET = '';
 
   var STRINGS = {
     en: {
+      hostNoteOctet: 'Only the last number — your Homey is on this subnet, so the appliance is too. To reach a different subnet, type the whole address.',
+      hostNoteFull: 'The whole address, for example 192.168.1.90.',
+      badHost: '{0} is not a valid address.',
       reportTitle: 'Help add support for this appliance',
       reportLede: 'This is what the appliance reports about itself. It is what adding support needs, and it is the one thing only you can provide. Serial number and device ids have been replaced — nothing here identifies you or your unit.',
       reportCopy: 'Copy report',
@@ -171,14 +208,14 @@
       addThis: 'Add',
       unknownType: 'Unsupported type',
       unknownSub: '{0} · {1} resources · cannot be added yet',
-      manualHint: 'Not listed? Some units answer only on ports this scan skips.',
+      manualHint: 'The scan does not find every appliance — some answer only on ports it skips, and some stay silent. Entering an address by hand always works.',
       othersTitle: '{0} other devices answered but could not be identified',
       otherSamsung: '{0} — a Samsung device this app cannot talk to (older firmware, most likely)',
       otherUnknown: '{0} — probably another vendor\u2019s device (MAC {1})',
       otherNoMac: '{0} — could not be identified',
-      manual: 'Enter an IP address instead',
+      manual: 'Add by IP address',
       hostTitle: 'Add an appliance',
-      hostLede: 'Enter the appliance’s IP address. The port is detected automatically. Find the address in your router’s client list, or in the SmartThings app under the appliance’s network information.',
+      hostLede: 'The port is detected automatically. Find the address in your router’s client list, or in the SmartThings app under the appliance’s network information.',
       hostLabel: 'IP address',
       connect: 'Connect',
       probing: 'Scanning ports and reading appliance state… this can take up to a minute.',
@@ -189,6 +226,9 @@
       capabilities: '{0} controls available',
     },
     ko: {
+      hostNoteOctet: '마지막 숫자만 입력하세요. Homey가 이 서브넷에 있으니 가전도 같은 서브넷에 있습니다. 다른 서브넷이라면 주소 전체를 입력하세요.',
+      hostNoteFull: '주소 전체를 입력하세요. 예: 192.168.1.90',
+      badHost: '{0} 은(는) 올바른 주소가 아닙니다.',
       reportTitle: '이 가전의 지원 추가에 도움 주기',
       reportLede: '가전이 스스로 보고하는 내용입니다. 지원을 추가하려면 이 정보가 필요하고, 이건 사용자만 제공할 수 있습니다. 시리얼 번호와 기기 식별자는 가려져 있어 사용자나 기기를 특정할 수 있는 내용은 없습니다.',
       reportCopy: '리포트 복사',
@@ -220,12 +260,12 @@
       addThis: '추가',
       unknownType: '미지원 종류',
       unknownSub: '{0} · 리소스 {1}개 · 아직 추가할 수 없습니다',
-      manualHint: '목록에 없나요? 이 검색이 건너뛴 포트만 응답하는 기기가 있을 수 있습니다.',
+      manualHint: '검색이 모든 가전을 찾아내지는 못합니다 — 검색이 건너뛴 포트로만 응답하거나 아예 조용한 기기가 있습니다. IP를 직접 입력하면 항상 됩니다.',
       othersTitle: '응답했지만 확인되지 않은 기기 {0}대',
       otherSamsung: '{0} — 삼성 기기이지만 이 앱이 통신할 수 없습니다 (구형 펌웨어일 가능성이 높습니다)',
       otherUnknown: '{0} — 다른 제조사 기기로 보입니다 (MAC {1})',
       otherNoMac: '{0} — 확인할 수 없었습니다',
-      manual: '대신 IP 주소 직접 입력',
+      manual: 'IP 주소로 추가',
       hostTitle: '가전 추가',
       hostLede: '가전의 IP 주소를 입력하세요. 포트는 자동으로 찾습니다. 주소는 공유기의 접속 기기 목록이나 SmartThings 앱의 네트워크 정보에서 확인할 수 있습니다.',
       hostLabel: 'IP 주소',
@@ -304,6 +344,19 @@
     setText('t-host-title', t('hostTitle'));
     setText('t-host-lede', t('hostLede'));
     setText('t-host-label', t('hostLabel'));
+    setText('t-host-note', SUBNET ? t('hostNoteOctet') : t('hostNoteFull'));
+    var prefix = document.getElementById('host-prefix');
+    var field = document.getElementById('host');
+    if (SUBNET) {
+      setText('host-prefix', SUBNET + '.');
+      show('host-prefix', true);
+      field.placeholder = '90';
+      field.setAttribute('maxlength', '15');
+    } else {
+      show('host-prefix', false);
+      field.placeholder = '192.168.1.90';
+      field.removeAttribute('maxlength');
+    }
     setText('t-connect', t('connect'));
     var ol = document.getElementById('setup-steps');
     ol.innerHTML = '';
@@ -523,10 +576,54 @@
     el.textContent = text;
   }
 
+  // The field holds only the last octet while a prefix is shown. A value containing
+  // a dot is taken as a whole address regardless, so an appliance on a different
+  // subnet is still reachable without a second input to find.
+  // Whitespace and edge dots are stripped rather than treated as input. The field
+  // sits directly after a prefix ending in '.', so typing '.185' is the natural
+  // mistake to make — and rejecting it, or worse reading it as a whole address
+  // because it contains a dot, is not a useful answer to an address that is
+  // perfectly clear. Only a dot *between* numbers means "this is a full address".
+  function normalizeTyped(raw) {
+    return String(raw == null ? '' : raw).trim().replace(/^\.+/, '').replace(/\.+$/, '').trim();
+  }
+
+  function resolvedHost() {
+    var typed = normalizeTyped(document.getElementById('host').value);
+    if (!typed) return '';
+    if (typed.indexOf('.') !== -1) return typed;
+    if (!SUBNET) return typed;
+    return SUBNET + '.' + typed;
+  }
+
+  // `prefixed` is true when the last octet came from the field and the rest from
+  // SUBNET. Only then is the /24 assumption ours to make: .0 and .255 are that
+  // subnet's network and broadcast addresses and never an appliance. A whole
+  // address typed by hand gets the structural check alone — the user knows their
+  // own network's shape better than this view does.
+  function validHost(host, prefixed) {
+    var parts = host.split('.');
+    if (parts.length !== 4) return false;
+    for (var i = 0; i < 4; i++) {
+      if (!/^\d{1,3}$/.test(parts[i])) return false;
+      var n = parseInt(parts[i], 10);
+      if (n < 0 || n > 255) return false;
+    }
+    if (!prefixed) return true;
+    var last = parseInt(parts[3], 10);
+    return last > 0 && last < 255;
+  }
+
+  function hostWasPrefixed() {
+    var typed = normalizeTyped(document.getElementById('host').value);
+    return !!SUBNET && !!typed && typed.indexOf('.') === -1;
+  }
+
   function connect() {
     var button = document.getElementById('btn-connect');
-    var host = document.getElementById('host').value.trim();
+    var host = resolvedHost();
     if (!host) return message('err', t('needHost'));
+    if (!validHost(host, hostWasPrefixed())) return message('err', t('badHost', host));
 
     show('summary', false);
     button.disabled = true;
@@ -621,6 +718,7 @@
         });
       })
       .then(function (state) {
+        SUBNET = String((state && state.subnet) || '').trim();
         applyStrings();
         show('boot', false);
         show('setup', !state.has_credentials);
@@ -660,6 +758,9 @@
       e.preventDefault();
       show('search-step', false);
       show('host-step', true);
+      // The prefix is already filled in, so the caret belongs in the one field the
+      // user still has to type into.
+      try { document.getElementById('host').focus(); } catch (err) { /* ignore */ }
     });
     document.getElementById('host').addEventListener('keydown', function (e) {
       if (e.key === 'Enter') connect();

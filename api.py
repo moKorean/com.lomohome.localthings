@@ -226,6 +226,68 @@ async def resources(homey, **kwargs):
     return out or {"error": "no matching device"}
 
 
+async def write_resource(homey, **kwargs):
+    """Write one resource on one appliance and read it straight back.
+
+    A diagnostic, for the question "does this appliance accept a write on this path at
+    all". Guessing the answer is how the refrigerator setpoint was implemented twice
+    without working either time; this makes it a measurement. The write goes through
+    the device's own session, so it is the same transport a capability write uses.
+
+        homey api raw --method POST \
+          --path /api/app/com.lomohome.localthings/write-resource \
+          --json '{"host":"192.168.1.203","path":"/temperature/desired/cooler/0",
+                   "body":{"temperature":4}}'
+
+    Returns the appliance's own response plus the resource re-read after the write, so
+    "accepted but not committed" is distinguishable from "committed".
+    """
+    params = _params(kwargs)
+    host = str(params.get("host") or "").strip()
+    path = str(params.get("path") or "").strip()
+    body = params.get("body")
+    if isinstance(body, str):
+        import json as _json
+        try:
+            body = _json.loads(body)
+        except ValueError:
+            return {"error": "body is not valid JSON"}
+    if not host or not path or not isinstance(body, dict):
+        return {"error": "host, path and a JSON object body are all required"}
+
+    try:
+        devices = homey.drivers.get_driver("appliance").get_devices()
+    except Exception as exc:
+        return {"error": f"{type(exc).__name__}: {exc}"}
+    device = next(
+        (d for d in devices if str((d.get_store() or {}).get("host")) == host), None
+    )
+    if device is None:
+        return {"error": f"no paired appliance at {host}"}
+
+    segments = [s for s in path.strip("/").split("/") if s]
+    session = getattr(device, "_session", None)
+    if session is None:
+        return {"error": "device has no session"}
+
+    result = {"host": host, "path": "/" + "/".join(segments), "sent": body}
+    try:
+        response = await session.write(segments, body)
+        result["response"] = response
+        result["accepted"] = session.write_accepted(response)
+    except Exception as exc:
+        result["error"] = f"{type(exc).__name__}: {exc}"
+        return result
+
+    # The point of the endpoint: what the appliance holds *after* the write.
+    try:
+        snapshot = await session.read_device0()
+        result["after"] = snapshot.get(result["path"])
+    except Exception as exc:
+        result["after_error"] = f"{type(exc).__name__}: {exc}"
+    return result
+
+
 def _device_report(homey) -> list:
     """Per-device push/poll state.
 
@@ -252,11 +314,17 @@ def _device_report(homey) -> list:
                 getattr(d, "_session", None), "subscription_count", None)),
             ("notified_hrefs", lambda d=device: len(getattr(d, "_notified", ()) or ())),
             ("capabilities", lambda d=device: len(d.get_capabilities() or ())),
+            # The values, not just the count. "the capability is bound" and "the
+            # capability holds the value the appliance reports" are different
+            # claims, and only the second one is what the user sees on the tile.
+            ("values", lambda d=device: {
+                c: d.get_capability_value(c) for c in sorted(d.get_capabilities() or ())
+            }),
         ):
             try:
                 entry[label] = get()
             except Exception as exc:
-                entry[label] = f"raised {type(exc).__name__}"
+                entry[label] = f"raised {type(exc).__name__}: {exc}"
         report.append(entry)
     return report
 

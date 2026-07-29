@@ -1,0 +1,15 @@
+{
+  "type": "boolean",
+  "getable": true,
+  "setable": false,
+  "title": {
+    "en": "Absence detection",
+    "ko": "부재 감지"
+  },
+  "desc": {
+    "en": "Whether the motion sensor's absence detection is switched on.",
+    "ko": "모션 센서의 부재 감지 기능이 켜져 있는지 여부입니다."
+  },
+  "icon": "/assets/capabilities/mdi-motion-sensor.svg",
+  "insights": true
+}

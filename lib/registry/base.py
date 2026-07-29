@@ -113,11 +113,24 @@ class Registry:
                 result[spec.capability] = entry
         return result
 
-    def spec_for(self, capability: str) -> Spec | None:
-        for spec in self.specs:
-            if spec.capability == capability:
-                return spec
-        return None
+    def spec_for(self, capability: str, resources: dict | None = None) -> Spec | None:
+        """The spec backing `capability`, preferring one that applies to `resources`.
+
+        Several capabilities are declared more than once on purpose — an OCF form and
+        a vendor form of the same thing, or a per-instance resource and an aggregate
+        fallback — with only one of them ever binding on a given appliance. Returning
+        the first declaration regardless would send a write to a resource the
+        appliance does not have, which it answers by doing nothing.
+
+        `resources` is optional so callers that only want a spec's titles or
+        writability keep working; those do not depend on which form bound.
+        """
+        candidates = [spec for spec in self.specs if spec.capability == capability]
+        if resources is not None:
+            for spec in candidates:
+                if spec.applies(resources):
+                    return spec
+        return candidates[0] if candidates else None
 
 
 # --- shared field readers -------------------------------------------------

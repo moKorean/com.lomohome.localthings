@@ -1,7 +1,7 @@
 {
   "_comment": "This file is generated. Please edit .homeycompose/app.json instead.",
   "id": "com.lomohome.localthings",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "compatibility": ">=13.0.0",
   "sdk": 3,
   "runtime": "python",
@@ -78,6 +78,10 @@
     "resources": {
       "method": "GET",
       "path": "/resources"
+    },
+    "write_resource": {
+      "method": "POST",
+      "path": "/write-resource"
     },
     "set_language": {
       "method": "POST",
@@ -340,6 +344,58 @@
       "setable": true,
       "uiComponent": "toggle",
       "icon": "/assets/capabilities/mdi-spray-bottle.svg"
+    },
+    "localthings_absence_detect": {
+      "type": "boolean",
+      "getable": true,
+      "setable": false,
+      "title": {
+        "en": "Absence detection",
+        "ko": "부재 감지"
+      },
+      "desc": {
+        "en": "Whether the motion sensor's absence detection is switched on.",
+        "ko": "모션 센서의 부재 감지 기능이 켜져 있는지 여부입니다."
+      },
+      "icon": "/assets/capabilities/mdi-motion-sensor.svg",
+      "insights": true
+    },
+    "localthings_absence_minutes": {
+      "type": "number",
+      "getable": true,
+      "setable": false,
+      "title": {
+        "en": "Absence threshold",
+        "ko": "부재 판정 시간"
+      },
+      "desc": {
+        "en": "Minutes without motion before the appliance treats the room as empty. 0 when absence detection is off.",
+        "ko": "이 시간 동안 움직임이 없으면 가전이 방을 비어 있다고 판단합니다. 부재 감지가 꺼져 있으면 0입니다."
+      },
+      "units": {
+        "en": "min",
+        "ko": "분"
+      },
+      "icon": "/assets/capabilities/mdi-timer-outline.svg",
+      "min": 0,
+      "max": 240,
+      "step": 30,
+      "insights": false
+    },
+    "localthings_absence_monitoring": {
+      "type": "boolean",
+      "getable": true,
+      "setable": false,
+      "title": {
+        "en": "Motion monitoring",
+        "ko": "모션 모니터링"
+      },
+      "desc": {
+        "en": "Whether the appliance is monitoring the room with its motion sensor.",
+        "ko": "가전이 모션 센서로 방을 관찰하고 있는지 여부입니다."
+      },
+      "icon": "/assets/capabilities/mdi-motion-sensor.svg",
+      "insights": true
     },
     "localthings_absence_power_saving": {
       "type": "boolean",

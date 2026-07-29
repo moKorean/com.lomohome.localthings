@@ -91,9 +91,21 @@ class Driver(driver.Driver):
             f"pair get_state: cert={len(cert_pem)}B key={len(key_pem)}B "
             f"language={language}"
         )
+        # The subnet base lets the manual-entry field prefill everything but the
+        # last octet. Resolved here rather than in the view, which has no way to
+        # ask: a webview sees Homey's address, not the Homey's own LAN interface.
+        # A failure must not block pairing, so it falls back to no prefix and the
+        # view asks for a whole address.
+        try:
+            subnet, _own = discovery.local_subnet()
+        except Exception as exc:
+            self.log(f"subnet detection failed: {exc}")
+            subnet = ""
+
         return {
             "has_credentials": bool(cert_pem and key_pem),
             "language": language,
+            "subnet": subnet,
         }
 
     def _paired_identity(self) -> tuple[set, set]:

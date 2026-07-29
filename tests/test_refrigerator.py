@@ -193,28 +193,64 @@ def test_the_convertible_units_have_no_refrigeration_resource_at_all():
 # --- setpoint writes ------------------------------------------------------
 
 
-def test_setpoint_writes_go_to_the_vendor_resource_with_the_right_item_id():
-    """Item ids are Samsung's convention, which the reference states and these units
-    confirm: 0 is the freezer, 1 the fridge."""
+def _applicable(capability: str, resources: dict):
+    """The one spec for `capability` that applies to these resources.
+
+    Two exist for each temperature capability — the per-compartment resource and the
+    vendor aggregate — and exactly one may ever bind.
+    """
+    matches = [
+        s for s in appliances.REFRIGERATOR.specs
+        if s.capability == capability and s.applies(resources)
+    ]
+    assert len(matches) == 1, f"{capability}: {len(matches)} applicable specs"
+    return matches[0]
+
+
+def test_setpoint_writes_go_to_the_resource_they_were_read_from():
+    """Not the vendor aggregate. A write confirmed by reading a *different* resource
+    cannot be confirmed at all, and on this firmware the aggregate is the stale copy —
+    the same copy that reported a door shut while it was open."""
     resources = load(COOLER)
-    spec = appliances.REFRIGERATOR.spec_for("target_temperature.fridge")
+    spec = _applicable("target_temperature.fridge", resources)
+    assert spec.href == "/temperature/desired/cooler/0"
     assert spec.write(4, resources[spec.href]) == (
-        ["temperatures", "vs", "0"],
-        {"x.com.samsung.da.items": [{
-            "x.com.samsung.da.id": "1",
-            "x.com.samsung.da.desired": "4",
-        }]},
+        ["temperature", "desired", "cooler", "0"], {"temperature": 4},
     )
 
     resources = load(FREEZER)
-    spec = appliances.REFRIGERATOR.spec_for("target_temperature.freezer")
+    spec = _applicable("target_temperature.freezer", resources)
+    assert spec.href == "/temperature/desired/freezer/0"
     assert spec.write(-18, resources[spec.href]) == (
-        ["temperatures", "vs", "0"],
-        {"x.com.samsung.da.items": [{
-            "x.com.samsung.da.id": "0",
-            "x.com.samsung.da.desired": "-18",
-        }]},
+        ["temperature", "desired", "freezer", "0"], {"temperature": -18},
     )
+
+
+def test_the_write_body_carries_only_the_field_being_changed():
+    """`range` and `units` are the device's to report. The vendor body also replaced
+    the whole items[] array with one partial entry, which briefly erased the other
+    compartment's bounds from the local copy after every write."""
+    resources = load(COOLER)
+    spec = _applicable("target_temperature.fridge", resources)
+    _segments, body = spec.write(4, resources[spec.href])
+    assert set(body) == {"temperature"}
+
+
+def test_the_vendor_aggregate_never_binds_alongside_the_per_compartment_resource():
+    """Both are declared, for units that have only the aggregate. On these units the
+    per-compartment resources exist, so the aggregate specs must stand down."""
+    for stem in ALL:
+        resources = load(stem)
+        assert appliances.has_ocf_temperatures(resources), stem
+        for capability in ("measure_temperature.fridge", "measure_temperature.freezer",
+                           "target_temperature.fridge", "target_temperature.freezer"):
+            bound = [
+                s for s in appliances.REFRIGERATOR.specs
+                if s.capability == capability and s.applies(resources)
+            ]
+            assert len(bound) <= 1, f"{stem}/{capability}: {[s.href for s in bound]}"
+            for spec in bound:
+                assert spec.href != "/temperatures/vs/0", f"{stem}/{capability}"
 
 
 @pytest.mark.parametrize(("stem", "capability", "value"), [
@@ -225,18 +261,20 @@ def test_setpoint_writes_go_to_the_vendor_resource_with_the_right_item_id():
 ])
 def test_a_setpoint_outside_the_advertised_bounds_is_refused(stem, capability, value):
     resources = load(stem)
-    spec = appliances.REFRIGERATOR.spec_for(capability)
+    spec = _applicable(capability, resources)
     assert spec.write(value, resources[spec.href]) is None
 
 
 def test_setpoint_bounds_come_from_the_appliance():
     resources = load(COOLER)
-    spec = appliances.REFRIGERATOR.spec_for("target_temperature.fridge")
+    spec = _applicable("target_temperature.fridge", resources)
+    assert resources[spec.href]["range"] == [0, 5]
     assert spec.options(resources[spec.href], resources) == {
         "min": 0.0, "max": 5.0, "step": 1, "decimals": 0,
     }
     resources = load(FREEZER)
-    spec = appliances.REFRIGERATOR.spec_for("target_temperature.freezer")
+    spec = _applicable("target_temperature.freezer", resources)
+    assert resources[spec.href]["range"] == [-23, -17]
     assert spec.options(resources[spec.href], resources) == {
         "min": -23.0, "max": -17.0, "step": 1, "decimals": 0,
     }

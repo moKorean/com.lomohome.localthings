@@ -304,31 +304,58 @@ SOUND = (
 # --- doors ---------------------------------------------------------------
 
 
-def _any_door_open(rep, _resources):
-    """True when any compartment in the items array reports open."""
-    items = rep.get("x.com.samsung.da.items")
-    if not isinstance(items, list):
+def _open_states(resources) -> list:
+    """Every door state this appliance reports, from wherever it reports it.
+
+    Samsung fridges expose doors twice: an aggregate at /doors/vs/0 with an items[]
+    array, and per-door resources at /door/<name>/vs/0. Which of the two actually
+    tracks the door is *per model*, and an earlier version of this code assumed the
+    per-door resource always won:
+
+      - the one-door convertible cabinets keep /door/onedoorfreezer/vs/0 current and
+        leave the aggregate stuck at Close
+      - the plain fridge is the other way round. Its door lives in the aggregate;
+        /door/onedoorfreezer/vs/0 exists but never moves, which stands to reason on a
+        unit that is not a one-door freezer at all
+
+    Binding only the per-door resource therefore fixed one model and broke the other.
+    So every source is read and any of them reporting Open counts. That is safe
+    against the staleness actually observed — a stale source sits at Close — and it
+    needs no per-model knowledge of which resource is the live one.
+    """
+    states = []
+    for href, rep in (resources or {}).items():
+        if not isinstance(rep, dict):
+            continue
+        if href == "/doors/vs/0":
+            for item in rep.get("x.com.samsung.da.items") or ():
+                if isinstance(item, dict):
+                    state = item.get("x.com.samsung.da.openState") or item.get("openState")
+                    if state is not None:
+                        states.append(state)
+        elif href.startswith("/door/"):
+            state = rep.get("openState")
+            if state is None:
+                state = rep.get("x.com.samsung.da.openState")
+            if state is not None:
+                states.append(state)
+    return states
+
+
+def read_any_door_open(_rep, resources):
+    """True when any door this appliance reports is open."""
+    states = _open_states(resources)
+    if not states:
         return None
-    seen = False
-    for item in items:
-        if not isinstance(item, dict):
-            continue
-        state = item.get("x.com.samsung.da.openState") or item.get("openState")
-        if state is None:
-            continue
-        seen = True
-        if str(state).strip().lower() in ("open", "opened", "true"):
-            return True
-    return False if seen else None
+    return any(str(s).strip().lower() in ("open", "opened", "true") for s in states)
 
 
 def read_open_state(rep):
-    """A single door resource's open state.
+    """A single door resource's open state, checking both field spellings.
 
-    Both spellings are checked: most /door/* resources report a bare `openState`,
-    while the family that also carries /door/onedoorfreezer/vs/0 reports it
-    vendor-prefixed. Looking up only one name leaves the capability bound and
-    permanently blank.
+    Most /door/* resources report a bare `openState`; the family that carries
+    /door/onedoorfreezer/vs/0 reports it vendor-prefixed. Looking up one name only
+    leaves the capability bound and permanently blank.
     """
     state = rep.get("openState")
     if state is None:
@@ -338,7 +365,14 @@ def read_open_state(rep):
     return str(state).strip().lower() in ("open", "opened", "true")
 
 
-DOORS = (Spec("alarm_contact", "/doors/vs/0", _any_door_open),)
+# One capability, every source. Anchored on the aggregate because all three verified
+# refrigerators carry it; the second spec covers a unit that has only a per-door
+# resource. Both read the union, so whichever binds gives the same answer.
+DOORS = (
+    Spec("alarm_contact", "/doors/vs/0", read_any_door_open),
+    Spec("alarm_contact", "/door/onedoorfreezer/vs/0", read_any_door_open,
+         exists=lambda _rep, resources: "/doors/vs/0" not in resources),
+)
 
 
 # --- the set every type starts from --------------------------------------

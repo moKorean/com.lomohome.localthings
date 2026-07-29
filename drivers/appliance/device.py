@@ -96,6 +96,9 @@ class Device(device.Device):
         # Previous values, so flow triggers fire on a transition rather than on every
         # poll that happens to see the same state.
         self._previous: dict = {}
+        # capability -> the options last handed to Homey, so re-pushing an unchanged
+        # set every poll can be skipped.
+        self._applied_options: dict = {}
 
         self.log(f"{self.get_name()} init ({self._host}:{self._port})")
         self._poll_task = asyncio.create_task(self._poll_loop())
@@ -397,8 +400,14 @@ class Device(device.Device):
                 f"{len(unbound)} unbound resources: {unbound}"
             )
             await self._sync_device_class()
-            await self._sync_capabilities()
-            await self._sync_capability_options()
+        # Outside the block above on purpose: the resource surface changes while the
+        # app is running, not only between versions. A convertible refrigerator
+        # switched from fridge to freezer moves its setpoint to the other
+        # compartment; a cooktop's Bluetooth probe appears when it is paired. Both
+        # were invisible until the next app restart when this ran once per start.
+        # Both calls compare before acting, so the steady-state cost is a comparison.
+        await self._sync_capabilities()
+        await self._sync_capability_options()
         await self._apply(self._resources)
         await self.set_available()
         self._evaluate_observe()
@@ -495,10 +504,16 @@ class Device(device.Device):
         for capability, values in options.items():
             if capability not in own:
                 continue
+            # Skip what is already applied. This runs on every poll so that a range
+            # the appliance changes is followed, and re-pushing 30-odd unchanged
+            # option sets every 30 seconds would be pure waste.
+            if self._applied_options.get(capability) == values:
+                continue
             try:
                 result = setter(capability, values)
                 if hasattr(result, "__await__"):
                     await result
+                self._applied_options[capability] = values
             except Exception as exc:
                 self.log(f"capability options for {capability} failed: {exc}")
 
@@ -586,7 +601,11 @@ class Device(device.Device):
         return listener
 
     async def _write(self, capability: str, value) -> None:
-        spec = self._registry.spec_for(capability) if self._registry else None
+        # Pass the resources: a capability declared in both an OCF and a vendor
+        # form must resolve to the one this appliance actually reports, or the
+        # write goes to a path it does not have and is silently dropped.
+        spec = (self._registry.spec_for(capability, self._resources)
+                if self._registry else None)
         if spec is None or not spec.writable:
             raise RuntimeError(i18n.translate(
                 "error.not_writable", self._language, capability=self._label(capability)))

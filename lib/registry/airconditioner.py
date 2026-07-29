@@ -40,6 +40,10 @@ HREF_SMART_COOLING = "/smartsensingcooling/vs/0"
 HREF_ALARMS = "/alarms/vs/0"
 HREF_SENSORS = "/sensors/vs/0"
 
+HREF_ABSENCE_STATE = "/mds/absencestate/vs/0"
+HREF_ABSENCE_MONITORING = "/mds/absencemonitoring/vs/0"
+
+
 FIELD_POWER = "x.com.samsung.da.power"
 FIELD_MODES = "x.com.samsung.da.modes"
 FIELD_SUPPORTED = "x.com.samsung.da.supportedModes"
@@ -80,6 +84,30 @@ def _fan_name_to_code(rep: dict) -> dict[str, str]:
         if alias:
             mapping[alias] = str(code)
     return mapping
+
+
+# The motion-detection sensor's *settings*, not its readings — MDS is Samsung's own
+# abbreviation for the sensor, and these two resources look at first like a presence
+# feed. They are not, and the evidence is direct: across four units, an occupied room
+# and an empty room both reported status Off, while a room whose occupant was asleep
+# reported status On with absenceTime 30. Occupancy does not correlate.
+#
+# What fits is a threshold pair. `supportedTimes` is exactly the shape of an option
+# list for `absenceTime` (0/30/60/120 minutes), the two values move together
+# (On paired with 30, Off with 0), and /mds/absencemonitoring/vs/0 is a third
+# independent on/off. So: "treat the room as empty after N minutes without motion".
+#
+# There is no live motion readout on this firmware. The reference mentions a
+# `motionState` field with its own supportedMotionState list, and none of the four
+# units reports it anywhere. The only actual sensor data is `maxDetectCount`, a
+# 48-slot daily profile whose indexing is not yet established — see docs/BACKLOG.md.
+#
+# Read-only. The reference ignores both hrefs outright, so there is no confirmed
+# write, and these change how the appliance manages its own compressor.
+
+
+def _read_absence_minutes(rep, _resources):
+    return as_float(rep.get("absenceTime"))
 
 
 def _read_power(rep, _resources):
@@ -397,6 +425,12 @@ REGISTRY = Registry(
         # now — the shared specs were only wired into the appliances that were
         # ported later. Field names confirmed against those units.
         *shared.SOUND,
+        Spec("localthings_absence_detect", HREF_ABSENCE_STATE,
+             shared.flag("status")),
+        Spec("localthings_absence_minutes", HREF_ABSENCE_STATE,
+             _read_absence_minutes),
+        Spec("localthings_absence_monitoring", HREF_ABSENCE_MONITORING,
+             shared.flag("status")),
         Spec("measure_power", HREF_ENERGY, _read_power_watts),
         Spec("meter_power", HREF_ENERGY, _read_meter_kwh),
         Spec("localthings_air_purify", HREF_AIRPURIFY, _read_airpurify, _write_airpurify),

@@ -93,6 +93,129 @@ DISHWASHER = Registry(
 # dump to get the href pattern right, and guessing would put wrong temperatures on a
 # tile rather than leave a gap.
 
+# Samsung fridges report temperature twice: per-compartment OCF resources
+# (/temperature/current/<c>/0, /temperature/desired/<c>/0, each carrying its own
+# `range`) and one vendor aggregate (/temperatures/vs/0) that repeats the same
+# numbers. Where both exist the per-compartment resources are the live ones and the
+# aggregate is second-class — this firmware demonstrably does not keep the aggregate
+# current, which is how a door reported through /doors/vs/0 stayed shut forever while
+# the same door read through /door/onedoorfreezer/vs/0 worked. So the aggregate is
+# used only by units that have nothing else, exactly as the reference does.
+#
+# OCF compartment segment -> the description used in the vendor aggregate.
+_COMPARTMENTS = {"cooler": "Fridge", "freezer": "Freezer"}
+
+
+def _ocf_current(compartment: str) -> str:
+    return f"/temperature/current/{compartment}/0"
+
+
+def _ocf_desired(compartment: str) -> str:
+    return f"/temperature/desired/{compartment}/0"
+
+
+def has_ocf_temperatures(resources) -> bool:
+    """Whether this unit reports per-compartment temperature resources."""
+    return any(href.startswith("/temperature/") for href in resources)
+
+
+def _in_ocf_range(rep: dict):
+    """`temperature`, or None when it falls outside the resource's own `range`.
+
+    A convertible cabinet parks 253 in the compartment it is not using — see
+    _in_range below for the evidence that this is a marker and not an encoding.
+    """
+    value = as_float(rep.get("temperature"))
+    bounds = rep.get("range")
+    if value is None:
+        return None
+    if isinstance(bounds, (list, tuple)) and len(bounds) == 2:
+        low, high = as_float(bounds[0]), as_float(bounds[1])
+        if low is not None and high is not None and not low <= value <= high:
+            return None
+    return value
+
+
+def _ocf_reading(rep, _resources):
+    """A current temperature, reported even when outside the setpoint range.
+
+    Those bounds describe the setpoints the compartment accepts, not what its sensor
+    can read: a cabinet running as kimchi storage reports 2 °C against a freezer
+    range of -23..-17, and 2 °C is genuinely its temperature.
+    """
+    return as_float(rep.get("temperature"))
+
+
+def _ocf_setpoint(rep, _resources):
+    return _in_ocf_range(rep)
+
+
+def _ocf_active(rep, _resources) -> bool:
+    """Whether the compartment is in use, so an idle one is offered nothing.
+
+    Both compartments of a convertible cabinet report the same current temperature,
+    because there is one physical compartment. Only the one whose setpoint is
+    believable is bound.
+    """
+    return _in_ocf_range(rep) is not None
+
+
+def _ocf_compartment_in_use(compartment: str):
+    """Whether the compartment is in use, judged from its *setpoint* resource.
+
+    A current-temperature resource cannot tell: both compartments of a convertible
+    cabinet report the same reading. The sibling /temperature/desired/<c>/0 is what
+    carries the idle marker.
+    """
+
+    def exists(_rep, resources):
+        desired = resources.get(_ocf_desired(compartment))
+        return bool(desired) and _in_ocf_range(desired) is not None
+
+    return exists
+
+
+def _ocf_options(rep, _resources) -> dict:
+    bounds = rep.get("range")
+    if not isinstance(bounds, (list, tuple)) or len(bounds) != 2:
+        return {}
+    low, high = as_float(bounds[0]), as_float(bounds[1])
+    if low is None or high is None:
+        return {}
+    return {"min": low, "max": high, "step": 1, "decimals": 0}
+
+
+def _write_ocf_setpoint(compartment: str):
+    """Write the setpoint on the resource it was read from.
+
+    Deliberately not the vendor aggregate. The reference notes that on some models
+    only the vendor path commits and prefers it for that reason, but on this firmware
+    the aggregate is the stale copy, and a write whose result is then read back from a
+    different resource cannot be confirmed either way. Writing and reading one
+    resource makes the outcome visible.
+
+    The body carries only `temperature`; `range` and `units` are the device's to
+    report. That also keeps the optimistic local merge honest — the vendor body would
+    have replaced the whole items[] array with a single partial entry, briefly
+    erasing the other compartment's bounds.
+    """
+    segments = ["temperature", "desired", compartment, "0"]
+
+    def write(value, rep):
+        try:
+            target = round(float(value))
+        except (TypeError, ValueError):
+            return None
+        bounds = rep.get("range")
+        if isinstance(bounds, (list, tuple)) and len(bounds) == 2:
+            low, high = as_float(bounds[0]), as_float(bounds[1])
+            if low is not None and high is not None and not low <= target <= high:
+                return None
+        return segments, {"temperature": target}
+
+    return write
+
+
 def _fridge_item(rep, compartment: str) -> dict:
     """The vendor items[] entry for a named compartment, or {}."""
     for item in rep.get("x.com.samsung.da.items") or ():
@@ -105,45 +228,20 @@ def _fridge_item(rep, compartment: str) -> dict:
 
 
 def _fridge_temp(rep, compartment: str):
-    """Current temperature for a named compartment in the vendor items array.
-
-    Reported even when it falls outside the compartment's own minimum/maximum.
-    Those bounds describe the setpoints the compartment accepts, not the range its
-    sensor can read: a convertible cabinet running as kimchi storage reports 2 °C
-    against a freezer range of -23..-17, and 2 °C is genuinely its temperature.
-    """
+    """Current temperature from the vendor aggregate. See _ocf_reading on why this
+    is reported even outside the compartment's setpoint bounds."""
     return as_float(_fridge_item(rep, compartment).get("x.com.samsung.da.current"))
 
 
-def _compartment_active(compartment: str):
-    """Whether this unit is actually using the named compartment.
-
-    Two signals, both needed. The compartment has to appear in items[] at all —
-    the fridge-only variant of this model carries the Fridge entry alone, and an
-    ungated spec gave it a freezer thermometer that could only ever be blank.
-
-    And on a convertible cabinet it has to be the compartment in use. Such a unit
-    lists both Freezer and Fridge, reports the *same* current temperature under
-    both, and parks 253 in the `desired` of whichever one is idle. Two units of the
-    same model in opposite modes pin this down: the cooler-mode unit reads
-    Freezer(current 2, desired 253) / Fridge(current 2, desired 2), and the
-    freezer-mode unit reads Freezer(current -20, desired -20) / Fridge(current -20,
-    desired 253). So 253 marks the idle compartment — it is not an encoding of
-    -20 °C, which the freezer-mode unit reports as plain -20 — and binding both
-    would put two thermometers showing one sensor's reading on the device page.
-    """
-
-    def exists(rep, _resources):
-        item = _fridge_item(rep, compartment)
-        if not item:
-            return False
-        return _in_range(item) is not None
-
-    return exists
-
-
 def _in_range(item: dict):
-    """The item's `desired`, or None when it is outside the bounds it advertises."""
+    """The item's `desired`, or None when it is outside the bounds it advertises.
+
+    A convertible cabinet leaves a marker in the idle compartment's `desired`: units
+    of the same model in opposite modes report Freezer(desired 253)/Fridge(desired 2)
+    when cooling and Freezer(desired -20)/Fridge(desired 253) when freezing, so 253
+    marks the compartment not in use. It is not an encoding of -20 °C — the unit
+    actually freezing reports -20 there directly.
+    """
     value = as_float(item.get("x.com.samsung.da.desired"))
     low = as_float(item.get("x.com.samsung.da.minimum"))
     high = as_float(item.get("x.com.samsung.da.maximum"))
@@ -154,20 +252,19 @@ def _in_range(item: dict):
     return value
 
 
+def _compartment_active(compartment: str):
+    """Whether this unit is using the named compartment, per the vendor aggregate."""
+
+    def exists(rep, resources):
+        if has_ocf_temperatures(resources):
+            return False       # the per-compartment resources cover it
+        item = _fridge_item(rep, compartment)
+        return bool(item) and _in_range(item) is not None
+
+    return exists
+
+
 def _fridge_setpoint(compartment: str):
-    """Read a compartment's target temperature, but only if it is believable.
-
-    A convertible cabinet leaves a raw value in the inactive compartment's
-    `desired` field: the verified TP2X_REF_21K reports 253 for its freezer while
-    advertising -23..-17, which is the internal representation showing through
-    (253 K is -20 °C) rather than a temperature anyone set. Publishing it would put
-    253 °C on a tile and hand Homey a slider value outside its own bounds.
-
-    Rather than decode an encoding that has only been seen once, anything outside
-    the compartment's advertised bounds is treated as no reading. `_setpoint_exists`
-    pairs with this so the capability is not offered at all in that state.
-    """
-
     def read(rep, _resources):
         return _in_range(_fridge_item(rep, compartment))
 
@@ -187,10 +284,7 @@ def _fridge_setpoint_options(compartment: str):
 
 
 # Item ids follow Samsung's convention, which the reference states and the verified
-# unit confirms: "0" is the freezer, "1" the fridge/cooler. The write goes to the
-# vendor resource rather than the OCF /temperature/desired/<compartment>/0 it is
-# also exposed on — the reference found that only the vendor path commits the change
-# on some models, and it works on all of them.
+# units confirm: "0" is the freezer, "1" the fridge/cooler.
 _FRIDGE_ITEM_IDS = {"Freezer": "0", "Fridge": "1"}
 
 
@@ -290,6 +384,23 @@ REFRIGERATOR = Registry(
         # ships as a fridge-only variant whose items[] carries the Fridge entry
         # alone, and an ungated spec gave it a freezer thermometer that could only
         # ever be blank.
+        # Per-compartment resources first — the live copy on hardware that has them.
+        Spec("measure_temperature.fridge", _ocf_current("cooler"), _ocf_reading,
+             exists=_ocf_compartment_in_use("cooler"),
+             titles={"en": "Fridge", "ko": "냉장실"}),
+        Spec("measure_temperature.freezer", _ocf_current("freezer"), _ocf_reading,
+             exists=_ocf_compartment_in_use("freezer"),
+             titles={"en": "Freezer", "ko": "냉동실"}),
+        Spec("target_temperature.fridge", _ocf_desired("cooler"),
+             _ocf_setpoint, _write_ocf_setpoint("cooler"),
+             exists=_ocf_active, options=_ocf_options,
+             titles={"en": "Fridge", "ko": "냉장실"}),
+        Spec("target_temperature.freezer", _ocf_desired("freezer"),
+             _ocf_setpoint, _write_ocf_setpoint("freezer"),
+             exists=_ocf_active, options=_ocf_options,
+             titles={"en": "Freezer", "ko": "냉동실"}),
+        # The vendor aggregate, for units that report nothing more precise. Gated on
+        # the per-compartment resources being absent so the two never both bind.
         Spec("measure_temperature.freezer", "/temperatures/vs/0",
              lambda rep, _r: _fridge_temp(rep, "Freezer"),
              exists=_compartment_active("Freezer"),
@@ -310,11 +421,6 @@ REFRIGERATOR = Registry(
              options=_fridge_setpoint_options("Fridge")),
         Spec("localthings_convertible_mode", "/mode/vs/0", _read_convertible_mode,
              exists=lambda rep, _r: _read_convertible_mode(rep, _r) is not None),
-        # This family reports a second door on its own resource, with the field
-        # vendor-prefixed where /doors/vs/0 uses the bare name.
-        Spec("alarm_contact.freezer", "/door/onedoorfreezer/vs/0",
-             lambda rep, _r: shared.read_open_state(rep),
-             titles={"en": "Freezer door", "ko": "냉동실 문"}),
     ),
 )
 
