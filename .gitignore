@@ -1,0 +1,12 @@
+node_modules/
+.homeybuild/
+env.json
+*.log
+.DS_Store
+
+.idea/
+
+# Never commit CA or device credentials.
+*.pem
+*.key
+certs/

@@ -1,0 +1,5 @@
+.vscode
+.github
+docs
+*.OLD.js
+.DS_Store

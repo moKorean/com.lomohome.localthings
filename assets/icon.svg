@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 960">
+  <g fill="#FFFFFF">
+    <!-- house outline: the "local" half of LocalThings -->
+    <path fill-rule="evenodd" d="
+      M480,120 L840,412 v368 a60,60 0 0 1 -60,60 h-600 a60,60 0 0 1 -60,-60 v-368 z
+      M480,232 L240,427 v329 h480 v-329 z
+    "/>
+    <!-- appliance drum inside the house: control, on the LAN -->
+    <path fill-rule="evenodd" d="
+      M480,468 a150,150 0 1 0 0,300 a150,150 0 1 0 0,-300 z
+      M480,548 a70,70 0 1 1 0,140 a70,70 0 1 1 0,-140 z
+    "/>
+  </g>
+</svg>

@@ -1,0 +1,74 @@
+{
+  "id": "com.lomohome.localthings",
+  "version": "0.1.0",
+  "compatibility": ">=12.4.0",
+  "sdk": 3,
+  "platforms": [
+    "local"
+  ],
+  "brandColor": "#1428A0",
+  "name": {
+    "en": "LocalThings",
+    "ko": "로컬띵스"
+  },
+  "description": {
+    "en": "Control Samsung appliances directly on your LAN, without SmartThings",
+    "ko": "SmartThings 없이 삼성 가전을 집 안에서 바로 제어하세요"
+  },
+  "category": [
+    "appliances"
+  ],
+  "tags": {
+    "en": [
+      "Samsung",
+      "SmartThings",
+      "local",
+      "appliance",
+      "washer",
+      "dryer",
+      "air conditioner",
+      "refrigerator",
+      "dishwasher",
+      "oven",
+      "CoAP",
+      "DTLS"
+    ],
+    "ko": [
+      "삼성",
+      "스마트싱스",
+      "로컬제어",
+      "가전",
+      "세탁기",
+      "건조기",
+      "에어컨",
+      "냉장고",
+      "식기세척기",
+      "오븐",
+      "비스포크"
+    ]
+  },
+  "permissions": [],
+  "images": {
+    "small": "/assets/images/small.png",
+    "large": "/assets/images/large.png",
+    "xlarge": "/assets/images/xlarge.png"
+  },
+  "author": {
+    "name": "Geunwon Mo",
+    "email": "mokorean@gmail.com"
+  },
+  "contributors": {
+    "developers": [
+      {
+        "name": "Geunwon Mo",
+        "email": "mokorean@gmail.com"
+      }
+    ]
+  },
+  "copyright": "Geunwon Mo (mokorean@gmail.com)",
+  "license": "GPL-3.0-or-later",
+  "bugs": {
+    "url": "https://github.com/moKorean/com.lomohome.localthings/issues"
+  },
+  "source": "https://github.com/moKorean/com.lomohome.localthings"
+}
