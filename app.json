@@ -70,6 +70,10 @@
     "clear_credentials": {
       "method": "POST",
       "path": "/credentials-clear"
+    },
+    "diagnostics": {
+      "method": "GET",
+      "path": "/diagnostics"
     }
   },
   "images": {
@@ -254,8 +258,8 @@
         {
           "id": "Wind",
           "title": {
-            "en": "Wind-free",
-            "ko": "무풍"
+            "en": "Wind",
+            "ko": "바람"
           }
         }
       ]
@@ -381,22 +385,22 @@
         {
           "id": "Nano",
           "title": {
-            "en": "Nano",
-            "ko": "나노"
+            "en": "Wind-Free",
+            "ko": "무풍"
           }
         },
         {
           "id": "LongWind",
           "title": {
             "en": "Long wind",
-            "ko": "장거리 바람"
+            "ko": "롱바람"
           }
         },
         {
           "id": "Speed",
           "title": {
             "en": "Speed",
-            "ko": "쾌속"
+            "ko": "스피드운전"
           }
         },
         {
@@ -409,8 +413,8 @@
         {
           "id": "NanoSleep",
           "title": {
-            "en": "Nano sleep",
-            "ko": "나노 취침"
+            "en": "Wind-Free sleep",
+            "ko": "무풍 취침"
           }
         }
       ]

@@ -69,6 +69,10 @@
     "clear_credentials": {
       "method": "POST",
       "path": "/credentials-clear"
+    },
+    "diagnostics": {
+      "method": "GET",
+      "path": "/diagnostics"
     }
   },
   "images": {

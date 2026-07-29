@@ -124,8 +124,9 @@
       searchTitle: 'Find appliances',
       searchLede: 'Scans your network for Samsung appliances that speak the local protocol, then identifies each one. Takes under a minute.',
       search: 'Search',
-      searching: 'Scanning the network…',
-      identifying: 'Found {0} candidates — identifying each…',
+      searching: 'Scanning the network… about 15 seconds.',
+      identifying: 'Found {0} that answered — identifying each. This is the slow part: every one needs its own encrypted handshake, and devices that turn out not to be Samsung appliances take longest to rule out.',
+      progress: 'Checking {0} ({1} of {2})…',
       foundNone: 'No appliances answered on {0}. Older firmware and units on another subnet are not found this way; you can still enter an address by hand.',
       foundSome: 'Found {0} on {1}.',
       addThis: 'Add',
@@ -157,8 +158,9 @@
       searchTitle: '가전 검색',
       searchLede: '로컬 프로토콜을 사용하는 삼성 가전을 네트워크에서 찾아 종류까지 확인합니다. 1분 이내에 끝납니다.',
       search: '검색',
-      searching: '네트워크를 훑는 중…',
-      identifying: '후보 {0}대 발견 — 각각 확인 중…',
+      searching: '네트워크를 훑는 중… 약 15초 걸립니다.',
+      identifying: '응답한 기기 {0}대 발견 — 각각 확인 중입니다. 이 단계가 오래 걸립니다: 기기마다 암호화 핸드셰이크를 따로 해야 하고, 삼성 가전이 아닌 기기는 판정에 가장 오래 걸립니다.',
+      progress: '{0} 확인 중 ({2}대 중 {1}번째)…',
       foundNone: '{0}에서 응답한 가전이 없습니다. 구형 펌웨어나 다른 서브넷의 기기는 이 방식으로 찾지 못합니다. 주소를 직접 입력할 수도 있습니다.',
       foundSome: '{1}에서 {0}대를 찾았습니다.',
       addThis: '추가',
@@ -281,6 +283,17 @@
     document.getElementById('results').innerHTML = '';
     searchMessage('', t('searching'), true);
 
+    if (H.on) {
+      H.on('discover_progress', function (p) {
+        if (!p) return;
+        if (p.phase === 'identifying') {
+          searchMessage('', t('identifying', p.total), true);
+        } else if (p.phase === 'host') {
+          searchMessage('', t('progress', p.host, p.index, p.total), true);
+        }
+      });
+    }
+
     H.emit('discover', { language: LANG })
       .then(function (result) {
         button.disabled = false;
@@ -330,31 +343,58 @@
   // Ask the webview itself first. The driver also reports a language, but it has
   // to guess at an undocumented Python i18n contract, whereas the view is handed a
   // Homey object that already knows. Both paths are tried before giving up.
+  // Order matters. getLanguage() is asked first because it is the UI language;
+  // Homey.language is only a cached property and the driver's answer comes from
+  // the Python i18n manager, which reports the *app's* language ('en' unless the
+  // user's language happens to be the app's default) rather than the user's.
   function resolveLanguage(fromDriver) {
     return new Promise(function (resolve) {
+      var settled = false;
       function done(value) {
-        var lang = String(value || fromDriver || '').slice(0, 2).toLowerCase();
+        if (settled) return;
+        settled = true;
+        var lang = String(value || H.language || fromDriver || '')
+          .slice(0, 2).toLowerCase();
         if (lang === 'ko') LANG = 'ko';
         resolve();
       }
       try {
-        if (typeof H.language === 'string' && H.language) return done(H.language);
         var maybe = H.getLanguage && H.getLanguage(function (err, value) {
           done(err ? null : value);
         });
         if (maybe && typeof maybe.then === 'function') {
-          return maybe.then(done, function () { done(null); });
+          maybe.then(done, function () { done(null); });
+        } else if (typeof maybe === 'string') {
+          done(maybe);
         }
-        if (typeof maybe === 'string') return done(maybe);
-      } catch (e) { /* fall through to the driver's answer */ }
-      done(null);
+      } catch (e) { /* fall through */ }
+      // Never let a missing contract stall the view.
+      setTimeout(function () { done(null); }, 2500);
     });
+  }
+
+  function reportEnvironment(fromDriver) {
+    var info = {
+      language_property: typeof H.language === 'string' ? H.language : typeof H.language,
+      has_getLanguage: typeof H.getLanguage,
+      driver_language: fromDriver || null,
+      resolved: LANG,
+      homey_keys: [],
+    };
+    try {
+      for (var k in H) { if (typeof H[k] === 'function') info.homey_keys.push(k); }
+      info.homey_keys = info.homey_keys.sort().slice(0, 40);
+    } catch (e) { /* ignore */ }
+    try { H.emit('report_env', info); } catch (e) { /* ignore */ }
   }
 
   function bootstrap() {
     H.emit('get_state', {})
       .then(function (state) {
-        return resolveLanguage(state && state.language).then(function () { return state; });
+        return resolveLanguage(state && state.language).then(function () {
+          reportEnvironment(state && state.language);
+          return state;
+        });
       })
       .then(function (state) {
         applyStrings();

@@ -11,6 +11,9 @@ of them.
 # The AC14K_M CA that signed it is never given to the app.
 SETTING_LEAF_CERT = "leaf_cert_pem"
 SETTING_LEAF_KEY = "leaf_key_pem"
+# Last environment report from the pairing webview. Diagnostic only; lets the
+# view's own view of the SDK be inspected from an installed app.
+SETTING_PAIR_ENV = "pair_env"
 
 # Per-device store keys. Credentials are not duplicated here — the device reads
 # the app-level certificate at runtime, so rotating it fixes every device at once

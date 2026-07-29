@@ -13,7 +13,11 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 
 from lib import cert, compat  # noqa: E402
-from lib.const import SETTING_LEAF_CERT, SETTING_LEAF_KEY  # noqa: E402
+from lib.const import (  # noqa: E402
+    SETTING_LEAF_CERT,
+    SETTING_LEAF_KEY,
+    SETTING_PAIR_ENV,
+)
 
 
 async def _run(fn, *args):
@@ -122,3 +126,32 @@ async def clear_credentials(homey, **kwargs):
         await compat.setting_unset(homey, key)
     _log(homey, "Client certificate cleared")
     return {"ok": True}
+
+
+async def diagnostics(homey, **kwargs):
+    """What the app resolves at runtime, readable without a dev session.
+
+    `homey app run` replaces the installed app and removes it when the run ends,
+    so debugging through it costs the user their paired devices. This endpoint is
+    reachable from an installed app via
+    `homey api raw --path /api/app/com.lomohome.localthings/diagnostics`.
+    """
+    report = {}
+
+    def record(label, get):
+        try:
+            value = get()
+        except Exception as exc:
+            report[label] = f"raised {type(exc).__name__}: {exc}"
+            return
+        report[label] = value if isinstance(value, (str, int, float, bool, type(None))) else repr(value)[:200]
+
+    record("i18n.get_language", lambda: homey.i18n.get_language())
+    record("i18n.get_strings.keys", lambda: sorted((homey.i18n.get_strings() or {}).keys()))
+    record("manifest.name", lambda: (homey.manifest or {}).get("name"))
+    report["compat.language"] = await compat.language(homey)
+
+    cert_pem, key_pem = await _stored(homey)
+    report["credentials"] = {"cert_bytes": len(cert_pem), "key_bytes": len(key_pem)}
+    report["pair_env"] = await compat.setting_get(homey, SETTING_PAIR_ENV) or "(not reported yet)"
+    return report

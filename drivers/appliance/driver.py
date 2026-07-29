@@ -18,6 +18,7 @@ from lib import compat, discovery, probe, registry  # noqa: E402
 from lib.const import (  # noqa: E402
     SETTING_LEAF_CERT,
     SETTING_LEAF_KEY,
+    SETTING_PAIR_ENV,
     STORE_HOST,
     STORE_PORT,
     STORE_SERIAL,
@@ -33,7 +34,9 @@ class Driver(driver.Driver):
     # --- pairing ----------------------------------------------------------
 
     async def on_pair(self, session) -> None:
+        self._session = session
         session.set_handler("get_state", self._on_get_state)
+        session.set_handler("report_env", self._on_report_env)
         session.set_handler("discover", self._on_discover)
         session.set_handler("probe", self._on_probe)
 
@@ -104,11 +107,17 @@ class Driver(driver.Driver):
         if not candidates:
             return {"appliances": [], "scanned": f"{base}.0/24"}
 
+        await self._progress({"phase": "identifying", "total": len(candidates)})
+
         # Identified one at a time: each is a separate DTLS handshake to a
         # different appliance, and the firmware is rate-limit sensitive enough
         # that parallelising isn't worth the saved seconds.
         appliances = []
-        for host, port in candidates:
+        for index, (host, port) in enumerate(candidates, start=1):
+            await self._progress({
+                "phase": "host", "host": host,
+                "index": index, "total": len(candidates),
+            })
             try:
                 appliances.append(
                     await self._identify(host, cert_pem, key_pem, language)
@@ -118,6 +127,20 @@ class Driver(driver.Driver):
 
         self.log(f"discovery identified {len(appliances)} of {len(candidates)}")
         return {"appliances": appliances, "scanned": f"{base}.0/24"}
+
+    async def _progress(self, payload: dict) -> None:
+        """Tell the view where the scan is. Identification is slow enough that
+        without this the window looks hung."""
+        session = getattr(self, "_session", None)
+        if session is None:
+            return
+        try:
+            result = session.emit("discover_progress", payload)
+            if hasattr(result, "__await__"):
+                await result
+        except Exception:
+            # Progress is cosmetic; never let it interrupt a scan.
+            pass
 
     async def _identify(self, host: str, cert_pem: str, key_pem: str,
                         language: str) -> dict:
@@ -164,6 +187,26 @@ class Driver(driver.Driver):
             "capabilitiesOptions": reg.capability_options(resources, language),
             "class": reg.device_class,
         }
+
+    async def _on_report_env(self, data=None, **_) -> dict:
+        """Record what the pairing webview sees, so it can be inspected without a
+        dev session.
+
+        `homey app run` replaces the installed app and removes it when the run
+        ends, which costs the user their paired devices — too expensive a price for
+        reading one log line. This lands in app settings and is surfaced by the
+        diagnostics endpoint instead.
+        """
+        import json
+
+        try:
+            await compat.setting_set(
+                self.homey, SETTING_PAIR_ENV, json.dumps(data or {})[:2000]
+            )
+        except Exception as exc:
+            self.log(f"storing pair env failed: {exc}")
+        self.log(f"pair env: {data}")
+        return {"ok": True}
 
     async def _on_probe(self, data=None, **_) -> dict:
         data = data or {}
