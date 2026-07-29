@@ -53,7 +53,9 @@
       "비스포크"
     ]
   },
-  "permissions": [],
+  "permissions": [
+    "homey:manager:api"
+  ],
   "api": {
     "get_status": {
       "method": "GET",

@@ -73,6 +73,14 @@
 </head>
 <body>
   <div class="wrap">
+    <!-- Boot trace. Visible only until init succeeds, then removed. Without it a
+         page that stalls before reaching the API gives no clue where it stopped —
+         the backend logs nothing, because nothing was called. -->
+    <div class="card" id="boot">
+      <h2>LocalThings</h2>
+      <p class="meta" id="boot-trace">script: ok</p>
+    </div>
+
     <div class="card">
       <h1 id="t-title">LocalThings community</h1>
       <p id="t-lede"></p>
@@ -365,13 +373,21 @@
       });
     }
 
+    function trace(step) {
+      var el = document.getElementById('boot-trace');
+      if (el) el.textContent += ' · ' + step;
+    }
+
     function init(homeyObj) {
       if (started) return;
       var ref = homeyObj || (typeof Homey !== 'undefined' ? Homey : null);
-      if (!ref) return;
-      if (!document.getElementById('cert')) return;  // DOM not ready yet
+      if (!ref) { trace('no Homey yet'); return; }
+      if (!document.getElementById('cert')) { trace('no DOM yet'); return; }
       started = true;
       H = ref;
+      trace('init ok (api=' + (typeof ref.api) + ')');
+      var boot = document.getElementById('boot');
+      if (boot) boot.parentNode.removeChild(boot);
 
       try {
         var lang = H.getLanguage && H.getLanguage();
@@ -387,14 +403,20 @@
     // The init contract varies by Homey version, so trigger through every
     // mechanism and let the `started` guard collapse the duplicates. Relying on
     // one callback is what renders the page blank when it doesn't fire.
-    function onHomeyReady(homeyObj) { init(homeyObj); }
-    document.addEventListener('DOMContentLoaded', function () { init(); });
-    window.addEventListener('load', function () { init(); });
+    function onHomeyReady(homeyObj) { trace('onHomeyReady'); init(homeyObj); }
+    document.addEventListener('DOMContentLoaded', function () { trace('DOM'); init(); });
+    window.addEventListener('load', function () { trace('load'); init(); });
     (function poll(n) {
-      if (started || n <= 0) return;
+      if (started || n <= 0) {
+        if (!started) trace('gave up after 6s — Homey object never arrived');
+        return;
+      }
       init();
       setTimeout(function () { poll(n - 1); }, 100);
     })(60);
+    window.onerror = function (msg, src, line) {
+      trace('JS error: ' + msg + ' @' + line);
+    };
   </script>
 </body>
 </html>
