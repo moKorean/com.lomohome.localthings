@@ -26,10 +26,29 @@ class Spec:
     href: str
     read: Callable[[dict, dict], Any]
     write: Optional[Callable[[Any, dict], tuple[list[str], dict]]] = None
+    # Presence gate for capabilities that only apply to some units of a type —
+    # a three-burner cooktop must not be given a fourth burner's controls. The
+    # reference calls the same thing exists_fn. Declaring a generous superset and
+    # gating it here is what lets one registry cover hardware variants.
+    exists: Optional[Callable[[dict, dict], bool]] = None
+    # Per-language title for a sub-capability (e.g. burner 2), which Homey needs
+    # supplied per device via capabilitiesOptions rather than in the manifest.
+    titles: Optional[dict] = None
 
     @property
     def writable(self) -> bool:
         return self.write is not None
+
+    def applies(self, resources: dict) -> bool:
+        rep = resources.get(self.href)
+        if not rep:
+            return False
+        if self.exists is None:
+            return True
+        try:
+            return bool(self.exists(rep, resources))
+        except Exception:
+            return False
 
 
 @dataclass(frozen=True)
@@ -57,9 +76,24 @@ class Registry:
         """
         seen = []
         for spec in self.specs:
-            if spec.href in resources and spec.capability not in seen:
+            if spec.applies(resources) and spec.capability not in seen:
                 seen.append(spec.capability)
         return seen
+
+    def capability_options(self, resources: dict, language: str = "en") -> dict:
+        """capabilitiesOptions for the capabilities this unit gets.
+
+        Sub-capabilities (burner 1, burner 2, …) are indistinguishable in the UI
+        without a per-instance title, and Homey only accepts those per device.
+        """
+        options = {}
+        for spec in self.specs:
+            if not spec.titles or not spec.applies(resources):
+                continue
+            title = spec.titles.get((language or "en")[:2].lower()) or spec.titles.get("en")
+            if title:
+                options[spec.capability] = {"title": title}
+        return options
 
     def spec_for(self, capability: str) -> Optional[Spec]:
         for spec in self.specs:

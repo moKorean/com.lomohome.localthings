@@ -161,6 +161,7 @@ class Driver(driver.Driver):
                 "poll_interval": 30,
             },
             "capabilities": reg.capabilities(resources),
+            "capabilitiesOptions": reg.capability_options(resources, language),
             "class": reg.device_class,
         }
 

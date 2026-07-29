@@ -312,7 +312,30 @@ Homey.prototype._onWindowLoad = function () {
 4. ~~레지스트리 이식 — 배치 파싱 + 종류 판정~~ **완료** (에어컨). 실기기 덤프를 픽스처로 회귀 테스트 9개
 5. ~~**가전 1종 엔드투엔드**~~ **완료.** 에어컨 페어링·폴링·제어 확인
 6. **OBSERVE 구독 및 폴링 강등/복구** — 현재는 폴링만이라 상태 반영이 최대 30초 지연
-7. **나머지 가전 종류 레지스트리 확장** — 냉장고·인덕션·후드·공기청정기 등
+7. **나머지 가전 종류 레지스트리 확장** — 인덕션 완료. 냉장고·후드·공기청정기 등 14종 남음. `scripts/check_reference_coverage.py`가 남은 목록과 보드 토큰을 보고합니다
 8. **에어컨 커버리지 확장** — 현재 8개 리소스 바인딩(51개 중). 운전 상태 상세, 알람 코드, 예약, 자동청소, AI수면, 절전, 모션 감지 풍향, 자가진단, 엣지 라이팅, UV LED, PM1 필터, 사운드 설정 미커버
 
 파이썬 SDK 메서드는 모두 실행으로 확인됐습니다: `get_store()`, `get_settings()`, `get_capabilities()`, `get_capability_value()`, `set_capability_value()`, `register_capability_listener()`, `set_available()`/`set_unavailable()`, `on_pair`, `session.set_handler`, `homey.settings.*`, `homey.i18n.*`.
+
+
+---
+
+## 6. 레퍼런스에 기기가 추가될 때 우리는 얼마나 쉽게 따라가는가
+
+솔직한 답: **기계적이지만 복사·붙여넣기는 아닙니다.** 종류 하나 추가는 몇 시간 규모의 한정된 작업입니다.
+
+그대로 가져올 수 있는 것:
+
+- **보드 토큰 라우팅** — 표 구조를 1:1로 유지했으므로 토큰 한 줄 추가로 끝납니다 (`CAC`가 그 예)
+- **리소스 href와 필드명** — 레퍼런스의 `capabilities/*.py`가 필드명의 근거입니다. 인덕션은 `capabilities/range.py`의 정의를 그대로 따랐고 실기기에서 바로 맞았습니다
+- **안전·정확성 판단** — "가열 제어는 노출하지 않는다", "차일드락은 안전하다", "센티넬 값은 발행하지 않는다" 같은 결정은 레퍼런스가 이미 근거와 함께 기록해 뒀습니다
+- **테스트 픽스처 형식** — `/device/0` 덤프 그대로
+
+그대로 안 되는 것:
+
+- **HA는 동적 옵션·임의 단위를 갖는 엔티티를 만들지만, Homey는 매니페스트에 정적으로 선언된 capability를 씁니다.** 새 종류마다 `.homeycompose/capabilities/*.json`과 아이콘이 필요합니다. 인덕션에서 9개를 새로 만들었습니다
+- **HA 엔티티 다중성 → Homey 서브 capability.** 버너 3개는 `localthings_burner_level.{0,1,2}`가 되고, 구별 이름은 기기 생성 시 `capabilitiesOptions`로 넘겨야 합니다(매니페스트에 못 넣음). `Spec.titles`와 `Registry.capability_options()`가 그 처리입니다
+- **복합 엔티티가 1:1로 안 맞습니다.** 에어컨의 HA `climate` 엔티티는 전원·모드·온도·풍량을 하나로 묶고 여러 리소스에 걸쳐 씁니다. 우리 `Spec`은 capability ↔ (리소스, 필드) 단순 대응이라 나눠서 표현합니다
+- **레퍼런스의 `poll_tier`, `rt_filter`, `match_fn`, 패턴 capability가 우리에겐 없습니다.** 필요해지면 그때 추가해야 합니다. `exists_fn`에 해당하는 `Spec.exists`는 인덕션 작업에서 필요해져서 추가했습니다
+
+즉 구조는 따라가기 쉽게 맞춰져 있고, **남은 비용은 Homey의 정적 capability 모델 때문**이며 이는 포팅으로 없앨 수 있는 종류의 비용이 아닙니다.

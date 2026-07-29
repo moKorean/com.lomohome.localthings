@@ -1,0 +1,1 @@
+{ "type": "boolean", "title": { "en": "Hot surface", "ko": "잔열 경고" }, "getable": true, "setable": false, "uiComponent": "sensor", "icon": "/assets/capabilities/stove.svg" }

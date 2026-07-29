@@ -1,0 +1,214 @@
+{
+  "_comment": "Live /device/0 dump from a Samsung induction cooktop (TP1X_DA-KS-COOKTOP-01011, NV9000D-/KO4, 3 burners). Identity and network fields are redacted. Captured 2026-07-29.",
+  "board_family_token": "COOKTOP",
+  "expected_registry": "induction_cooktop",
+  "model": "TP1X_DA-KS-COOKTOP-01011",
+  "resources": {
+    "/alarms/vs/0": {
+      "if": [
+        "oic.if.baseline",
+        "oic.if.s"
+      ],
+      "rt": [
+        "x.com.samsung.da.alarms"
+      ],
+      "x.com.samsung.da.items": [
+        {
+          "x.com.samsung.da.alarmType": "Device",
+          "x.com.samsung.da.code": "CT_E_OFF",
+          "x.com.samsung.da.description": "Alarm",
+          "x.com.samsung.da.id": "0",
+          "x.com.samsung.da.triggeredTime": "2026-07-29T11:54:10"
+        }
+      ]
+    },
+    "/bluetooth/probe/status/vs/0": {
+      "batteryPercentage": 0,
+      "batteryState": "normal",
+      "connectionState": "disconnected",
+      "currentTemperature": 0,
+      "operationBurnerNumber": -1,
+      "targetTemperature": 0,
+      "temperatureUnit": "C"
+    },
+    "/cooktop/recipe/status/vs/0": {
+      "operationBurnerNumber": 2,
+      "sequenceNumber": 40,
+      "stageInfo": {
+        "cookingTimeList": [],
+        "numberOfStages": 0
+      },
+      "textData": {
+        "menu": ""
+      }
+    },
+    "/cooktop/settings/status/vs/0": {
+      "safetyAlert": {
+        "settingTime": 3600,
+        "state": "on"
+      },
+      "sequenceNumber": 40
+    },
+    "/cooktop/spec/vs/0": {
+      "deviceType": "cooktop",
+      "micomModelId": "NV9000D-/KO4",
+      "numberOfBurners": 3,
+      "supportedBurnerList": [
+        0,
+        1,
+        2
+      ],
+      "supportedFeatureList": [
+        "kitchenService",
+        "remoteChildLock",
+        "remotePowerOff"
+      ],
+      "supportedPowerLevelList": [
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "7",
+        "8",
+        "9",
+        "boost",
+        "0",
+        "keepWarm"
+      ],
+      "supportedRecipeProtocolVersion": 1
+    },
+    "/cooktop/status/vs/0": {
+      "additionalStateList": [
+        ""
+      ],
+      "burnerList": [
+        {
+          "burnerNumber": 0,
+          "hotSurfaceState": "normal",
+          "mode": "normal",
+          "operationState": "ready",
+          "panDetection": true,
+          "powerLevel": "0",
+          "timer": {
+            "cookingTime": 0,
+            "operationState": "ready",
+            "remainingTime": 0
+          }
+        },
+        {
+          "burnerNumber": 1,
+          "hotSurfaceState": "normal",
+          "mode": "normal",
+          "operationState": "ready",
+          "panDetection": true,
+          "powerLevel": "0",
+          "timer": {
+            "cookingTime": 0,
+            "operationState": "ready",
+            "remainingTime": 0
+          }
+        },
+        {
+          "burnerNumber": 2,
+          "hotSurfaceState": "normal",
+          "mode": "normal",
+          "operationState": "ready",
+          "panDetection": true,
+          "powerLevel": "0",
+          "timer": {
+            "cookingTime": 0,
+            "operationState": "ready",
+            "remainingTime": 0
+          }
+        }
+      ],
+      "childLock": "off",
+      "operationState": "ready",
+      "power": "off",
+      "sequenceNumber": 784,
+      "smartControlState": "off"
+    },
+    "/energy/consumption/vs/0": {
+      "x.com.samsung.da.cumulativePower": "43800",
+      "x.com.samsung.da.cumulativeUnit": "Wh",
+      "x.com.samsung.da.instantaneousPower": "-500",
+      "x.com.samsung.da.instantaneousPowerUnit": "W"
+    },
+    "/information/vs/0": {
+      "x.com.samsung.da.description": "NV9000D-/KO4",
+      "x.com.samsung.da.diagDumpType": "file",
+      "x.com.samsung.da.diagEndPoint": "SSM",
+      "x.com.samsung.da.diagLogType": [
+        "errCode",
+        "dump"
+      ],
+      "x.com.samsung.da.diagMinVersion": "3.0",
+      "x.com.samsung.da.diagMnid": "0AJT",
+      "x.com.samsung.da.diagProtocolType": "BLE_OCF",
+      "x.com.samsung.da.diagSetupid": "KC2",
+      "x.com.samsung.da.diagTsId": "DA01",
+      "x.com.samsung.da.items": [
+        {
+          "x.com.samsung.da.description": "Version",
+          "x.com.samsung.da.id": "0",
+          "x.com.samsung.da.newVersionAvailable": "0",
+          "x.com.samsung.da.number": "26033000",
+          "x.com.samsung.da.type": "Software"
+        },
+        {
+          "x.com.samsung.da.description": "Version",
+          "x.com.samsung.da.id": "1",
+          "x.com.samsung.da.newVersionAvailable": "0",
+          "x.com.samsung.da.number": "04796A26032400, 04795A25070200",
+          "x.com.samsung.da.type": "Firmware"
+        }
+      ],
+      "x.com.samsung.da.modelNum": "TP1X_DA-KS-COOKTOP-01011|40479641|50000203001811000A00000000000000",
+      "x.com.samsung.da.otnDUID": "**REDACTED**",
+      "x.com.samsung.da.serialNum": "**REDACTED**"
+    },
+    "/otninformation/vs/0": {
+      "flashingProgress": "0",
+      "otnCompleteDate": "noHistory",
+      "otnList": [
+        {
+          "modelId": "AKS-WW-TP1-21-COOKTOP-2",
+          "type": "WIFI",
+          "versions": [
+            "40260330"
+          ],
+          "visVersion": "260330"
+        },
+        {
+          "modelId": "05114047964140479541",
+          "type": "Micom",
+          "versions": [
+            "26032400",
+            "25070200"
+          ],
+          "visVersion": "260324"
+        }
+      ],
+      "otnStatus": "None",
+      "otnTarget": "main",
+      "x.com.samsung.da.currentVersionInfo": "40240322",
+      "x.com.samsung.da.newVersionAvailable": "false",
+      "x.com.samsung.da.newVersionNo": "40260325",
+      "x.com.samsung.da.target": "Micom"
+    },
+    "/quickcontrol/info/vs/0": {
+      "supportedVersion": "1.0"
+    },
+    "/timezone/vs/0": {
+      "DST": "OFF",
+      "offset": "+09:00",
+      "timezoneid": "Asia/Seoul"
+    },
+    "/wirelessinfo/vs/0": {
+      "macaddressBLE": "**REDACTED**",
+      "macaddressWiFi": "**REDACTED**"
+    }
+  }
+}

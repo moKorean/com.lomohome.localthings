@@ -1,0 +1,1 @@
+{ "type": "boolean", "title": { "en": "Smart control enabled", "ko": "스마트 제어 허용" }, "getable": true, "setable": false, "uiComponent": "sensor", "icon": "/assets/capabilities/lock.svg" }

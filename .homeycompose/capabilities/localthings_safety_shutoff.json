@@ -1,0 +1,1 @@
+{ "type": "boolean", "title": { "en": "Safety auto-shutoff", "ko": "안전 자동 차단" }, "getable": true, "setable": false, "uiComponent": "sensor", "icon": "/assets/capabilities/shield.svg" }

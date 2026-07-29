@@ -1,0 +1,1 @@
+{ "type": "boolean", "title": { "en": "Probe connected", "ko": "프로브 연결" }, "getable": true, "setable": false, "uiComponent": "sensor", "icon": "/assets/capabilities/shield.svg" }

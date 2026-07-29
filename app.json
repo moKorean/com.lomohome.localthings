@@ -260,6 +260,50 @@
       "uiComponent": "sensor",
       "icon": "/assets/capabilities/filter.svg"
     },
+    "localthings_alarm_hot_surface": {
+      "type": "boolean",
+      "title": {
+        "en": "Hot surface",
+        "ko": "잔열 경고"
+      },
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "icon": "/assets/capabilities/stove.svg"
+    },
+    "localthings_burner_level": {
+      "type": "string",
+      "title": {
+        "en": "Burner level",
+        "ko": "화력"
+      },
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "icon": "/assets/capabilities/stove.svg"
+    },
+    "localthings_burner_state": {
+      "type": "string",
+      "title": {
+        "en": "Burner state",
+        "ko": "버너 상태"
+      },
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "icon": "/assets/capabilities/stove.svg"
+    },
+    "localthings_child_lock": {
+      "type": "boolean",
+      "title": {
+        "en": "Child lock",
+        "ko": "차일드락"
+      },
+      "getable": true,
+      "setable": true,
+      "uiComponent": "toggle",
+      "icon": "/assets/capabilities/lock.svg"
+    },
     "localthings_fan_mode": {
       "type": "enum",
       "title": {
@@ -317,6 +361,61 @@
       "decimals": 1,
       "uiComponent": "sensor",
       "icon": "/assets/capabilities/filter.svg"
+    },
+    "localthings_operation_state": {
+      "type": "string",
+      "title": {
+        "en": "Status",
+        "ko": "동작 상태"
+      },
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "icon": "/assets/capabilities/stove.svg"
+    },
+    "localthings_power_state": {
+      "type": "boolean",
+      "title": {
+        "en": "Power",
+        "ko": "전원"
+      },
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "icon": "/assets/capabilities/stove.svg"
+    },
+    "localthings_probe_connected": {
+      "type": "boolean",
+      "title": {
+        "en": "Probe connected",
+        "ko": "프로브 연결"
+      },
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "icon": "/assets/capabilities/shield.svg"
+    },
+    "localthings_safety_shutoff": {
+      "type": "boolean",
+      "title": {
+        "en": "Safety auto-shutoff",
+        "ko": "안전 자동 차단"
+      },
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "icon": "/assets/capabilities/shield.svg"
+    },
+    "localthings_smart_control": {
+      "type": "boolean",
+      "title": {
+        "en": "Smart control enabled",
+        "ko": "스마트 제어 허용"
+      },
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "icon": "/assets/capabilities/lock.svg"
     }
   }
 }

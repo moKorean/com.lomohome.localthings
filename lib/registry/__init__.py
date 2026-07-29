@@ -5,19 +5,20 @@ central property: there is no per-model descriptor. The board named in
 `modelNum` determines the resource surface, which is what a registry describes,
 so a new unit of an already-supported type binds with no code change.
 
-Only the air conditioner is ported so far; the remaining types are mechanical
-additions (docs/PORTING.md milestone 7).
+Air conditioners and induction cooktops are ported; the remaining types are
+mechanical additions (docs/PORTING.md milestone 7).
 """
 
 import re
 from typing import Optional
 
-from . import airconditioner
+from . import airconditioner, induction_cooktop
 from .base import Registry
 from ..resources import read_identity
 
 _REGISTRY_BY_KEY: dict[str, Registry] = {
     "airconditioner": airconditioner.REGISTRY,
+    "induction_cooktop": induction_cooktop.REGISTRY,
 }
 
 # Board-family token -> registry key, matched against whole tokens of
@@ -32,7 +33,8 @@ _REGISTRY_BY_KEY: dict[str, Registry] = {
 # 'DA-AC-' prefixes RAC/WAC/DHM/AIR alike, so a bare 'AC' entry would swallow the
 # dehumidifier and the air purifier once those are ported.
 _BOARD_TOKEN_TO_KEY: dict[str, str] = {
-    token: "airconditioner" for token in airconditioner.BOARD_TOKENS
+    **{token: "airconditioner" for token in airconditioner.BOARD_TOKENS},
+    **{token: "induction_cooktop" for token in induction_cooktop.BOARD_TOKENS},
 }
 
 _TOKEN_SPLIT_RE = re.compile(r"[^A-Z0-9]+")

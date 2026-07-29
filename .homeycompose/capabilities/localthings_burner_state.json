@@ -1,0 +1,1 @@
+{ "type": "string", "title": { "en": "Burner state", "ko": "버너 상태" }, "getable": true, "setable": false, "uiComponent": "sensor", "icon": "/assets/capabilities/stove.svg" }
