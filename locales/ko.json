@@ -1,0 +1,16 @@
+{
+  "settings": {
+    "title": "로컬띵스 커뮤니티"
+  },
+  "pair": {
+    "setup_required": "설정이 필요합니다"
+  },
+  "device": {
+    "airconditioner": "삼성 에어컨"
+  },
+  "error": {
+    "no_credentials": "클라이언트 인증서가 설정되지 않았습니다. 설정 → 앱 → 로컬띵스 커뮤니티에서 등록하세요.",
+    "not_supported": "아직 지원되지 않는 가전 종류입니다.",
+    "rejected": "가전이 변경을 거부했습니다."
+  }
+}

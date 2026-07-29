@@ -1,0 +1,16 @@
+{
+  "settings": {
+    "title": "LocalThings community"
+  },
+  "pair": {
+    "setup_required": "Set up required"
+  },
+  "device": {
+    "airconditioner": "Samsung Air Conditioner"
+  },
+  "error": {
+    "no_credentials": "No client certificate configured. Set one up in Settings → Apps → LocalThings community.",
+    "not_supported": "This appliance type is not supported yet.",
+    "rejected": "The appliance rejected the change."
+  }
+}

@@ -54,6 +54,18 @@
     background: #f4f5f7; border-radius: 8px; padding: 11px;
     margin-top: 13px; font-size: 13px;
   }
+  .result {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 10px; border: 1px solid var(--border); border-radius: 8px;
+    padding: 10px 12px; margin-top: 9px; background: #fafafc;
+  }
+  .result-main { min-width: 0; }
+  .result-title { font-weight: 600; font-size: 13.5px; }
+  .result-sub { color: var(--muted); font-size: 12px; margin-top: 2px; word-break: break-all; }
+  .result button { margin: 0; padding: 7px 13px; font-size: 13px; flex: 0 0 auto; }
+  .result.unknown { opacity: .75; }
+  .meta { color: var(--muted); font-size: 12.5px; margin-top: 14px; }
+  a { color: var(--blue); font-size: 13px; }
   .hidden { display: none; }
 </style>
 
@@ -64,6 +76,16 @@
     <h2 id="t-setup-title"></h2>
     <p id="t-setup-lede"></p>
     <ol id="setup-steps"></ol>
+  </div>
+
+  <div id="search-step" class="card hidden">
+    <h2 id="t-search-title"></h2>
+    <p id="t-search-lede"></p>
+    <button id="btn-search"><span id="t-search"></span></button>
+    <div id="search-msg" class="msg"></div>
+    <div id="results"></div>
+    <p class="meta" id="t-manual-toggle-hint"></p>
+    <a href="#" id="btn-manual"><span id="t-manual"></span></a>
   </div>
 
   <div id="host-step" class="card hidden">
@@ -99,6 +121,18 @@
         'Follow the instructions there to obtain and paste a certificate.',
         'Come back to <b>Devices → Add device → LocalThings community</b>.',
       ],
+      searchTitle: 'Find appliances',
+      searchLede: 'Scans your network for Samsung appliances that speak the local protocol, then identifies each one. Takes under a minute.',
+      search: 'Search',
+      searching: 'Scanning the network…',
+      identifying: 'Found {0} candidates — identifying each…',
+      foundNone: 'No appliances answered on {0}. Older firmware and units on another subnet are not found this way; you can still enter an address by hand.',
+      foundSome: 'Found {0} on {1}.',
+      addThis: 'Add',
+      unknownType: 'Unsupported type',
+      unknownSub: '{0} · {1} resources · cannot be added yet',
+      manualHint: 'Not listed? Some units answer only on ports this scan skips.',
+      manual: 'Enter an IP address instead',
       hostTitle: 'Add an appliance',
       hostLede: 'Enter the appliance’s IP address. The port is detected automatically. Find the address in your router’s client list, or in the SmartThings app under the appliance’s network information.',
       hostLabel: 'IP address',
@@ -120,6 +154,18 @@
         '거기 안내에 따라 인증서를 발급해 붙여넣습니다.',
         '다시 <b>기기 → 기기 추가 → 로컬띵스 커뮤니티</b>로 돌아옵니다.',
       ],
+      searchTitle: '가전 검색',
+      searchLede: '로컬 프로토콜을 사용하는 삼성 가전을 네트워크에서 찾아 종류까지 확인합니다. 1분 이내에 끝납니다.',
+      search: '검색',
+      searching: '네트워크를 훑는 중…',
+      identifying: '후보 {0}대 발견 — 각각 확인 중…',
+      foundNone: '{0}에서 응답한 가전이 없습니다. 구형 펌웨어나 다른 서브넷의 기기는 이 방식으로 찾지 못합니다. 주소를 직접 입력할 수도 있습니다.',
+      foundSome: '{1}에서 {0}대를 찾았습니다.',
+      addThis: '추가',
+      unknownType: '미지원 종류',
+      unknownSub: '{0} · 리소스 {1}개 · 아직 추가할 수 없습니다',
+      manualHint: '목록에 없나요? 이 검색이 건너뛴 포트만 응답하는 기기가 있을 수 있습니다.',
+      manual: '대신 IP 주소 직접 입력',
       hostTitle: '가전 추가',
       hostLede: '가전의 IP 주소를 입력하세요. 포트는 자동으로 찾습니다. 주소는 공유기의 접속 기기 목록이나 SmartThings 앱의 네트워크 정보에서 확인할 수 있습니다.',
       hostLabel: 'IP 주소',
@@ -162,6 +208,11 @@
     setText('t-boot', t('boot'));
     setText('t-setup-title', t('setupTitle'));
     setText('t-setup-lede', t('setupLede'));
+    setText('t-search-title', t('searchTitle'));
+    setText('t-search-lede', t('searchLede'));
+    setText('t-search', t('search'));
+    setText('t-manual-toggle-hint', t('manualHint'));
+    setText('t-manual', t('manual'));
     setText('t-host-title', t('hostTitle'));
     setText('t-host-lede', t('hostLede'));
     setText('t-host-label', t('hostLabel'));
@@ -173,6 +224,78 @@
       li.innerHTML = step;
       ol.appendChild(li);
     });
+  }
+
+  function searchMessage(kind, text, loading) {
+    var el = document.getElementById('search-msg');
+    el.className = 'msg ' + (kind || '');
+    el.innerHTML = (loading ? '<span class="spinner"></span>' : '')
+      + (text || '').replace(/</g, '&lt;');
+  }
+
+  function addDiscovered(entry, button) {
+    button.disabled = true;
+    searchMessage('ok', t('creating'), true);
+    H.createDevice(entry.device)
+      .then(function () { return H.done(); })
+      .catch(function (err) {
+        button.disabled = false;
+        searchMessage('err', String((err && err.message) || err));
+      });
+  }
+
+  function renderResults(appliances) {
+    var box = document.getElementById('results');
+    box.innerHTML = '';
+    appliances.forEach(function (entry) {
+      var row = document.createElement('div');
+      row.className = 'result' + (entry.recognised ? '' : ' unknown');
+
+      var main = document.createElement('div');
+      main.className = 'result-main';
+      var title = document.createElement('div');
+      title.className = 'result-title';
+      title.textContent = entry.recognised ? entry.title : t('unknownType');
+      var sub = document.createElement('div');
+      sub.className = 'result-sub';
+      sub.textContent = entry.recognised
+        ? entry.host + ' · ' + entry.model + ' · ' + t('capabilities', entry.capability_count)
+        : entry.host + ' · ' + t('unknownSub', entry.model, entry.resource_count);
+      main.appendChild(title);
+      main.appendChild(sub);
+      row.appendChild(main);
+
+      if (entry.recognised) {
+        var add = document.createElement('button');
+        add.textContent = t('addThis');
+        add.addEventListener('click', function () { addDiscovered(entry, add); });
+        row.appendChild(add);
+      }
+      box.appendChild(row);
+    });
+  }
+
+  function search() {
+    var button = document.getElementById('btn-search');
+    button.disabled = true;
+    document.getElementById('results').innerHTML = '';
+    searchMessage('', t('searching'), true);
+
+    H.emit('discover', { language: LANG })
+      .then(function (result) {
+        button.disabled = false;
+        var found = (result && result.appliances) || [];
+        if (!found.length) {
+          searchMessage('warn', t('foundNone', (result && result.scanned) || ''));
+          return;
+        }
+        searchMessage('ok', t('foundSome', found.length, result.scanned));
+        renderResults(found);
+      })
+      .catch(function (err) {
+        button.disabled = false;
+        searchMessage('err', String((err && err.message) || err));
+      });
   }
 
   function connect() {
@@ -237,7 +360,8 @@
         applyStrings();
         show('boot', false);
         show('setup', !state.has_credentials);
-        show('host-step', !!state.has_credentials);
+        show('search-step', !!state.has_credentials);
+        show('host-step', false);
       })
       .catch(function (err) {
         // Falling back to the address form keeps the view usable; the real
@@ -267,6 +391,12 @@
     H = ref;
     try { H.ready(); } catch (e) { /* ignore */ }
     document.getElementById('btn-connect').addEventListener('click', connect);
+    document.getElementById('btn-search').addEventListener('click', search);
+    document.getElementById('btn-manual').addEventListener('click', function (e) {
+      e.preventDefault();
+      show('search-step', false);
+      show('host-step', true);
+    });
     document.getElementById('host').addEventListener('keydown', function (e) {
       if (e.key === 'Enter') connect();
     });
