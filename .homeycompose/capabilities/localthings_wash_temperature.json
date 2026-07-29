@@ -1,0 +1,11 @@
+{
+  "type": "string",
+  "title": {
+    "en": "Wash temperature",
+    "ko": "세탁 온도"
+  },
+  "getable": true,
+  "setable": false,
+  "uiComponent": "sensor",
+  "icon": "/assets/capabilities/mdi-washing-machine.svg"
+}

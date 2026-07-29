@@ -1,0 +1,11 @@
+{
+  "type": "string",
+  "title": {
+    "en": "Oven mode",
+    "ko": "오븐 모드"
+  },
+  "getable": true,
+  "setable": false,
+  "uiComponent": "sensor",
+  "icon": "/assets/capabilities/mdi-stove.svg"
+}

@@ -1,0 +1,11 @@
+{
+  "type": "string",
+  "title": {
+    "en": "Heated dry",
+    "ko": "가열 건조"
+  },
+  "getable": true,
+  "setable": false,
+  "uiComponent": "sensor",
+  "icon": "/assets/capabilities/mdi-dishwasher.svg"
+}

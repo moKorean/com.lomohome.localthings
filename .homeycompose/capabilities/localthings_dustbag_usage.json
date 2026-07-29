@@ -1,0 +1,17 @@
+{
+  "type": "number",
+  "title": {
+    "en": "Dust bag usage",
+    "ko": "먼지봉투 사용량"
+  },
+  "getable": true,
+  "setable": false,
+  "uiComponent": "sensor",
+  "decimals": 0,
+  "icon": "/assets/capabilities/mdi-delete-empty.svg",
+  "units": {
+    "en": "%"
+  },
+  "min": 0,
+  "max": 100
+}

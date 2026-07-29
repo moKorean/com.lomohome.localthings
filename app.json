@@ -328,6 +328,17 @@
       "uiComponent": "sensor",
       "icon": "/assets/capabilities/mdi-alert-circle-outline.svg"
     },
+    "localthings_alarm_dustbag": {
+      "type": "boolean",
+      "title": {
+        "en": "Dust bag needs attention",
+        "ko": "먼지봉투 점검 필요"
+      },
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "icon": "/assets/capabilities/mdi-delete-empty.svg"
+    },
     "localthings_alarm_filter": {
       "type": "boolean",
       "title": {
@@ -361,6 +372,28 @@
       "uiComponent": "toggle",
       "icon": "/assets/capabilities/mdi-spray-bottle.svg"
     },
+    "localthings_autofill": {
+      "type": "boolean",
+      "title": {
+        "en": "Auto fill",
+        "ko": "자동 급수"
+      },
+      "getable": true,
+      "setable": true,
+      "uiComponent": "toggle",
+      "icon": "/assets/capabilities/mdi-water-outline.svg"
+    },
+    "localthings_burner_any_active": {
+      "type": "boolean",
+      "title": {
+        "en": "A burner is on",
+        "ko": "버너 사용 중"
+      },
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "icon": "/assets/capabilities/mdi-stove.svg"
+    },
     "localthings_burner_level": {
       "type": "string",
       "title": {
@@ -382,6 +415,17 @@
       "setable": false,
       "uiComponent": "sensor",
       "icon": "/assets/capabilities/mdi-stove.svg"
+    },
+    "localthings_cabinet_light": {
+      "type": "boolean",
+      "title": {
+        "en": "Interior light",
+        "ko": "내부 조명"
+      },
+      "getable": true,
+      "setable": true,
+      "uiComponent": "toggle",
+      "icon": "/assets/capabilities/mdi-lightbulb-outline.svg"
     },
     "localthings_child_lock": {
       "type": "boolean",
@@ -449,6 +493,17 @@
         }
       ]
     },
+    "localthings_cycle_active": {
+      "type": "boolean",
+      "title": {
+        "en": "Cycle running",
+        "ko": "동작 중"
+      },
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "icon": "/assets/capabilities/mdi-progress-clock.svg"
+    },
     "localthings_display_light": {
       "type": "boolean",
       "title": {
@@ -459,6 +514,17 @@
       "setable": true,
       "uiComponent": "toggle",
       "icon": "/assets/capabilities/mdi-led-on.svg"
+    },
+    "localthings_dry_level": {
+      "type": "string",
+      "title": {
+        "en": "Dry level",
+        "ko": "건조 강도"
+      },
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "icon": "/assets/capabilities/mdi-tumble-dryer.svg"
     },
     "localthings_dust_pm1": {
       "type": "number",
@@ -489,6 +555,23 @@
       "units": {
         "en": "µg/m³"
       }
+    },
+    "localthings_dustbag_usage": {
+      "type": "number",
+      "title": {
+        "en": "Dust bag usage",
+        "ko": "먼지봉투 사용량"
+      },
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "decimals": 0,
+      "icon": "/assets/capabilities/mdi-delete-empty.svg",
+      "units": {
+        "en": "%"
+      },
+      "min": 0,
+      "max": 100
     },
     "localthings_edge_light": {
       "type": "boolean",
@@ -542,6 +625,20 @@
         }
       ]
     },
+    "localthings_fan_speed_level": {
+      "type": "number",
+      "title": {
+        "en": "Fan level",
+        "ko": "풍량 단계"
+      },
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "decimals": 0,
+      "icon": "/assets/capabilities/mdi-fan-speed-1.svg",
+      "min": 0,
+      "max": 10
+    },
     "localthings_filter_usage": {
       "type": "number",
       "title": {
@@ -558,6 +655,39 @@
       "decimals": 1,
       "uiComponent": "sensor",
       "icon": "/assets/capabilities/mdi-air-filter.svg"
+    },
+    "localthings_firmware_update": {
+      "type": "boolean",
+      "title": {
+        "en": "Firmware update available",
+        "ko": "펌웨어 업데이트 있음"
+      },
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "icon": "/assets/capabilities/mdi-cog-outline.svg"
+    },
+    "localthings_heated_dry": {
+      "type": "string",
+      "title": {
+        "en": "Heated dry",
+        "ko": "가열 건조"
+      },
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "icon": "/assets/capabilities/mdi-dishwasher.svg"
+    },
+    "localthings_ice_maker": {
+      "type": "boolean",
+      "title": {
+        "en": "Ice maker",
+        "ko": "제빙기"
+      },
+      "getable": true,
+      "setable": true,
+      "uiComponent": "toggle",
+      "icon": "/assets/capabilities/mdi-snowflake.svg"
     },
     "localthings_light_mode": {
       "type": "enum",
@@ -593,6 +723,17 @@
         }
       ]
     },
+    "localthings_machine_state": {
+      "type": "string",
+      "title": {
+        "en": "Machine state",
+        "ko": "동작 상태"
+      },
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "icon": "/assets/capabilities/mdi-cog-outline.svg"
+    },
     "localthings_motion_detect_wind": {
       "type": "boolean",
       "title": {
@@ -625,6 +766,28 @@
       "setable": false,
       "uiComponent": "sensor",
       "icon": "/assets/capabilities/mdi-pot-steam.svg"
+    },
+    "localthings_oven_mode": {
+      "type": "string",
+      "title": {
+        "en": "Oven mode",
+        "ko": "오븐 모드"
+      },
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "icon": "/assets/capabilities/mdi-stove.svg"
+    },
+    "localthings_pet_filter": {
+      "type": "boolean",
+      "title": {
+        "en": "Pet filter",
+        "ko": "펫 필터"
+      },
+      "getable": true,
+      "setable": true,
+      "uiComponent": "toggle",
+      "icon": "/assets/capabilities/mdi-air-filter.svg"
     },
     "localthings_power_save_mode": {
       "type": "enum",
@@ -682,6 +845,87 @@
       "uiComponent": "sensor",
       "icon": "/assets/capabilities/mdi-thermometer-probe.svg"
     },
+    "localthings_progress": {
+      "type": "number",
+      "title": {
+        "en": "Progress",
+        "ko": "진행률"
+      },
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "decimals": 0,
+      "icon": "/assets/capabilities/mdi-progress-clock.svg",
+      "units": {
+        "en": "%"
+      },
+      "min": 0,
+      "max": 100
+    },
+    "localthings_rapid_freeze": {
+      "type": "boolean",
+      "title": {
+        "en": "Rapid freezing",
+        "ko": "급속 냉동"
+      },
+      "getable": true,
+      "setable": true,
+      "uiComponent": "toggle",
+      "icon": "/assets/capabilities/mdi-snowflake.svg"
+    },
+    "localthings_rapid_fridge": {
+      "type": "boolean",
+      "title": {
+        "en": "Rapid cooling",
+        "ko": "급속 냉장"
+      },
+      "getable": true,
+      "setable": true,
+      "uiComponent": "toggle",
+      "icon": "/assets/capabilities/mdi-snowflake.svg"
+    },
+    "localthings_remaining_minutes": {
+      "type": "number",
+      "title": {
+        "en": "Time remaining",
+        "ko": "남은 시간"
+      },
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "decimals": 0,
+      "icon": "/assets/capabilities/mdi-timer-sand.svg",
+      "units": {
+        "en": "min"
+      },
+      "min": 0,
+      "max": 1440
+    },
+    "localthings_rinse_cycles": {
+      "type": "number",
+      "title": {
+        "en": "Rinse cycles",
+        "ko": "헹굼 횟수"
+      },
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "decimals": 0,
+      "icon": "/assets/capabilities/mdi-washing-machine.svg",
+      "min": 0,
+      "max": 10
+    },
+    "localthings_sabbath": {
+      "type": "boolean",
+      "title": {
+        "en": "Sabbath mode",
+        "ko": "안식일 모드"
+      },
+      "getable": true,
+      "setable": true,
+      "uiComponent": "toggle",
+      "icon": "/assets/capabilities/mdi-weather-night.svg"
+    },
     "localthings_safety_shutoff": {
       "type": "boolean",
       "title": {
@@ -692,6 +936,28 @@
       "setable": false,
       "uiComponent": "sensor",
       "icon": "/assets/capabilities/mdi-shield-check.svg"
+    },
+    "localthings_sanitize": {
+      "type": "boolean",
+      "title": {
+        "en": "Sanitize",
+        "ko": "살균"
+      },
+      "getable": true,
+      "setable": true,
+      "uiComponent": "toggle",
+      "icon": "/assets/capabilities/mdi-silverware-clean.svg"
+    },
+    "localthings_selfcheck": {
+      "type": "string",
+      "title": {
+        "en": "Self check",
+        "ko": "자가 진단"
+      },
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "icon": "/assets/capabilities/mdi-stethoscope.svg"
     },
     "localthings_smart_control": {
       "type": "boolean",
@@ -715,6 +981,75 @@
       "uiComponent": "toggle",
       "icon": "/assets/capabilities/mdi-motion-sensor.svg"
     },
+    "localthings_sound_mode": {
+      "type": "string",
+      "title": {
+        "en": "Sound mode",
+        "ko": "사운드 모드"
+      },
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "icon": "/assets/capabilities/mdi-volume-high.svg"
+    },
+    "localthings_sound_volume": {
+      "type": "number",
+      "title": {
+        "en": "Sound volume",
+        "ko": "사운드 볼륨"
+      },
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "decimals": 0,
+      "icon": "/assets/capabilities/mdi-volume-high.svg",
+      "min": 0,
+      "max": 100
+    },
+    "localthings_spin_speed": {
+      "type": "string",
+      "title": {
+        "en": "Spin speed",
+        "ko": "탈수 강도"
+      },
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "icon": "/assets/capabilities/mdi-washing-machine.svg"
+    },
+    "localthings_target_humidity": {
+      "type": "number",
+      "title": {
+        "en": "Target humidity",
+        "ko": "목표 습도"
+      },
+      "getable": true,
+      "setable": true,
+      "uiComponent": "slider",
+      "decimals": 0,
+      "icon": "/assets/capabilities/mdi-water-percent.svg",
+      "units": {
+        "en": "%"
+      },
+      "min": 30,
+      "max": 70,
+      "step": 5
+    },
+    "localthings_target_temperature_readonly": {
+      "type": "number",
+      "title": {
+        "en": "Set temperature",
+        "ko": "설정 온도"
+      },
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "decimals": 0,
+      "icon": "/assets/capabilities/mdi-thermometer.svg",
+      "units": {
+        "en": "°C"
+      }
+    },
     "localthings_uvled": {
       "type": "boolean",
       "title": {
@@ -725,6 +1060,43 @@
       "setable": true,
       "uiComponent": "toggle",
       "icon": "/assets/capabilities/mdi-sun-wireless.svg"
+    },
+    "localthings_wash_temperature": {
+      "type": "string",
+      "title": {
+        "en": "Wash temperature",
+        "ko": "세탁 온도"
+      },
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "icon": "/assets/capabilities/mdi-washing-machine.svg"
+    },
+    "localthings_water_total": {
+      "type": "number",
+      "title": {
+        "en": "Water used",
+        "ko": "누적 사용 수량"
+      },
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "decimals": 1,
+      "icon": "/assets/capabilities/mdi-water-outline.svg",
+      "units": {
+        "en": "L"
+      }
+    },
+    "localthings_welcome_light": {
+      "type": "boolean",
+      "title": {
+        "en": "Welcome lighting",
+        "ko": "웰컴 라이팅"
+      },
+      "getable": true,
+      "setable": true,
+      "uiComponent": "toggle",
+      "icon": "/assets/capabilities/mdi-lightbulb-outline.svg"
     },
     "localthings_wind_direction": {
       "type": "enum",
@@ -786,6 +1158,17 @@
           }
         }
       ]
+    },
+    "localthings_wrinkle_prevent": {
+      "type": "boolean",
+      "title": {
+        "en": "Wrinkle prevention",
+        "ko": "주름 방지"
+      },
+      "getable": true,
+      "setable": true,
+      "uiComponent": "toggle",
+      "icon": "/assets/capabilities/mdi-tshirt-crew.svg"
     }
   }
 }

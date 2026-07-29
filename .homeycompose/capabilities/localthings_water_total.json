@@ -1,0 +1,15 @@
+{
+  "type": "number",
+  "title": {
+    "en": "Water used",
+    "ko": "누적 사용 수량"
+  },
+  "getable": true,
+  "setable": false,
+  "uiComponent": "sensor",
+  "decimals": 1,
+  "icon": "/assets/capabilities/mdi-water-outline.svg",
+  "units": {
+    "en": "L"
+  }
+}

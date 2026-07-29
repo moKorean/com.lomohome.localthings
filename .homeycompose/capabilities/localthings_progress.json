@@ -1,0 +1,17 @@
+{
+  "type": "number",
+  "title": {
+    "en": "Progress",
+    "ko": "진행률"
+  },
+  "getable": true,
+  "setable": false,
+  "uiComponent": "sensor",
+  "decimals": 0,
+  "icon": "/assets/capabilities/mdi-progress-clock.svg",
+  "units": {
+    "en": "%"
+  },
+  "min": 0,
+  "max": 100
+}

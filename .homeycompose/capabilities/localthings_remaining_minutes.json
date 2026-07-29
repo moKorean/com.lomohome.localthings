@@ -1,0 +1,17 @@
+{
+  "type": "number",
+  "title": {
+    "en": "Time remaining",
+    "ko": "남은 시간"
+  },
+  "getable": true,
+  "setable": false,
+  "uiComponent": "sensor",
+  "decimals": 0,
+  "icon": "/assets/capabilities/mdi-timer-sand.svg",
+  "units": {
+    "en": "min"
+  },
+  "min": 0,
+  "max": 1440
+}

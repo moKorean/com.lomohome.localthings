@@ -35,12 +35,19 @@ def test_resolve_is_none_for_unknown_board():
     }}) is None
 
 
-def test_bare_ac_token_does_not_route():
-    """'DA-AC-' prefixes the dehumidifier and air purifier too, so a bare AC
-    token must not match — otherwise those mis-bind once ported."""
-    assert registry.resolve({"/information/vs/0": {
-        "x.com.samsung.da.modelNum": "TP1X_DA-AC-DHM-01001|1|2",
-    }}) is None
+def test_bare_ac_token_does_not_swallow_its_siblings():
+    """'DA-AC-' prefixes the dehumidifier and air purifier as well as the air
+    conditioner, so routing must key on the specific token. A bare 'AC' entry would
+    make all three air conditioners."""
+    for token, expected in (
+        ("DHM", "dehumidifier"),
+        ("AIR", "air_purifier"),
+        ("CAC", "airconditioner"),
+    ):
+        resolved = registry.resolve({"/information/vs/0": {
+            "x.com.samsung.da.modelNum": f"TP1X_DA-AC-{token}-01001|1|2",
+        }})
+        assert resolved is not None and resolved.name == expected, token
 
 
 def test_capabilities_present(resources):

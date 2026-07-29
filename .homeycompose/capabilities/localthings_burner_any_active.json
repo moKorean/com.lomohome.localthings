@@ -1,0 +1,11 @@
+{
+  "type": "boolean",
+  "title": {
+    "en": "A burner is on",
+    "ko": "버너 사용 중"
+  },
+  "getable": true,
+  "setable": false,
+  "uiComponent": "sensor",
+  "icon": "/assets/capabilities/mdi-stove.svg"
+}

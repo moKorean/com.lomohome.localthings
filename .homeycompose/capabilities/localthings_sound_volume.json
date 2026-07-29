@@ -1,0 +1,14 @@
+{
+  "type": "number",
+  "title": {
+    "en": "Sound volume",
+    "ko": "사운드 볼륨"
+  },
+  "getable": true,
+  "setable": false,
+  "uiComponent": "sensor",
+  "decimals": 0,
+  "icon": "/assets/capabilities/mdi-volume-high.svg",
+  "min": 0,
+  "max": 100
+}

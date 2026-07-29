@@ -5,20 +5,29 @@ central property: there is no per-model descriptor. The board named in
 `modelNum` determines the resource surface, which is what a registry describes,
 so a new unit of an already-supported type binds with no code change.
 
-Air conditioners and induction cooktops are ported; the remaining types are
-mechanical additions (docs/PORTING.md milestone 7).
+All of the reference's appliance types are routed. The air conditioner and induction
+cooktop are verified against real hardware and live in their own modules; the rest are
+in appliances.py, ported from the reference's field definitions and unverified — see
+that module's docstring.
 """
 
 import re
 from typing import Optional
 
-from . import airconditioner, induction_cooktop
+from . import airconditioner, appliances, induction_cooktop
 from .base import Registry
 from ..resources import read_identity
 
 _REGISTRY_BY_KEY: dict[str, Registry] = {
     "airconditioner": airconditioner.REGISTRY,
     "induction_cooktop": induction_cooktop.REGISTRY,
+    **{
+        registry.name: registry
+        for registry in (
+            *appliances.BOARD_TOKENS.values(),
+            *appliances.CONSUMER_PREFIXES.values(),
+        )
+    },
 }
 
 # Board-family token -> registry key, matched against whole tokens of
@@ -35,6 +44,17 @@ _REGISTRY_BY_KEY: dict[str, Registry] = {
 _BOARD_TOKEN_TO_KEY: dict[str, str] = {
     **{token: "airconditioner" for token in airconditioner.BOARD_TOKENS},
     **{token: "induction_cooktop" for token in induction_cooktop.BOARD_TOKENS},
+    **{token: registry.name for token, registry in appliances.BOARD_TOKENS.items()},
+}
+
+# Consumer-model prefix -> registry key, matched against the start of a
+# '_'-delimited segment of `description`. Consulted only after the board tokens: a
+# two-letter prefix is the fuzziest evidence available, and 'WAC' (window air
+# conditioner) also starts with 'WA' (top-load washer), so it must never outrank a
+# specific board token.
+_CONSUMER_PREFIX_TO_KEY: dict[str, str] = {
+    prefix: registry.name
+    for prefix, registry in appliances.CONSUMER_PREFIXES.items()
 }
 
 _TOKEN_SPLIT_RE = re.compile(r"[^A-Z0-9]+")
@@ -59,15 +79,38 @@ def _board_family_key(value: str, cut_at: str) -> Optional[str]:
     return None
 
 
+def _consumer_model_key(description: str) -> Optional[str]:
+    """Registry key from the consumer-model token in `description`.
+
+    Segments are scanned from the end rather than assuming the last is the model: the
+    reference documents a dryer whose description pairs two model numbers
+    ('..._DVE50A8800_8600'), leaving the real token one segment before the last.
+
+    Splits on '_' only. Widening to '-' would start reading board-family segments as
+    consumer models — a dishwasher's 'ADW-WW-RTL-24' would offer a bare 'WW' and
+    route to washer.
+    """
+    segments = (description or "").split("/", 1)[0].split("_")
+    for segment in reversed(segments):
+        key = _CONSUMER_PREFIX_TO_KEY.get(segment[:2].upper())
+        if key is not None:
+            return key
+    return None
+
+
 def resolve(resources: dict) -> Optional[Registry]:
     """Registry for a parsed /device/0 dump, or None if unrecognised.
 
-    modelNum first, then description — a device whose two fields disagree is
-    typed by its board, which is the field that determines the resource surface.
+    Narrowest evidence first: the board token in `modelNum`, then the same token in
+    `description` (some units carry it only there), then the consumer-model prefix. A
+    device whose fields disagree is typed by its board, which is what determines the
+    resource surface.
     """
     identity = read_identity(resources)
-    key = _board_family_key(identity["model"], "|") or _board_family_key(
-        identity["description"], "/"
+    key = (
+        _board_family_key(identity["model"], "|")
+        or _board_family_key(identity["description"], "/")
+        or _consumer_model_key(identity["description"])
     )
     return _REGISTRY_BY_KEY.get(key) if key else None
 

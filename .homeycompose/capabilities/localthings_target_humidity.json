@@ -1,0 +1,18 @@
+{
+  "type": "number",
+  "title": {
+    "en": "Target humidity",
+    "ko": "목표 습도"
+  },
+  "getable": true,
+  "setable": true,
+  "uiComponent": "slider",
+  "decimals": 0,
+  "icon": "/assets/capabilities/mdi-water-percent.svg",
+  "units": {
+    "en": "%"
+  },
+  "min": 30,
+  "max": 70,
+  "step": 5
+}

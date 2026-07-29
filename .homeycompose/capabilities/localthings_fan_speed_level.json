@@ -1,0 +1,14 @@
+{
+  "type": "number",
+  "title": {
+    "en": "Fan level",
+    "ko": "풍량 단계"
+  },
+  "getable": true,
+  "setable": false,
+  "uiComponent": "sensor",
+  "decimals": 0,
+  "icon": "/assets/capabilities/mdi-fan-speed-1.svg",
+  "min": 0,
+  "max": 10
+}

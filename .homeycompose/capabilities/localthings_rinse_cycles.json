@@ -1,0 +1,14 @@
+{
+  "type": "number",
+  "title": {
+    "en": "Rinse cycles",
+    "ko": "헹굼 횟수"
+  },
+  "getable": true,
+  "setable": false,
+  "uiComponent": "sensor",
+  "decimals": 0,
+  "icon": "/assets/capabilities/mdi-washing-machine.svg",
+  "min": 0,
+  "max": 10
+}

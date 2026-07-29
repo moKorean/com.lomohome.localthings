@@ -1,0 +1,15 @@
+{
+  "type": "number",
+  "title": {
+    "en": "Set temperature",
+    "ko": "설정 온도"
+  },
+  "getable": true,
+  "setable": false,
+  "uiComponent": "sensor",
+  "decimals": 0,
+  "icon": "/assets/capabilities/mdi-thermometer.svg",
+  "units": {
+    "en": "°C"
+  }
+}
