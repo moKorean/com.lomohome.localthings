@@ -4,7 +4,7 @@
 
 Home Assistant 통합 [mbillow/localthings](https://github.com/mbillow/localthings)를 Homey로 포팅하는 프로젝트입니다. 가전과 DTLS-over-CoAP 세션을 직접 맺어 상태를 읽고 명령을 보내므로, 클라우드 왕복이 없습니다.
 
-> **상태: 초기 골격 (v0.1.0).** 앱 구조와 저장소만 준비된 단계이며 프로토콜 계층은 아직 구현되지 않았습니다. 설계와 남은 작업은 [`docs/PORTING.md`](docs/PORTING.md)를 참고하세요.
+> **상태: 초기 골격 (v0.1.0).** 파이썬 런타임 앱 구조와 의존성만 준비된 단계이며, 드라이버·레지스트리는 아직 구현되지 않았습니다. 설계와 남은 작업은 [`docs/PORTING.md`](docs/PORTING.md)를 참고하세요.
 
 ## 동작 방식
 
@@ -31,8 +31,20 @@ nmap -Pn -sU -p 49152-49160 "$APPLIANCE_IP"
 
 ## 요구 사항
 
-- Homey Pro — LAN UDP가 필요하므로 `local` 플랫폼 전용입니다. Homey Cloud에서는 동작할 수 없습니다.
+- **Homey Pro, 펌웨어 v13.0.0 이상.** 이 앱은 Homey의 파이썬 런타임(`"runtime": "python"`, Python 3.14)으로 동작하므로 v13 미만에서는 설치되지 않습니다.
+- LAN UDP가 필요하므로 `local` 플랫폼 전용입니다. Homey Cloud에서는 동작할 수 없습니다.
 - `AC14K_M` CA 인증서와 개인키 (저장소에 포함되어 있지 않습니다). 앱이 이 CA로 기기별 리프 인증서를 직접 발급하므로, 최초 1회만 입력하면 이후 추가하는 기기는 IP만 입력합니다.
+
+## 구조
+
+```
+app.py                  진입점 (homey.app.App 상속, homey_export로 내보냄)
+drivers/appliance/       제네릭 드라이버 — driver.py(페어링) + device.py(세션·폴링)
+lib/                     전송 글루, 인증서 발급, 기기 레지스트리
+python_packages/         Homey CLI가 생성하는 아키텍처별 venv (커밋하지 않음)
+```
+
+전송 계층은 직접 구현하지 않고 [`smartthings-local`](https://pypi.org/project/smartthings-local/)에 위임합니다. `app.json`의 `pythonPackages`에 선언되어 있고, Homey CLI가 빌드 시 `uv`로 아키텍처별 venv에 설치합니다.
 
 ## 참조 프로젝트
 
@@ -76,10 +88,20 @@ cd ../homey-pythonscript-reference && git pull
 ## 개발
 
 ```sh
-npm install
-npm run lint
+homey app build                    # pythonPackages를 아키텍처별 venv로 해석 (Docker 필요)
 homey app validate --level publish
 homey app run
+```
+
+`homey app build`는 공식 빌더 이미지(`ghcr.io/athombv/python-homey-app-builder-{arm64,amd64}`)를 받아 `python_packages/{amd64,arm64}/.venv/`를 만듭니다. 이 venv들은 `app.json`에서 재생성 가능하므로 커밋하지 않습니다(약 36 MB의 바이너리). 클론 직후에는 `homey app build`를 한 번 돌리면 됩니다.
+
+로컬 테스트·린트용 가상환경:
+
+```sh
+python3 -m venv .venv
+.venv/bin/pip install -e '.[dev]'
+.venv/bin/pytest
+.venv/bin/ruff check .
 ```
 
 ## 라이선스

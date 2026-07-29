@@ -1,5 +1,12 @@
-.vscode
-.github
-docs
-*.OLD.js
+tests/
+docs/
+scripts/
+.claude/
+CLAUDE.md
+*.pyc
+__pycache__/
+.homeybuild/
+.ruff_cache/
+.pytest_cache/
+uv.lock
 .DS_Store

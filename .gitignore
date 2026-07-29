@@ -1,10 +1,25 @@
-node_modules/
 .homeybuild/
 env.json
 *.log
 .DS_Store
 
 .idea/
+.vscode/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+uv.lock
+
+# Built per-architecture venvs. `homey app build` regenerates these from
+# app.json's `pythonPackages` using the official builder images, so they are
+# reproducible rather than source. Keeps ~36 MB of ARM/x86 binaries and the uv
+# cache out of history. .python-version stays tracked.
+/python_packages/*/
 
 # Never commit CA or device credentials.
 *.pem

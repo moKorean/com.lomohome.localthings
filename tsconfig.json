@@ -1,8 +1,0 @@
-{
-  "include": ["**/*.js", "**/*.mjs"],
-  "compilerOptions": {
-    "noEmit": true,
-    "checkJs": false,
-    "allowJs": true
-  }
-}

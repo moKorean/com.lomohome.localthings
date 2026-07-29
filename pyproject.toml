@@ -1,0 +1,43 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "com-lomohome-localthings"
+version = "0.1.0"
+description = "Homey app for local control of Samsung appliances over DTLS/CoAP, without SmartThings"
+requires-python = ">=3.12"
+license = "GPL-3.0-or-later"
+authors = [{ name = "Geunwon Mo", email = "mokorean@gmail.com" }]
+
+# Runtime dependencies are declared in app.json's `pythonPackages`, which is
+# what Homey actually installs. Kept in sync here so local dev and tests can
+# `pip install -e .` and import the same versions.
+dependencies = [
+    "smartthings-local>=0.1.1",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23",
+    "ruff>=0.6",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["lib"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+addopts = "-m 'not integration'"
+markers = [
+    "integration: requires a real appliance on the LAN (run with -m integration)",
+]
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint.per-file-ignores]
+# app.py puts the app directory on sys.path before importing homey.
+"app.py" = ["E402"]
