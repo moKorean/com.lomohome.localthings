@@ -378,10 +378,21 @@
       if (el) el.textContent += ' · ' + step;
     }
 
+    // homey.js defines a global `Homey` *constructor* up front and only replaces
+    // it with the ready instance at the very end (window.Homey = this, right
+    // before onHomeyReady). Accepting the global on sight therefore latches onto
+    // the constructor, which has neither .ready() nor .api() — and once latched,
+    // the real onHomeyReady is ignored, so ready() is never called and Homey's
+    // loading overlay stays up forever. Check for the methods, not the name.
+    function usable(obj) {
+      return !!obj && typeof obj.ready === 'function' && typeof obj.api === 'function';
+    }
+
     function init(homeyObj) {
       if (started) return;
-      var ref = homeyObj || (typeof Homey !== 'undefined' ? Homey : null);
-      if (!ref) { trace('no Homey yet'); return; }
+      var candidate = homeyObj || (typeof Homey !== 'undefined' ? Homey : null);
+      var ref = usable(candidate) ? candidate : null;
+      if (!ref) { trace('no Homey instance yet'); return; }
       if (!document.getElementById('cert')) { trace('no DOM yet'); return; }
       started = true;
       H = ref;

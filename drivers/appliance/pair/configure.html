@@ -223,9 +223,18 @@
       });
   }
 
+  // See the settings page for why this checks methods rather than the global's
+  // existence: the global starts life as homey.js's constructor, and latching
+  // onto it means the ready instance never arrives.
+  function usable(obj) {
+    return !!obj && typeof obj.ready === 'function' && typeof obj.emit === 'function'
+      && typeof obj.createDevice === 'function';
+  }
+
   function init(homeyObj) {
     if (started) return;
-    var ref = homeyObj || (typeof Homey !== 'undefined' ? Homey : null);
+    var candidate = homeyObj || (typeof Homey !== 'undefined' ? Homey : null);
+    var ref = usable(candidate) ? candidate : null;
     if (!ref) return;
     if (!document.getElementById('host')) return;  // DOM not ready yet
     started = true;
