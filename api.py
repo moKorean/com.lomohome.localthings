@@ -20,15 +20,43 @@ async def _run(fn, *args):
     return await asyncio.get_running_loop().run_in_executor(None, fn, *args)
 
 
+def _body(kwargs: dict) -> dict:
+    """Request body, however this Homey build delivers it.
+
+    Some versions pass it as `body`, others flatten the fields into kwargs. The
+    reference Python app reads both, so do the same rather than betting on one.
+    """
+    body = kwargs.get("body")
+    return body if isinstance(body, dict) else kwargs
+
+
+def _log(homey, message: str) -> None:
+    """Log if this build exposes a logger here; never fail a request over it."""
+    for target in (getattr(homey, "app", None), homey):
+        log = getattr(target, "log", None)
+        if callable(log):
+            try:
+                log(message)
+                return
+            except Exception:
+                pass
+
+
+def _stored(homey) -> tuple[str, str]:
+    return (
+        homey.settings.get(SETTING_LEAF_CERT) or "",
+        homey.settings.get(SETTING_LEAF_KEY) or "",
+    )
+
+
 async def get_status(homey, **kwargs):
     """What the settings page shows on load.
 
     Never returns the stored PEMs — the page only needs to know whether they are
-    present and healthy, and echoing key material back into a webview serves no
+    present and healthy, and echoing key material into a webview serves no
     purpose.
     """
-    cert_pem = homey.settings.get(SETTING_LEAF_CERT) or ""
-    key_pem = homey.settings.get(SETTING_LEAF_KEY) or ""
+    cert_pem, key_pem = _stored(homey)
     if not cert_pem or not key_pem:
         return {"configured": False}
 
@@ -41,28 +69,28 @@ async def get_status(homey, **kwargs):
 
 
 async def check_uuid(homey, **kwargs):
-    """Compare the stored certificate's UUID with the one appliances currently
-    expect. A mismatch means the certificate needs re-minting; it is the one
-    failure mode that looks like a broken network but isn't."""
-    cert_pem = homey.settings.get(SETTING_LEAF_CERT) or ""
+    """Compare the stored certificate's identity with the one appliances
+    currently expect. A mismatch means the certificate needs re-minting; it is
+    the one failure mode that looks like a broken network but isn't."""
+    cert_pem, key_pem = _stored(homey)
     if not cert_pem:
         return {"configured": False}
     try:
-        stored = await _run(cert.inspect_leaf, cert_pem,
-                            homey.settings.get(SETTING_LEAF_KEY) or "")
-        live = await _run(cert.fetch_samsung_uuid)
+        stored = await _run(cert.inspect_leaf, cert_pem, key_pem)
     except cert.InvalidCredentials as exc:
         return {"ok": False, "error": str(exc)}
+    try:
+        live = await _run(cert.fetch_samsung_uuid)
     except Exception as exc:
         return {"ok": False, "error": f"Could not reach Samsung's gateway: {exc}"}
     return {"ok": stored["uuid"] == live, "stored": stored["uuid"], "live": live}
 
 
-async def save_credentials(homey, body=None, **kwargs):
+async def save_credentials(homey, **kwargs):
     """Validate then store. Validation failure leaves the previous value intact."""
-    body = body or {}
-    cert_pem = (body.get("cert_pem") or "").strip()
-    key_pem = (body.get("key_pem") or "").strip()
+    body = _body(kwargs)
+    cert_pem = str(body.get("cert_pem") or "").strip()
+    key_pem = str(body.get("key_pem") or "").strip()
     if not cert_pem or not key_pem:
         raise ValueError("Both the certificate and the private key are required.")
 
@@ -70,12 +98,17 @@ async def save_credentials(homey, body=None, **kwargs):
 
     homey.settings.set(SETTING_LEAF_CERT, cert_pem + "\n")
     homey.settings.set(SETTING_LEAF_KEY, key_pem + "\n")
-    homey.app.log(f"Client certificate stored (uuid:{info['uuid']}, expires {info['expires']})")
+    _log(homey, f"Client certificate stored (uuid:{info['uuid']}, expires {info['expires']})")
     return {"ok": True, **info}
 
 
 async def clear_credentials(homey, **kwargs):
-    homey.settings.unset(SETTING_LEAF_CERT)
-    homey.settings.unset(SETTING_LEAF_KEY)
-    homey.app.log("Client certificate cleared")
+    for key in (SETTING_LEAF_CERT, SETTING_LEAF_KEY):
+        try:
+            homey.settings.unset(key)
+        except Exception:
+            # Not every build exposes unset(); an empty value reads the same to
+            # every consumer here.
+            homey.settings.set(key, "")
+    _log(homey, "Client certificate cleared")
     return {"ok": True}

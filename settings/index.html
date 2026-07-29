@@ -225,12 +225,30 @@
     el.textContent = text || '';
   }
 
+  // Homey.api is promise-based and takes no callback; older builds are
+  // callback-style. Support both, because waiting on a callback that a
+  // promise-based implementation never invokes is an infinite spinner.
   function api(method, path, body) {
     return new Promise(function (resolve, reject) {
-      H.api(method, path, body || null, function (err, result) {
-        if (err) return reject(err instanceof Error ? err : new Error(String(err)));
-        resolve(result);
-      });
+      var settled = false;
+      function ok(result) { if (!settled) { settled = true; resolve(result); } }
+      function fail(err) {
+        if (settled) return;
+        settled = true;
+        reject(err instanceof Error ? err : new Error(String(err && err.message || err)));
+      }
+      var args = (method === 'GET') ? [method, path] : [method, path, body || {}];
+      var maybe;
+      try {
+        maybe = H.api.apply(H, args.concat([function (err, result) {
+          if (err) fail(err); else ok(result);
+        }]));
+      } catch (e) {
+        return fail(e);
+      }
+      if (maybe && typeof maybe.then === 'function') maybe.then(ok, fail);
+      // Neither contract answered — surface it rather than spinning forever.
+      setTimeout(function () { fail(new Error('Homey.api did not respond (' + method + ' ' + path + ')')); }, 20000);
     });
   }
 
