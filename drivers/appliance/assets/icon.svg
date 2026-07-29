@@ -1,19 +1,20 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <!-- A house holding an appliance panel, with the signal arcs kept inside the
-       walls: control never leaves the local network, which is the whole point. -->
-  <g fill="#FFFFFF">
-    <!-- Roof and walls as one outline, so the interior stays transparent and the
-         brand colour shows through. -->
-    <path fill-rule="evenodd" d="
-      M256 44 L474 214 v226 a30 30 0 0 1-30 30 H68 a30 30 0 0 1-30-30 V214 z
-      M256 108 L92 236 v178 h328 V236 z"/>
-    <!-- Appliance panel, narrowed to leave room for the signal beside it. -->
-    <rect x="126" y="276" width="172" height="104" rx="16"/>
-    <rect x="148" y="300" width="86" height="24" rx="9" fill="#1428A0"/>
-    <circle cx="164" cy="352" r="12" fill="#1428A0"/>
-    <circle cx="204" cy="352" r="12" fill="#1428A0"/>
-    <!-- Signal, radiating toward the wall and stopping at it. -->
-    <path d="M322 300 a52 52 0 0 1 0 56 l-17 -12 a34 34 0 0 0 0 -32 z"/>
-    <path d="M352 282 a86 86 0 0 1 0 92 l-17 -12 a68 68 0 0 0 0 -68 z"/>
-  </g>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 960" width="960" height="960">
+<style>
+  path, rect, line, circle { fill: none; stroke: #000; stroke-linecap: round; stroke-linejoin: round; }
+  .o { stroke-width: 40; }
+  .r { stroke-width: 60; }
+  .d { stroke-width: 20; }
+</style>
+<path class="r" d="M 480 130 L 820 430 L 820 810 L 140 810 L 140 430 Z"/>
+<circle cx="480" cy="545" r="66" class="o"/>
+<line x1="480.0" y1="479.0" x2="480.0" y2="400.0" class="o"/>
+<circle cx="480.0" cy="360.0" r="40" class="o"/>
+<line x1="542.8" y1="524.6" x2="617.9" y2="500.2" class="o"/>
+<circle cx="655.9" cy="487.8" r="40" class="o"/>
+<line x1="518.8" y1="598.4" x2="565.2" y2="662.3" class="o"/>
+<circle cx="588.7" cy="694.7" r="40" class="o"/>
+<line x1="441.2" y1="598.4" x2="394.8" y2="662.3" class="o"/>
+<circle cx="371.3" cy="694.7" r="40" class="o"/>
+<line x1="417.2" y1="524.6" x2="342.1" y2="500.2" class="o"/>
+<circle cx="304.1" cy="487.8" r="40" class="o"/>
 </svg>

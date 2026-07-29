@@ -1,6 +1,6 @@
-# LocalThings community (로컬띵스 커뮤니티)
+# LocalThings Community (로컬띵스 커뮤니티)
 
-**SmartThings 클라우드 없이, 최신 삼성 가전을 집 안 네트워크에서 직접 제어하는 Homey 앱입니다.**
+**Samsung appliances, no cloud** — SmartThings 클라우드 없이, 최신 삼성 가전을 집 안 네트워크에서 직접 제어하는 Homey 앱입니다.
 
 Home Assistant 통합 [mbillow/localthings](https://github.com/mbillow/localthings)를 Homey로 포팅하는 프로젝트입니다. 가전과 DTLS-over-CoAP 세션을 직접 맺어 상태를 읽고 명령을 보내므로, 클라우드 왕복이 없습니다.
 
@@ -30,6 +30,8 @@ nmap -Pn -sU -p 49152-49160 "$APPLIANCE_IP"
 ```
 
 앱의 **기기 추가 → 검색**이 같은 일을 네트워크 전체에 대해 해줍니다. 응답한 기기만 종류를 확인하므로 IP를 몰라도 됩니다.
+
+> 앱스토어 소개문은 [`README.txt`](README.txt)(영어)와 [`README.ko.txt`](README.ko.txt)(한국어)에 있습니다. 심사 제출 시 이 두 파일이 앱 설명으로 쓰입니다.
 
 ## 앱 설치 방법
 
