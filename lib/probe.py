@@ -74,8 +74,9 @@ def find_live_ports(
 
     The in-process equivalent of `nmap -sU`, minus the root requirement.
     """
+    wanted = list(ports or PROBE_PORT_RANGE)
     candidates = []
-    for port in ports or PROBE_PORT_RANGE:
+    for port in wanted:
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         sock.settimeout(timeout)
         try:
@@ -96,7 +97,28 @@ def find_live_ports(
             pass
         finally:
             sock.close()
-    return order_candidates(candidates)
+
+    # The ICMP verdict above is not trustworthy on every network path. The
+    # reference integration's issue #192 captured a device on a segregated VLAN
+    # where this sweep called three closed ports live while never reporting the
+    # one port a concurrent nmap found genuinely open|filtered — and that port was
+    # 49154, one of the two we already have strong prior evidence for.
+    #
+    # So a "not live" verdict does not get to overrule that prior: the
+    # historically confirmed ports always get a real handshake attempt.
+    #
+    # They are appended last, where the reference promotes them to the front.
+    # That divergence is deliberate — the reference probes one host the user
+    # typed in, while this app sweeps a whole subnet, and most of what answers is
+    # not a Samsung appliance. Promoting would spend two guaranteed extra
+    # handshakes on every non-appliance host that responds. Appending reaches the
+    # same appliance in the #192 case, where the sweep's own candidates all fail
+    # first anyway, without making a subnet scan slower for everyone else.
+    rescued = [
+        port for port in PREFERRED_PROBE_PORTS
+        if port in wanted and port not in candidates
+    ]
+    return order_candidates(candidates) + rescued
 
 
 def order_candidates(ports: list[int]) -> list[int]:

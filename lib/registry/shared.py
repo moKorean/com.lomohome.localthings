@@ -258,10 +258,38 @@ OPERATIONAL = (
 
 # --- sound ---------------------------------------------------------------
 
+def _sound_volume_options(rep, _resources) -> dict:
+    """Volume bounds from the appliance, not from Homey's number defaults.
+
+    The verified air conditioners report 0-3 in steps of 1. A slider inheriting a
+    wider default range would show positions the appliance has no value for.
+    """
+    options = {}
+    low = as_int(rep.get("minLevel"))
+    high = as_int(rep.get("maxLevel"))
+    step = as_int(rep.get("resolution"))
+    if low is not None:
+        options["min"] = low
+    if high is not None:
+        options["max"] = high
+    if step:
+        options["step"] = step
+    return options
+
+
+# Unusually for this codebase, these two resources use plain OCF field names with
+# no vendor prefix (`mode`, `level`). That is what three air conditioners actually
+# report, so the names are confirmed rather than assumed.
+#
+# Both stay read-only. The volume resource advertises min/max/resolution, which
+# looks like an invitation to write it, but no write has been observed and the
+# reference exposes neither as writable — a control that looks settable and is
+# silently refused is worse than a reading.
 SOUND = (
     Spec("localthings_sound_mode", "/settings/sound/mode/vs/0", text("mode")),
     Spec("localthings_sound_volume", "/settings/sound/volume/vs/0",
-         lambda rep, _r: as_int(rep.get("level"))),
+         lambda rep, _r: as_int(rep.get("level")),
+         options=_sound_volume_options),
 )
 
 # --- doors ---------------------------------------------------------------

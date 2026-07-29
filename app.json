@@ -18,8 +18,8 @@
     "ko": "로컬띵스 커뮤니티"
   },
   "description": {
-    "en": "Control your Samsung air conditioner, induction cooktop and range hood on your own network, without SmartThings",
-    "ko": "SmartThings 없이 삼성 에어컨·인덕션·주방 후드를 집 안에서 바로 제어하세요"
+    "en": "Control Samsung appliances locally, with no cloud in between",
+    "ko": "삼성 가전을 클라우드 없이, 로컬에서 바로 제어하세요"
   },
   "category": [
     "appliances"

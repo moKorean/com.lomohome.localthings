@@ -498,6 +498,11 @@ BOARD_TOKENS = {
     "AIR": AIR_PURIFIER,
     "TVTL": AIR_PURIFIER,
     "VTWW": AIR_PURIFIER,
+    # A next-gen BESPOKE Cube Air board, AVT-WW-TP1-23-AXX500. Same lineage and
+    # the same resource surface as VTWW, but the "-WW-" delimiter falls one letter
+    # to the left ("A-VTWW-" became "AVT-WW-"), which splits into a token the VTWW
+    # entry cannot see. Reference issue #190.
+    "AVT": AIR_PURIFIER,
     "DHM": DEHUMIDIFIER,
     "OVEN": OVEN,
     "MICROWAVE": MICROWAVE,

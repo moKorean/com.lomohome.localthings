@@ -19,6 +19,10 @@ HREF_TEMPS = "/temperatures/vs/0"
 HREF_HUMIDITY = "/humidity/vs/0"
 HREF_ENERGY = "/energy/consumption/vs/0"
 HREF_WIND_STRENGTH = "/wind/strength/vs/0"
+# Only the legacy ARTIK051 generation carries this; newer families use
+# HREF_WIND_STRENGTH above. Nothing reads it directly — its presence is the
+# discriminator between the two generations (see is_legacy_board).
+HREF_AIRFLOW = "/airflow/vs/0"
 HREF_AIRPURIFY = "/option/airpurify/vs/0"
 HREF_AIR_FILTER = "/filter/airdustfilter/vs/0"
 HREF_PM1_FILTER = "/filter/airdustPM1filter/vs/0"
@@ -194,10 +198,33 @@ def _read_power_watts(rep, _resources):
     return as_float(rep.get("x.com.samsung.da.instantaneousPower"))
 
 
-def _read_meter_kwh(rep, _resources):
+def is_legacy_board(resources) -> bool:
+    """True for the board generation whose airflow lives in /airflow/vs/0.
+
+    Newer families carry a dedicated /wind/strength/vs/0 instead. The reference
+    uses exactly this test to gate the handful of behaviours that differ between
+    generations, so it is reproduced rather than re-derived.
+    """
+    return HREF_AIRFLOW in resources and HREF_WIND_STRENGTH not in resources
+
+
+def _read_meter_kwh(rep, resources):
     total = as_float(rep.get("x.com.samsung.da.cumulativePower"))
     if total is None:
         return None
+    # The legacy ARTIK051 generation reports this in centiwatt-hours, not the Wh
+    # every other family reports — and it still labels the unit 'Wh', so the label
+    # cannot be trusted to tell them apart. The reference established the factor
+    # against a reporter's own SmartThings reading: raw 117430000 against an
+    # authoritative 1,174.30 kWh is /100000 exactly, a further /100 on top of the
+    # usual /1000 (reference issue #193).
+    #
+    # Not verified here — no legacy board was available to test. The gate is
+    # narrow enough that being wrong affects only that generation, and leaving it
+    # unhandled is certainly wrong for those users: they see a figure 100x too
+    # large.
+    if is_legacy_board(resources):
+        return round(total / 100000.0, 2)
     # cumulativeUnit is 'Wh' on every dump seen, but honour it rather than
     # hardcoding the divisor.
     unit = str(rep.get("x.com.samsung.da.cumulativeUnit") or "Wh").strip().lower()
@@ -366,6 +393,10 @@ REGISTRY = Registry(
         Spec("localthings_ac_mode", HREF_MODE, _read_mode, _write_mode),
         Spec("localthings_fan_mode", HREF_WIND_STRENGTH, _read_fan, _write_fan),
         Spec("measure_humidity", HREF_HUMIDITY, _read_humidity),
+        # Present and populated on all three verified units, but unbound until
+        # now — the shared specs were only wired into the appliances that were
+        # ported later. Field names confirmed against those units.
+        *shared.SOUND,
         Spec("measure_power", HREF_ENERGY, _read_power_watts),
         Spec("meter_power", HREF_ENERGY, _read_meter_kwh),
         Spec("localthings_air_purify", HREF_AIRPURIFY, _read_airpurify, _write_airpurify),

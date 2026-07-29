@@ -147,12 +147,15 @@ def test_unbound_hrefs_are_reported(resources):
     looks complete while missing controls."""
     reg = registry.resolve(resources)
     gaps = registry.unbound_hrefs(resources, reg)
-    # Sound settings and AI sleep are real features still unmapped; they must keep
-    # showing up rather than being quietly dropped once coverage grows.
-    assert "/settings/sound/volume/vs/0" in gaps
+    # AI sleep is a real feature still unmapped; it must keep showing up rather than
+    # being quietly dropped once coverage grows elsewhere. The sound resources used
+    # to be listed here too and are now bound, which is what this assertion is for —
+    # it failed when they were, rather than letting the gap list drift.
     assert "/aisleep/vs/0" in gaps
     assert "/power/vs/0" not in gaps
     assert "/uvled/vs/0" not in gaps
+    assert "/settings/sound/volume/vs/0" not in gaps
+    assert "/settings/sound/mode/vs/0" not in gaps
 
 
 def _desired(spec, rep, value):
