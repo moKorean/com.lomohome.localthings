@@ -23,6 +23,7 @@ from homey import device  # noqa: E402
 from lib import compat, registry  # noqa: E402
 from lib.const import (  # noqa: E402
     OBSERVE_GRACE_S,
+    PUSH_HEALTH_WINDOW_S,
     OBSERVE_REFRESH_S,
     OBSERVE_RETRY_S,
     OBSERVE_SUCCESS_FRACTION,
@@ -51,8 +52,12 @@ class Device(device.Device):
         # initial notifications have actually arrived.
         self._observing = False
         self._notified: set = set()
+        self._observe_hrefs: set = set()
         self._observe_attempted_at = 0.0
         self._subscribed_at = 0.0
+        self._observe_pending = False
+        self._observe_failed = 0
+        self._last_notify_at = 0.0
         # href -> monotonic deadline. A just-written resource ignores incoming
         # notifications briefly, so a slow-settling device can't revert the value
         # that was just set.
@@ -109,12 +114,18 @@ class Device(device.Device):
         })
 
     async def _try_observe(self) -> None:
-        """Subscribe, then judge from the initial notifications whether push works.
+        """Subscribe, then let a later poll judge whether push actually works.
 
-        Re-attempted on the retry interval while polling, and refreshed on the
-        refresh interval while observing, because observations expire device-side.
+        The judgment is deliberately not made here. Subscribing 22 resources takes
+        over four seconds on its own — the library paces CON sends at 5/s — and the
+        initial notifications keep arriving after that, so deciding from inside a
+        fixed sleep both blocks the poll loop and reaches its verdict before the
+        evidence is in. That is what made a device with 21 of 22 resources notifying
+        get recorded as push-unavailable.
         """
         now = time.monotonic()
+        if self._observe_pending:
+            return
         if self._observing:
             if now - self._subscribed_at < OBSERVE_REFRESH_S:
                 return
@@ -127,6 +138,7 @@ class Device(device.Device):
 
         self._observe_attempted_at = now
         self._notified.clear()
+        self._observe_hrefs = set(hrefs)
         failed = 0
         for href in hrefs:
             try:
@@ -135,11 +147,22 @@ class Device(device.Device):
                 failed += 1
                 self.log(f"subscribe {href} failed: {exc}")
         self._subscribed_at = time.monotonic()
+        self._observe_pending = True
+        self._observe_failed = failed
+        self.log(f"subscribed to {len(hrefs) - failed}/{len(hrefs)} resources")
 
-        await asyncio.sleep(OBSERVE_GRACE_S)
+    def _evaluate_observe(self) -> None:
+        """Decide push vs poll once the grace period has actually elapsed."""
+        if not self._observe_pending:
+            return
+        if time.monotonic() - self._subscribed_at < OBSERVE_GRACE_S:
+            return
 
-        got = len(self._notified & set(hrefs))
+        hrefs = self._observe_hrefs
+        got = len(self._notified & hrefs)
         needed = max(1, int(len(hrefs) * OBSERVE_SUCCESS_FRACTION))
+        self._observe_pending = False
+
         if got >= needed:
             if not self._observing:
                 self._observing = True
@@ -153,13 +176,24 @@ class Device(device.Device):
             else:
                 self.log(
                     f"push unavailable ({got}/{len(hrefs)} notified, "
-                    f"{failed} subscribe errors); polling"
+                    f"{self._observe_failed} subscribe errors); polling"
                 )
             self._observing = False
+
+    def _push_is_healthy(self) -> bool:
+        """Whether anything has been pushed recently enough to trust the channel.
+
+        A resource that simply never changes sends nothing, so silence across the
+        whole device — not per resource — is the signal worth acting on.
+        """
+        if not self._last_notify_at:
+            return False
+        return time.monotonic() - self._last_notify_at < PUSH_HEALTH_WINDOW_S
 
     def _on_notification(self, href: str, rep: dict) -> None:
         """A pushed resource update. Called on the event loop by Session."""
         self._notified.add(href)
+        self._last_notify_at = time.monotonic()
         deadline = self._settling.get(href)
         if deadline and time.monotonic() < deadline:
             # Mid-settle after a write: the device may still be reporting the old
@@ -217,6 +251,7 @@ class Device(device.Device):
             )
         await self._apply(self._resources)
         await self.set_available()
+        self._evaluate_observe()
         await self._try_observe()
 
     async def _apply(self, resources: dict, only_href: str = None) -> None:

@@ -237,11 +237,19 @@
       + (text || '').replace(/</g, '&lt;');
   }
 
+  // Devices added in this window, keyed by serial. The driver also filters by
+  // serial, but a device created a moment ago may not be back from get_devices()
+  // yet — this side knows for certain what it just created.
+  var addedSerials = {};
+
   function addDiscovered(entry, button) {
     button.disabled = true;
     searchMessage('ok', t('creating'), true);
     H.createDevice(entry.device)
-      .then(function () { return H.done(); })
+      .then(function () {
+        if (entry.serial) addedSerials[entry.serial] = true;
+        return H.done();
+      })
       .catch(function (err) {
         button.disabled = false;
         searchMessage('err', String((err && err.message) || err));
@@ -251,7 +259,9 @@
   function renderResults(appliances) {
     var box = document.getElementById('results');
     box.innerHTML = '';
-    appliances.forEach(function (entry) {
+    appliances.filter(function (entry) {
+      return !(entry.serial && addedSerials[entry.serial]);
+    }).forEach(function (entry) {
       var row = document.createElement('div');
       row.className = 'result' + (entry.recognised ? '' : ' unknown');
 

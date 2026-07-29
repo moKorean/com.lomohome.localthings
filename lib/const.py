@@ -60,7 +60,10 @@ POLL_INTERVAL_S = 30.0
 # in poll mode and earning push is deliberate — a device that accepts a
 # subscription and then never notifies would otherwise look healthy while going
 # silently stale.
-OBSERVE_GRACE_S = 15.0
+# Generous because it no longer blocks anything: the verdict is reached on a later
+# poll, so waiting longer costs nothing and a device subscribing 22 resources needs
+# well over 15s for its initial notifications to all land.
+OBSERVE_GRACE_S = 45.0
 OBSERVE_SUCCESS_FRACTION = 0.8
 OBSERVE_RETRY_S = 600.0
 # Summary sweep interval while push is healthy. Still polled, because a missed
@@ -71,6 +74,10 @@ OBSERVE_REFRESH_S = 6 * 3600.0
 # After a write, ignore notifications for that resource this long, so a device that
 # settles slowly doesn't revert the value just set.
 WRITE_SETTLE_S = 4.0
+# Any notification inside this window is proof the push channel is alive, even if
+# nothing else changed. Resources that never change never notify, so device-wide
+# silence is the signal, not per-resource silence.
+PUSH_HEALTH_WINDOW_S = 600.0
 
 SAMSUNG_CLOUD_HOST = "connect-v2.samsungiotcloud.com"
 SAMSUNG_CLOUD_PORT = 443

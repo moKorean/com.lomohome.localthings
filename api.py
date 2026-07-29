@@ -154,4 +154,40 @@ async def diagnostics(homey, **kwargs):
     cert_pem, key_pem = await _stored(homey)
     report["credentials"] = {"cert_bytes": len(cert_pem), "key_bytes": len(key_pem)}
     report["pair_env"] = await compat.setting_get(homey, SETTING_PAIR_ENV) or "(not reported yet)"
+    report["devices"] = _device_report(homey)
+    return report
+
+
+def _device_report(homey) -> list:
+    """Per-device push/poll state.
+
+    The mode decision is only logged otherwise, and reading app logs means running
+    a dev session — which replaces the installed app and removes it when it ends.
+    """
+    try:
+        driver = homey.drivers.get_driver("appliance")
+        devices = driver.get_devices()
+    except Exception as exc:
+        return [f"unavailable: {type(exc).__name__}: {exc}"]
+
+    report = []
+    for device in devices:
+        entry = {}
+        for label, get in (
+            ("name", lambda d=device: d.get_name()),
+            ("available", lambda d=device: d.get_available()),
+            ("host", lambda d=device: (d.get_store() or {}).get("host")),
+            ("registry", lambda d=device: getattr(d, "_registry", None)
+             and d._registry.name),
+            ("observing", lambda d=device: getattr(d, "_observing", None)),
+            ("subscriptions", lambda d=device: getattr(
+                getattr(d, "_session", None), "subscription_count", None)),
+            ("notified_hrefs", lambda d=device: len(getattr(d, "_notified", ()) or ())),
+            ("capabilities", lambda d=device: len(d.get_capabilities() or ())),
+        ):
+            try:
+                entry[label] = get()
+            except Exception as exc:
+                entry[label] = f"raised {type(exc).__name__}"
+        report.append(entry)
     return report

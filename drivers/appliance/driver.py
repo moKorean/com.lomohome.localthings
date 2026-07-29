@@ -63,22 +63,37 @@ class Driver(driver.Driver):
             "language": language,
         }
 
-    def _paired_hosts(self) -> set:
-        """Addresses already paired, so discovery doesn't offer them again."""
-        hosts = set()
+    def _paired_identity(self) -> tuple[set, set]:
+        """(hosts, serials) already paired.
+
+        Both are needed. The host skips the sweep cheaply, but a device whose
+        address changed via DHCP would still answer on a new one, and the serial is
+        what actually identifies it — it is the device's data id, so pairing the
+        same unit twice is impossible anyway; offering it is just misleading.
+        """
+        hosts, serials = set(), set()
         try:
-            for device in self.get_devices():
-                try:
-                    host = (device.get_store() or {}).get(STORE_HOST)
-                except Exception:
-                    host = None
-                if host:
-                    hosts.add(host)
+            devices = self.get_devices()
         except Exception:
-            # Not worth failing discovery over; worst case is offering something
-            # that is already added.
-            pass
-        return hosts
+            return hosts, serials
+        for device in devices:
+            try:
+                store = device.get_store() or {}
+            except Exception:
+                store = {}
+            host = store.get(STORE_HOST)
+            if host:
+                hosts.add(str(host))
+            serial = store.get(STORE_SERIAL)
+            if serial:
+                serials.add(str(serial))
+            try:
+                data_id = (device.get_data() or {}).get("id")
+            except Exception:
+                data_id = None
+            if data_id:
+                serials.add(str(data_id))
+        return hosts, serials
 
     # Discovery runs as a background job polled by the view, not as one call.
     # Homey.emit has a hard 30s timeout and a full scan takes one to two minutes,
@@ -128,7 +143,7 @@ class Driver(driver.Driver):
     async def _run_discovery(self, cert_pem: str, key_pem: str, language: str) -> None:
         state = self._discovery
         try:
-            paired = self._paired_hosts()
+            paired, paired_serials = self._paired_identity()
             base, own = discovery.local_subnet()
             state["scanned"] = f"{base}.0/24"
             self.log(
@@ -150,6 +165,13 @@ class Driver(driver.Driver):
                     entry = await self._identify(host, cert_pem, key_pem, language)
                 except Exception as exc:
                     self.log(f"discovery: {host}:{port} not identified: {exc}")
+                    continue
+                # Re-checked here rather than trusting the pre-sweep host list: a
+                # device created moments ago may not be back from get_devices() yet,
+                # which is how an already-added appliance can reappear in a repeat
+                # scan. The serial settles it.
+                if entry.get("serial") and entry["serial"] in paired_serials:
+                    self.log(f"discovery: {host} already paired ({entry['serial']})")
                     continue
                 # Appended as it lands, so the view can show it immediately.
                 state["appliances"].append(entry)
@@ -175,6 +197,7 @@ class Driver(driver.Driver):
         entry = {
             "host": host,
             "port": result["port"],
+            "serial": result["serial"],
             "model": identity["model"].split("|")[0] or identity["description"],
             "recognised": reg is not None,
             "resource_count": len(resources),

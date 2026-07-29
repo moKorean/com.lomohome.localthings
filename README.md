@@ -4,7 +4,7 @@
 
 Home Assistant 통합 [mbillow/localthings](https://github.com/mbillow/localthings)를 Homey로 포팅하는 프로젝트입니다. 가전과 DTLS-over-CoAP 세션을 직접 맺어 상태를 읽고 명령을 보내므로, 클라우드 왕복이 없습니다.
 
-> **상태: 개발 중 (v0.1.0).** 에어컨이 검색·페어링·폴링·제어까지 실기기에서 동작합니다. 상태 갱신은 폴링(기본 30초)이며 OBSERVE(푸시)는 미구현, 나머지 가전 종류는 미이식입니다. 설계와 실측 자료는 [`docs/PORTING.md`](docs/PORTING.md)를 참고하세요.
+> **상태: 개발 중 (v0.1.0).** 에어컨 4대와 인덕션 1대가 검색·페어링·제어까지 실기기에서 동작하고, 상태는 CoAP OBSERVE로 푸시받습니다(폴링은 5분 주기 안전 스윕). 나머지 가전 종류는 미이식입니다. 설계와 실측 자료는 [`docs/PORTING.md`](docs/PORTING.md)를 참고하세요.
 
 ## 동작 방식
 
@@ -146,8 +146,18 @@ cd ../homey-pythonscript-reference && git pull
 ```sh
 homey app build                    # pythonPackages를 아키텍처별 venv로 해석 (Docker 필요)
 homey app validate --level publish
-homey app run
+homey app install                  # 영구 설치
 ```
+
+> `homey app run`(dev 모드)은 영구 설치본을 대체하고 **실행이 끝나면 앱을 제거**합니다. 개발 후에는 `homey app install`을 다시 하세요.
+
+설치된 앱 상태는 dev 모드 없이 확인할 수 있습니다:
+
+```sh
+homey api raw --path /api/app/com.lomohome.localthings/diagnostics
+```
+
+해석된 언어, 로케일, 자격증명 크기, 기기별 푸시 상태(구독 수·알림 수·observing)를 반환합니다.
 
 `homey app build`는 공식 빌더 이미지(`ghcr.io/athombv/python-homey-app-builder-{arm64,amd64}`)를 받아 `python_packages/{amd64,arm64}/.venv/`를 만듭니다. 이 venv들은 `app.json`에서 재생성 가능하므로 커밋하지 않습니다(약 36 MB의 바이너리). 클론 직후에는 `homey app build`를 한 번 돌리면 됩니다.
 
