@@ -1,1 +1,11 @@
-{ "type": "boolean", "title": { "en": "Child lock", "ko": "차일드락" }, "getable": true, "setable": true, "uiComponent": "toggle", "icon": "/assets/capabilities/lock.svg" }
+{
+  "type": "boolean",
+  "title": {
+    "en": "Child lock",
+    "ko": "차일드락"
+  },
+  "getable": true,
+  "setable": true,
+  "uiComponent": "toggle",
+  "icon": "/assets/capabilities/mdi-lock.svg"
+}

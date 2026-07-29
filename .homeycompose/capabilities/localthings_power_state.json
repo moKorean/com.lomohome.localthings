@@ -1,1 +1,11 @@
-{ "type": "boolean", "title": { "en": "Power", "ko": "전원" }, "getable": true, "setable": false, "uiComponent": "sensor", "icon": "/assets/capabilities/stove.svg" }
+{
+  "type": "boolean",
+  "title": {
+    "en": "Power",
+    "ko": "전원"
+  },
+  "getable": true,
+  "setable": false,
+  "uiComponent": "sensor",
+  "icon": "/assets/capabilities/mdi-stove.svg"
+}

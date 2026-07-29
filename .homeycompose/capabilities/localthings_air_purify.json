@@ -1,8 +1,11 @@
 {
   "type": "boolean",
-  "title": { "en": "Air purify", "ko": "공기청정" },
+  "title": {
+    "en": "Air purify",
+    "ko": "공기청정"
+  },
   "getable": true,
   "setable": true,
   "uiComponent": "toggle",
-  "icon": "/assets/capabilities/air-purify.svg"
+  "icon": "/assets/capabilities/mdi-air-purifier.svg"
 }

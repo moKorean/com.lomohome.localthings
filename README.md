@@ -163,3 +163,9 @@ python3 -m venv .venv
 ## 라이선스
 
 GPL-3.0-or-later. 프로토콜 분석과 기기 레지스트리 설계는 [mbillow/localthings](https://github.com/mbillow/localthings)와 [QuiteYellow/SmartThings-Local](https://github.com/QuiteYellow/SmartThings-Local)의 작업에 기반합니다.
+
+`assets/capabilities/mdi-*.svg`는 [Material Design Icons](https://pictogrammers.com/library/mdi/)에서 수정 없이 가져왔습니다 (Pictogrammers Free License / Apache-2.0). 새 capability 아이콘도 이 아이콘셋에서 가져옵니다:
+
+```sh
+curl -O https://raw.githubusercontent.com/Templarian/MaterialDesign/master/svg/<name>.svg
+```

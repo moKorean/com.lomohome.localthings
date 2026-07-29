@@ -1,8 +1,11 @@
 {
   "type": "boolean",
-  "title": { "en": "Filter needs attention", "ko": "필터 점검 필요" },
+  "title": {
+    "en": "Filter needs attention",
+    "ko": "필터 점검 필요"
+  },
   "getable": true,
   "setable": false,
   "uiComponent": "sensor",
-  "icon": "/assets/capabilities/filter.svg"
+  "icon": "/assets/capabilities/mdi-air-filter.svg"
 }

@@ -1,17 +1,62 @@
 {
   "type": "enum",
-  "title": { "en": "Mode", "ko": "운전 모드" },
+  "title": {
+    "en": "Mode",
+    "ko": "운전 모드"
+  },
   "getable": true,
   "setable": true,
   "uiComponent": "picker",
-  "icon": "/assets/capabilities/mode.svg",
+  "icon": "/assets/capabilities/mdi-air-conditioner.svg",
   "values": [
-    { "id": "AIComfort", "title": { "en": "AI Comfort", "ko": "AI 쾌적" } },
-    { "id": "Auto", "title": { "en": "Auto", "ko": "자동" } },
-    { "id": "Cool", "title": { "en": "Cool", "ko": "냉방" } },
-    { "id": "Dry", "title": { "en": "Dry", "ko": "제습" } },
-    { "id": "Fan", "title": { "en": "Fan", "ko": "송풍" } },
-    { "id": "Heat", "title": { "en": "Heat", "ko": "난방" } },
-    { "id": "Wind", "title": { "en": "Wind-free", "ko": "무풍" } }
+    {
+      "id": "AIComfort",
+      "title": {
+        "en": "AI Comfort",
+        "ko": "AI 쾌적"
+      }
+    },
+    {
+      "id": "Auto",
+      "title": {
+        "en": "Auto",
+        "ko": "자동"
+      }
+    },
+    {
+      "id": "Cool",
+      "title": {
+        "en": "Cool",
+        "ko": "냉방"
+      }
+    },
+    {
+      "id": "Dry",
+      "title": {
+        "en": "Dry",
+        "ko": "제습"
+      }
+    },
+    {
+      "id": "Fan",
+      "title": {
+        "en": "Fan",
+        "ko": "송풍"
+      }
+    },
+    {
+      "id": "Heat",
+      "title": {
+        "en": "Heat",
+        "ko": "난방"
+      }
+    },
+    {
+      "id": "Wind",
+      "title": {
+        "en": "Wind-free",
+        "ko": "무풍"
+      }
+    }
   ]
 }

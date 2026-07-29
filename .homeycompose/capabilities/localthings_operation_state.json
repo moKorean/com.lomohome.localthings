@@ -1,1 +1,11 @@
-{ "type": "string", "title": { "en": "Status", "ko": "동작 상태" }, "getable": true, "setable": false, "uiComponent": "sensor", "icon": "/assets/capabilities/stove.svg" }
+{
+  "type": "string",
+  "title": {
+    "en": "Status",
+    "ko": "동작 상태"
+  },
+  "getable": true,
+  "setable": false,
+  "uiComponent": "sensor",
+  "icon": "/assets/capabilities/mdi-pot-steam.svg"
+}

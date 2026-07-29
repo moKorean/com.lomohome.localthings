@@ -185,7 +185,7 @@
       "getable": true,
       "setable": true,
       "uiComponent": "picker",
-      "icon": "/assets/capabilities/mode.svg",
+      "icon": "/assets/capabilities/mdi-air-conditioner.svg",
       "values": [
         {
           "id": "AIComfort",
@@ -247,7 +247,7 @@
       "getable": true,
       "setable": true,
       "uiComponent": "toggle",
-      "icon": "/assets/capabilities/air-purify.svg"
+      "icon": "/assets/capabilities/mdi-air-purifier.svg"
     },
     "localthings_alarm_filter": {
       "type": "boolean",
@@ -258,7 +258,7 @@
       "getable": true,
       "setable": false,
       "uiComponent": "sensor",
-      "icon": "/assets/capabilities/filter.svg"
+      "icon": "/assets/capabilities/mdi-air-filter.svg"
     },
     "localthings_alarm_hot_surface": {
       "type": "boolean",
@@ -269,7 +269,7 @@
       "getable": true,
       "setable": false,
       "uiComponent": "sensor",
-      "icon": "/assets/capabilities/stove.svg"
+      "icon": "/assets/capabilities/mdi-heat-wave.svg"
     },
     "localthings_burner_level": {
       "type": "string",
@@ -280,7 +280,7 @@
       "getable": true,
       "setable": false,
       "uiComponent": "sensor",
-      "icon": "/assets/capabilities/stove.svg"
+      "icon": "/assets/capabilities/mdi-knob.svg"
     },
     "localthings_burner_state": {
       "type": "string",
@@ -291,7 +291,7 @@
       "getable": true,
       "setable": false,
       "uiComponent": "sensor",
-      "icon": "/assets/capabilities/stove.svg"
+      "icon": "/assets/capabilities/mdi-stove.svg"
     },
     "localthings_child_lock": {
       "type": "boolean",
@@ -302,7 +302,7 @@
       "getable": true,
       "setable": true,
       "uiComponent": "toggle",
-      "icon": "/assets/capabilities/lock.svg"
+      "icon": "/assets/capabilities/mdi-lock.svg"
     },
     "localthings_fan_mode": {
       "type": "enum",
@@ -313,7 +313,7 @@
       "getable": true,
       "setable": true,
       "uiComponent": "picker",
-      "icon": "/assets/capabilities/fan.svg",
+      "icon": "/assets/capabilities/mdi-fan.svg",
       "values": [
         {
           "id": "auto",
@@ -360,7 +360,7 @@
       "max": 100,
       "decimals": 1,
       "uiComponent": "sensor",
-      "icon": "/assets/capabilities/filter.svg"
+      "icon": "/assets/capabilities/mdi-air-filter.svg"
     },
     "localthings_operation_state": {
       "type": "string",
@@ -371,7 +371,7 @@
       "getable": true,
       "setable": false,
       "uiComponent": "sensor",
-      "icon": "/assets/capabilities/stove.svg"
+      "icon": "/assets/capabilities/mdi-pot-steam.svg"
     },
     "localthings_power_state": {
       "type": "boolean",
@@ -382,7 +382,7 @@
       "getable": true,
       "setable": false,
       "uiComponent": "sensor",
-      "icon": "/assets/capabilities/stove.svg"
+      "icon": "/assets/capabilities/mdi-stove.svg"
     },
     "localthings_probe_connected": {
       "type": "boolean",
@@ -393,7 +393,7 @@
       "getable": true,
       "setable": false,
       "uiComponent": "sensor",
-      "icon": "/assets/capabilities/shield.svg"
+      "icon": "/assets/capabilities/mdi-thermometer-probe.svg"
     },
     "localthings_safety_shutoff": {
       "type": "boolean",
@@ -404,7 +404,7 @@
       "getable": true,
       "setable": false,
       "uiComponent": "sensor",
-      "icon": "/assets/capabilities/shield.svg"
+      "icon": "/assets/capabilities/mdi-shield-check.svg"
     },
     "localthings_smart_control": {
       "type": "boolean",
@@ -415,7 +415,7 @@
       "getable": true,
       "setable": false,
       "uiComponent": "sensor",
-      "icon": "/assets/capabilities/lock.svg"
+      "icon": "/assets/capabilities/mdi-wifi-check.svg"
     }
   }
 }
