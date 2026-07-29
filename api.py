@@ -57,6 +57,9 @@ async def get_status(homey, **kwargs):
     purpose.
     """
     cert_pem, key_pem = _stored(homey)
+    # Logged so the settings page reaching the backend can be told apart from it
+    # failing before the request — the two look identical in the UI.
+    _log(homey, f"settings GET /status (configured={bool(cert_pem and key_pem)})")
     if not cert_pem or not key_pem:
         return {"configured": False}
 
