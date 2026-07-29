@@ -29,6 +29,27 @@ class Driver(driver.Driver):
 
     async def on_init(self) -> None:
         self.log("LocalThings appliance driver init")
+        self._log_sdk_surface()
+
+    def _log_sdk_surface(self) -> None:
+        """One-time dump of what this SDK build actually exposes.
+
+        The Python SDK's surface is only partly documented and the i18n accessor
+        guessed at in lib/compat.py resolves to nothing on this firmware, so log
+        the real attribute names instead of guessing again.
+        """
+        try:
+            names = sorted(a for a in dir(self.homey) if not a.startswith("_"))
+            self.log(f"sdk homey: {names}")
+            for attr in ("i18n", "settings", "app"):
+                target = getattr(self.homey, attr, None)
+                if target is None:
+                    self.log(f"sdk homey.{attr}: absent")
+                    continue
+                members = sorted(a for a in dir(target) if not a.startswith("_"))
+                self.log(f"sdk homey.{attr}: {members}")
+        except Exception as exc:
+            self.log(f"sdk surface dump failed: {exc}")
 
     # --- pairing ----------------------------------------------------------
 
@@ -59,9 +80,16 @@ class Driver(driver.Driver):
         }
 
     async def _on_probe(self, data=None, **_) -> dict:
-        host = (data or {}).get("host", "").strip()
+        data = data or {}
+        host = (data.get("host") or "").strip()
         if not host:
             raise ValueError("An IP address is required")
+
+        # The view resolves the language from its own Homey object, which works;
+        # the Python i18n accessors do not on this firmware (see
+        # _log_sdk_surface). Prefer what the view reports and keep the Python
+        # lookup as the fallback.
+        language = (data.get("language") or "").strip() or await compat.language(self.homey)
 
         cert_pem, key_pem = await self._credentials()
         if not cert_pem or not key_pem:
@@ -102,7 +130,7 @@ class Driver(driver.Driver):
             "registry": reg.name,
             "capability_count": len(capabilities),
             "device": {
-                "name": f"Samsung {reg.name.replace('_', ' ').title()} ({host})",
+                "name": f"{reg.title(language)} ({host})",
                 "data": {"id": result["serial"]},
                 "store": {
                     STORE_HOST: host,

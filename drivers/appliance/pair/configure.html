@@ -184,7 +184,7 @@
     button.disabled = true;
     message('', t('probing'), true);
 
-    H.emit('probe', { host: host })
+    H.emit('probe', { host: host, language: LANG })
       .then(function (result) {
         button.disabled = false;
         if (!result.recognised) {

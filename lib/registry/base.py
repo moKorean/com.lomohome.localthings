@@ -39,6 +39,15 @@ class Registry:
     name: str
     device_class: str  # Homey device class, e.g. 'thermostat'
     specs: tuple[Spec, ...]
+    # Display names per language, used for the device's initial name. A Homey
+    # device name is a plain user-editable string rather than an i18n object, so
+    # the language has to be chosen when the device is created; the user can
+    # rename it afterwards either way.
+    titles: dict = None
+
+    def title(self, language: str = "en") -> str:
+        titles = self.titles or {}
+        return titles.get((language or "en")[:2].lower()) or titles.get("en") or self.name
 
     def capabilities(self, resources: dict) -> list[str]:
         """Capability ids this device actually supports.

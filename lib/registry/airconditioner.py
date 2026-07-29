@@ -176,6 +176,7 @@ def _read_filter_alarm(rep, _resources):
 REGISTRY = Registry(
     name="airconditioner",
     device_class="thermostat",
+    titles={"en": "Samsung Air Conditioner", "ko": "삼성 에어컨"},
     specs=(
         Spec("onoff", HREF_POWER, _read_power, _write_power),
         Spec("target_temperature", HREF_TEMPS, _read_target_temp, _write_target_temp),
