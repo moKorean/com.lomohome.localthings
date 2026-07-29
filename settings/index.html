@@ -404,15 +404,23 @@
       });
 
       document.getElementById('btn-check').addEventListener('click', function () {
-        message('', t('checking2'));
+        var button = this;
+        button.disabled = true;
+        // Rendered under this button, not in the credentials card three cards down the
+        // page: feedback that appears somewhere else reads as nothing happening.
+        checkMessage('', t('checking2'), true);
         api('GET', '/check-uuid')
           .then(function (r) {
+            button.disabled = false;
             r = r || {};
-            if (r.error) return message('err', r.error);
-            message(r.ok ? 'ok' : 'err',
+            if (r.error) return checkMessage('err', r.error);
+            checkMessage(r.ok ? 'ok' : 'err',
               r.ok ? t('uuidOk') : t('uuidBad', r.stored, r.live));
           })
-          .catch(function (err) { message('err', String((err && err.message) || err)); });
+          .catch(function (err) {
+            button.disabled = false;
+            checkMessage('err', String((err && err.message) || err));
+          });
       });
     }
 

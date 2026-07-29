@@ -17,6 +17,11 @@ from pathlib import Path
 
 import pytest
 
+VIEWS = (
+    "settings/index.html",
+    "drivers/appliance/pair/configure.html",
+    "drivers/appliance/repair/reconnect.html",
+)
 MODULES = (
     "drivers/appliance/driver.py",
     "drivers/appliance/device.py",
@@ -121,3 +126,39 @@ def test_no_module_imports_something_it_does_not_use(filename):
     }
     unused = {name for name in imported if name not in used and name != "annotations"}
     assert not unused, f"{filename}: unused imports {sorted(unused)}"
+
+
+# --- webview scripts -------------------------------------------------------
+#
+# The same failure mode reaches the views, and did: a helper for rendering a result
+# next to its button was added while the call site kept writing to a message area
+# three cards further down the page. Nothing was broken enough to notice — the button
+# worked, its result just appeared somewhere the user was not looking.
+
+
+def _view_script(filename: str) -> str:
+    import re
+
+    source = (APP_ROOT / filename).read_text()
+    blocks = re.findall(r"<script type=\"text/javascript\">(.*?)</script>", source, re.DOTALL)
+    assert blocks, f"{filename}: no script block found"
+    return "\n".join(blocks)
+
+
+@pytest.mark.parametrize("filename", VIEWS)
+def test_every_view_function_is_called(filename):
+    """A declared-but-uncalled function means an edit landed half-applied."""
+    import re
+
+    script = _view_script(filename)
+    declared = re.findall(r"^\s*function\s+(\w+)\s*\(", script, re.MULTILINE)
+    assert declared, f"{filename}: no functions found; the extraction looks broken"
+
+    # Called by Homey rather than by this file.
+    external = {"onHomeyReady"}
+    for name in declared:
+        if name in external:
+            continue
+        # A call is any occurrence that is not the declaration itself.
+        uses = len(re.findall(rf"\b{re.escape(name)}\b", script))
+        assert uses > 1, f"{filename}: function {name}() is declared but never used"
