@@ -3,9 +3,10 @@
 레퍼런스:
 
 - `../localthings-reference/` — [mbillow/localthings](https://github.com/mbillow/localthings), `main` @ `119a4f4` (v0.16.0). 포팅 원본
+- `../smartthings-local-reference/` — [QuiteYellow/SmartThings-Local](https://github.com/QuiteYellow/SmartThings-Local), `main` @ `8c2108a`. 전송 계층 소스 + `setup_cert.py`
 - `../homey-pythonscript-reference/` — [jaccoh/homey-pythonscript](https://github.com/jaccoh/homey-pythonscript), `main` @ `55f491f` (v0.4.0). Homey 파이썬 런타임 실증 사례
 
-이 문서는 두 레퍼런스를 실제로 읽고 정리한 설계 메모입니다. 구현이 진행되면 함께 갱신합니다.
+이 문서는 세 레퍼런스를 실제로 읽고 실기기로 검증하며 정리한 설계 메모입니다. 구현이 진행되면 함께 갱신합니다.
 
 ---
 
@@ -155,10 +156,52 @@ outbound-address: 192.168.1.133
 - **`socket` + `threading` 제약이 없습니다.** `DtlsCoapSession`이 쓰는 소스 포트 49700을 백그라운드 스레드에서 바인딩했습니다
 - **앱이 LAN에 직접 붙습니다.** outbound 주소가 `192.168.1.133`(Homey 자신의 LAN IP)입니다. 도커 브리지 주소(`172.17.x.x`)가 아니므로 LAN 가전에 UDP가 도달합니다. HA 레퍼런스가 `network_mode: host`를 요구하는 이유가 여기서 자동으로 해결됩니다
 
+### 검증 완료: 실기기 프로토콜 접근 성공
+
+대상 기기: **삼성 천장형/상업용 에어컨**, `192.168.1.90`. CA 자격증명 준비는 [`CA-SETUP.md`](CA-SETUP.md) 참고.
+
+| 단계 | 결과 |
+|---|---|
+| UDP 스윕 `49152-49160` | `49154` 응답(살아있는 리스너), `49153` 무응답(후보). 나머지 ICMP 거부 |
+| 리프 인증서 발급 | UUID `ab0b0ac4-…`로 `AC14K_M` SHA-1 서명 |
+| DTLS 핸드셰이크 | **2.91초에 성공** |
+| `GET /oic/sec/acl` | **`2.05` — 기기 ACL이 인증서 수락** |
+| `GET /device/0` | **`2.05`, 11,315 바이트, 51개 리소스 파싱** |
+
+라이브 상태값 26개가 정상적으로 읽혔습니다: 현재온도 29.0°C, 습도 49%, 소비전력 99W, 누적 146.5kWh, 필터 사용 56/100시간(`FilterAlarm`), 모드 `AIComfort` 등.
+
+### 이 기기는 레퍼런스 라우팅 표에 없습니다 (한 토큰 추가로 해결)
+
+`modelNum`이 `TP1X_DA-AC-CAC-01001_0000|…`이라 `_board_tokens()`가 `[TP1X, DA, AC, CAC, 01001, 0000]`을 뽑는데, `_BOARD_TOKEN_TO_KEY`의 에어컨 항목은 `RAC/PRAC/KRAC/WAC/FAC/CAWW/ARA`뿐이고 **`CAC`가 없습니다**. `AC`는 제습기·공기청정기를 삼켜서 의도적으로 제외된 토큰이라 폴백도 없고, `for_device_by_resources()`의 시그니처(쿡탑·후드·오븐)에도 안 걸려 `resolve()`가 `None`을 반환합니다.
+
+`_BOARD_TOKEN_TO_KEY`에 `'CAC': 'airconditioner'` 한 줄을 추가해 검증한 결과:
+
+```
+registry: airconditioner
+bound entities: 41
+unbound hrefs:  10 (of 51)
+state keys:     26
+```
+
+**새 레지스트리가 필요한 게 아니라 라우팅 토큰만 없던 것**이 확인됐습니다. 기존 에어컨 레지스트리가 이 기기의 리소스 표면을 그대로 다룹니다. 업스트림([mbillow/localthings](https://github.com/mbillow/localthings))에도 기여할 가치가 있는 한 줄입니다.
+
+미바인딩 10개는 이 모델 고유 기능들로, 커버리지 확장 대상입니다:
+
+```
+/edgelighting/vs/0                 엣지 라이팅 (status, colorOption, modeSupportedList…)
+/light/stateful/vs/0               조명 on/off + 모드
+/uvled/vs/0                        UV LED 살균
+/filter/airdustPM1filter/vs/0      PM1 필터 (별도 필터, airdustfilter는 바인딩됨)
+/smartsensingcooling/vs/0          스마트 센싱 냉방
+/mds/absenceclean/vs/0             부재 중 청정
+/settings/sound/{mode,optimization,output,volume}/vs/0   사운드 설정 4종
+```
+
+테스트 픽스처: `tests/fixtures/airconditioner_TP1X_DA-AC-CAC-01001.json` (시리얼·MAC·SSID·otnDUID 리댁션 완료).
+
 ### 남은 검증 항목
 
-1. **실기기 핸드셰이크.** `AC14K_M` CA 자격증명이 있어야 진행 가능. 이것만 남았습니다
-2. **메모리.** 기기당 DTLS 세션 1개 + 상태 캐시. 파이썬 런타임 오버헤드 포함해 실측
+**메모리만 남았습니다.** 기기당 DTLS 세션 1개 + 상태 캐시. 파이썬 런타임 오버헤드 포함해 실측 필요.
 
 ---
 
@@ -190,7 +233,7 @@ outbound-address: 192.168.1.133
 ## 5. 제안 마일스톤 (파이썬 경로)
 
 1. ~~**스파이크 — `pythonPackages`로 의존성 체인 확인.**~~ **완료** (2절 참고). aarch64 네이티브 확장까지 정상 반입
-2. **스파이크 — 실기기 핸드셰이크.** 런타임 자체 점검(소켓·스레드·DTLS API·LAN 접근)은 완료, `AC14K_M` CA 자격증명 대기 중. 앱에서 `DtlsCoapSession`으로 `/device/0` 덤프까지 성공하면 최대 난관 통과
+2. ~~**스파이크 — 실기기 핸드셰이크.**~~ **완료** (2절 참고). `/device/0` 덤프까지 성공
 3. `app.py` + 제네릭 드라이버 + 페어링 뷰 — UUID 조회, 리프 인증서 발급, 포트 스윕
 4. 레지스트리 이식 — 배치 파싱 + 종류 판정. 레퍼런스의 골든 파일 덤프를 테스트 픽스처로 재사용
 5. 가전 1종(예: 세탁기) 엔드투엔드 완성

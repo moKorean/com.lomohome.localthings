@@ -69,7 +69,16 @@ python_packages/         Homey CLI가 생성하는 아키텍처별 venv (커밋�
 cd ../localthings-reference && git pull   # 레퍼런스 최신화
 ```
 
-### 2. `../homey-pythonscript-reference/` — [jaccoh/homey-pythonscript](https://github.com/jaccoh/homey-pythonscript)
+### 2. `../smartthings-local-reference/` — [QuiteYellow/SmartThings-Local](https://github.com/QuiteYellow/SmartThings-Local)
+
+**전송 계층의 소스.** `app.json`의 `pythonPackages`로 설치하는 [`smartthings-local`](https://pypi.org/project/smartthings-local/) 패키지의 원본 저장소입니다. 패키지만 써도 동작하지만, 프로토콜 디버깅 때 소스를 보려면 필요합니다.
+
+- `smartthings_local/protocol/dtls_session.py` — DTLS 핸드셰이크 + CoAP 세션. 협상 불가능한 wire 상수들의 근거 주석이 여기 있습니다
+- `smartthings_local/protocol/coap.py` — CoAP 인코딩/디코딩, Block2, OBSERVE
+- **`setup_cert.py`** — CA 자격증명 준비와 리프 인증서 발급 스크립트. 절차는 [`docs/CA-SETUP.md`](docs/CA-SETUP.md) 참고
+- `mqtt_demo/` — 라이브러리 사용 예시(브리지 구현). 세션 수명주기 참고용
+
+### 3. `../homey-pythonscript-reference/` — [jaccoh/homey-pythonscript](https://github.com/jaccoh/homey-pythonscript)
 
 **Homey에서 파이썬을 쓰는 방법의 실증 사례.** Advanced Flow에서 파이썬 코드를 실행하게 해주는 Homey 앱입니다. 이 프로젝트가 알려주는 핵심 사실:
 
