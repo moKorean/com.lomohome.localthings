@@ -93,6 +93,157 @@ DISHWASHER = Registry(
 # dump to get the href pattern right, and guessing would put wrong temperatures on a
 # tile rather than leave a gap.
 
+def _fridge_item(rep, compartment: str) -> dict:
+    """The vendor items[] entry for a named compartment, or {}."""
+    for item in rep.get("x.com.samsung.da.items") or ():
+        if not isinstance(item, dict):
+            continue
+        description = str(item.get("x.com.samsung.da.description") or "")
+        if compartment.lower() in description.lower():
+            return item
+    return {}
+
+
+def _fridge_temp(rep, compartment: str):
+    """Current temperature for a named compartment in the vendor items array.
+
+    Reported even when it falls outside the compartment's own minimum/maximum.
+    Those bounds describe the setpoints the compartment accepts, not the range its
+    sensor can read: a convertible cabinet running as kimchi storage reports 2 °C
+    against a freezer range of -23..-17, and 2 °C is genuinely its temperature.
+    """
+    return as_float(_fridge_item(rep, compartment).get("x.com.samsung.da.current"))
+
+
+def _compartment_active(compartment: str):
+    """Whether this unit is actually using the named compartment.
+
+    Two signals, both needed. The compartment has to appear in items[] at all —
+    the fridge-only variant of this model carries the Fridge entry alone, and an
+    ungated spec gave it a freezer thermometer that could only ever be blank.
+
+    And on a convertible cabinet it has to be the compartment in use. Such a unit
+    lists both Freezer and Fridge, reports the *same* current temperature under
+    both, and parks 253 in the `desired` of whichever one is idle. Two units of the
+    same model in opposite modes pin this down: the cooler-mode unit reads
+    Freezer(current 2, desired 253) / Fridge(current 2, desired 2), and the
+    freezer-mode unit reads Freezer(current -20, desired -20) / Fridge(current -20,
+    desired 253). So 253 marks the idle compartment — it is not an encoding of
+    -20 °C, which the freezer-mode unit reports as plain -20 — and binding both
+    would put two thermometers showing one sensor's reading on the device page.
+    """
+
+    def exists(rep, _resources):
+        item = _fridge_item(rep, compartment)
+        if not item:
+            return False
+        return _in_range(item) is not None
+
+    return exists
+
+
+def _in_range(item: dict):
+    """The item's `desired`, or None when it is outside the bounds it advertises."""
+    value = as_float(item.get("x.com.samsung.da.desired"))
+    low = as_float(item.get("x.com.samsung.da.minimum"))
+    high = as_float(item.get("x.com.samsung.da.maximum"))
+    if value is None:
+        return None
+    if low is not None and high is not None and not low <= value <= high:
+        return None
+    return value
+
+
+def _fridge_setpoint(compartment: str):
+    """Read a compartment's target temperature, but only if it is believable.
+
+    A convertible cabinet leaves a raw value in the inactive compartment's
+    `desired` field: the verified TP2X_REF_21K reports 253 for its freezer while
+    advertising -23..-17, which is the internal representation showing through
+    (253 K is -20 °C) rather than a temperature anyone set. Publishing it would put
+    253 °C on a tile and hand Homey a slider value outside its own bounds.
+
+    Rather than decode an encoding that has only been seen once, anything outside
+    the compartment's advertised bounds is treated as no reading. `_setpoint_exists`
+    pairs with this so the capability is not offered at all in that state.
+    """
+
+    def read(rep, _resources):
+        return _in_range(_fridge_item(rep, compartment))
+
+    return read
+
+
+def _fridge_setpoint_options(compartment: str):
+    def options(rep, _resources) -> dict:
+        item = _fridge_item(rep, compartment)
+        low = as_float(item.get("x.com.samsung.da.minimum"))
+        high = as_float(item.get("x.com.samsung.da.maximum"))
+        if low is None or high is None:
+            return {}
+        return {"min": low, "max": high, "step": 1, "decimals": 0}
+
+    return options
+
+
+# Item ids follow Samsung's convention, which the reference states and the verified
+# unit confirms: "0" is the freezer, "1" the fridge/cooler. The write goes to the
+# vendor resource rather than the OCF /temperature/desired/<compartment>/0 it is
+# also exposed on — the reference found that only the vendor path commits the change
+# on some models, and it works on all of them.
+_FRIDGE_ITEM_IDS = {"Freezer": "0", "Fridge": "1"}
+
+
+def _write_fridge_setpoint(compartment: str):
+    def write(value, rep):
+        item = _fridge_item(rep, compartment)
+        low = as_float(item.get("x.com.samsung.da.minimum"))
+        high = as_float(item.get("x.com.samsung.da.maximum"))
+        try:
+            target = round(float(value))
+        except (TypeError, ValueError):
+            return None
+        if low is not None and high is not None and not low <= target <= high:
+            return None
+        return (
+            ["temperatures", "vs", "0"],
+            {"x.com.samsung.da.items": [{
+                "x.com.samsung.da.id": _FRIDGE_ITEM_IDS[compartment],
+                "x.com.samsung.da.desired": str(target),
+            }]},
+        )
+
+    return write
+
+
+# The convertible ("변온") compartment's current function, from /mode/vs/0's modes
+# list. That list holds several orthogonal flags — CVN_KIMCHI_STORAGE says the
+# compartment *can* store kimchi, CV_NULL is an unused slot — and only the
+# MULTIROOM_ member tracks what the user selected. Two units of this model in
+# opposite modes established the mapping: the one set to 냉장 reports
+# MULTIROOM_COOLER, the one set to 냉동 reports MULTIROOM_FREEZER. The fridge-only
+# variant has no `modes` at all, so nothing binds there.
+#
+# Read-only, and reported as a plain string rather than an enum. Only those two
+# values have been observed; the appliance also offers a kimchi setting whose token
+# is unknown, and an enum missing it would go blank the moment someone selected it.
+# Selecting by prefix rather than position means an unseen value still reads through
+# as itself. No write: the reference has no confirmed write for this resource on
+# this family either, and switching a cabinet between fridge and freezer is not
+# something to fire blind.
+_MULTIROOM_PREFIX = "MULTIROOM_"
+_MULTIROOM_NAMES = {"COOLER": "Cooler", "FREEZER": "Freezer"}
+
+
+def _read_convertible_mode(rep, _resources):
+    for mode in rep.get("x.com.samsung.da.modes") or ():
+        token = str(mode)
+        if token.startswith(_MULTIROOM_PREFIX):
+            suffix = token[len(_MULTIROOM_PREFIX):]
+            return _MULTIROOM_NAMES.get(suffix.upper(), suffix.title())
+    return None
+
+
 REFRIGERATOR = Registry(
     name="refrigerator",
     device_class="other",
@@ -105,11 +256,16 @@ REFRIGERATOR = Registry(
         Spec("localthings_rapid_fridge", "/refrigeration/vs/0",
              shared.flag("x.com.samsung.da.rapidFridge"),
              shared.write_flag(["refrigeration", "vs", "0"],
-                               "x.com.samsung.da.rapidFridge")),
+                               "x.com.samsung.da.rapidFridge"),
+             exists=lambda rep, _r: "x.com.samsung.da.rapidFridge" in rep),
+        # Absent on the fridge-only variant, which carries /refrigeration/vs/0 for
+        # rapidFridge alone — an ungated switch there wrote a field the appliance
+        # does not have.
         Spec("localthings_rapid_freeze", "/refrigeration/vs/0",
              shared.flag("x.com.samsung.da.rapidFreezing"),
              shared.write_flag(["refrigeration", "vs", "0"],
-                               "x.com.samsung.da.rapidFreezing")),
+                               "x.com.samsung.da.rapidFreezing"),
+             exists=lambda rep, _r: "x.com.samsung.da.rapidFreezing" in rep),
         Spec("localthings_ice_maker", "/icemaker/status/vs/0",
              shared.flag("x.com.samsung.da.iceMaker"),
              shared.write_flag(["icemaker", "status", "vs", "0"],
@@ -130,25 +286,37 @@ REFRIGERATOR = Registry(
              shared.flag("status"),
              shared.write_flag(["proximity", "vs", "0"], "status")),
         # Freezer/fridge temperatures on boards that report the vendor array.
+        # Gated on the compartment actually being in that array: the same model
+        # ships as a fridge-only variant whose items[] carries the Fridge entry
+        # alone, and an ungated spec gave it a freezer thermometer that could only
+        # ever be blank.
         Spec("measure_temperature.freezer", "/temperatures/vs/0",
              lambda rep, _r: _fridge_temp(rep, "Freezer"),
+             exists=_compartment_active("Freezer"),
              titles={"en": "Freezer", "ko": "냉동실"}),
         Spec("measure_temperature.fridge", "/temperatures/vs/0",
              lambda rep, _r: _fridge_temp(rep, "Fridge"),
+             exists=_compartment_active("Fridge"),
              titles={"en": "Fridge", "ko": "냉장실"}),
+        Spec("target_temperature.freezer", "/temperatures/vs/0",
+             _fridge_setpoint("Freezer"), _write_fridge_setpoint("Freezer"),
+             exists=_compartment_active("Freezer"),
+             titles={"en": "Freezer", "ko": "냉동실"},
+             options=_fridge_setpoint_options("Freezer")),
+        Spec("target_temperature.fridge", "/temperatures/vs/0",
+             _fridge_setpoint("Fridge"), _write_fridge_setpoint("Fridge"),
+             exists=_compartment_active("Fridge"),
+             titles={"en": "Fridge", "ko": "냉장실"},
+             options=_fridge_setpoint_options("Fridge")),
+        Spec("localthings_convertible_mode", "/mode/vs/0", _read_convertible_mode,
+             exists=lambda rep, _r: _read_convertible_mode(rep, _r) is not None),
+        # This family reports a second door on its own resource, with the field
+        # vendor-prefixed where /doors/vs/0 uses the bare name.
+        Spec("alarm_contact.freezer", "/door/onedoorfreezer/vs/0",
+             lambda rep, _r: shared.read_open_state(rep),
+             titles={"en": "Freezer door", "ko": "냉동실 문"}),
     ),
 )
-
-
-def _fridge_temp(rep, compartment: str):
-    """Current temperature for a named compartment in the vendor items array."""
-    for item in rep.get("x.com.samsung.da.items") or ():
-        if not isinstance(item, dict):
-            continue
-        description = str(item.get("x.com.samsung.da.description") or "")
-        if compartment.lower() in description.lower():
-            return as_float(item.get("x.com.samsung.da.current"))
-    return None
 
 
 # --- air purifier ---------------------------------------------------------

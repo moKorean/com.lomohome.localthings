@@ -2,5 +2,9 @@
   "0.3.0": {
     "en": "First release. Controls Samsung air conditioners, induction cooktops and range hoods directly on your own network, with no SmartThings cloud involved. State arrives by push where the appliance supports it, and an appliance that changes IP address is found again by serial number without re-pairing.",
     "ko": "첫 릴리스. SmartThings 클라우드 없이 삼성 에어컨·인덕션·주방 후드를 집 안 네트워크에서 직접 제어합니다. 가전이 지원하면 상태를 푸시로 받고, IP가 바뀐 가전은 시리얼로 다시 찾아 재페어링이 필요 없습니다."
+  },
+  "0.4.0": {
+    "en": "Refrigerators are now verified against real hardware, including a convertible compartment — the app reports whether it is currently a fridge or a freezer, and sets each compartment's temperature. Range hood control is fixed: power, fan speed and the work lamp all work now. Air conditioners gained their sound settings, and their filter figure was being divided when the appliance already reports a percentage.",
+    "ko": "냉장고를 실기기로 검증했습니다. 변온실이 지금 냉장인지 냉동인지 알려 주고, 칸별 목표 온도를 설정할 수 있습니다. 주방 후드 제어를 고쳤습니다 — 전원, 풍량, 작업등이 모두 동작합니다. 에어컨에 사운드 설정이 추가되고, 필터 사용률이 잘못 계산되던 문제를 바로잡았습니다."
   }
 }

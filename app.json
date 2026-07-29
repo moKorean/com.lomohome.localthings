@@ -1,7 +1,7 @@
 {
   "_comment": "This file is generated. Please edit .homeycompose/app.json instead.",
   "id": "com.lomohome.localthings",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "compatibility": ">=13.0.0",
   "sdk": 3,
   "runtime": "python",
@@ -34,6 +34,7 @@
       "induction",
       "cooktop",
       "range hood",
+      "refrigerator",
       "CoAP",
       "DTLS"
     ],
@@ -47,6 +48,8 @@
       "쿡탑",
       "주방후드",
       "후드",
+      "냉장고",
+      "변온고",
       "비스포크"
     ]
   },
@@ -624,6 +627,21 @@
           }
         }
       ]
+    },
+    "localthings_convertible_mode": {
+      "type": "string",
+      "getable": true,
+      "setable": false,
+      "title": {
+        "en": "Convertible compartment",
+        "ko": "변온실"
+      },
+      "desc": {
+        "en": "What the switchable compartment is currently being used as.",
+        "ko": "변온실이 현재 무엇으로 쓰이고 있는지입니다."
+      },
+      "icon": "/assets/capabilities/mdi-thermometer.svg",
+      "insights": false
     },
     "localthings_cycle_active": {
       "type": "boolean",

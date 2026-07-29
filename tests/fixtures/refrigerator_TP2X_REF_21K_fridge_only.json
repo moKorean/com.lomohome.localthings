@@ -1,0 +1,152 @@
+{
+  "/alarms/vs/0": {},
+  "/autodoor/timer/vs/0": {
+    "x.com.samsung.da.time.desired": "2",
+    "x.com.samsung.da.time.supportedOptions": [
+      "1",
+      "2",
+      "3",
+      "4"
+    ]
+  },
+  "/bespoke/vs/0": {
+    "x.com.samsung.da.BespokeProduct": "On"
+  },
+  "/configuration/vs/0": {
+    "x.com.samsung.da.countryCode": "",
+    "x.com.samsung.da.region": ""
+  },
+  "/door/onedoorfreezer/vs/0": {
+    "x.com.samsung.da.openState": "Close"
+  },
+  "/doors/vs/0": {
+    "x.com.samsung.da.items": [
+      {
+        "x.com.samsung.da.description": "Door",
+        "x.com.samsung.da.id": "3",
+        "x.com.samsung.da.openState": "Close"
+      }
+    ]
+  },
+  "/drlc/0": {
+    "DRLevel": 2
+  },
+  "/drlc/vs/0": {
+    "x.com.samsung.da.drlcLevel": "2",
+    "x.com.samsung.da.durationminutes": "1441",
+    "x.com.samsung.da.realSaving": "Off",
+    "x.com.samsung.da.start": "2026-07-29T00:27:59Z"
+  },
+  "/energy/ailevel/vs/0": {
+    "aiLevel": "1",
+    "supportedAiLevel": [
+      "1"
+    ]
+  },
+  "/energy/consumption/vs/0": {
+    "x.com.samsung.da.cumulativeConsumption": "17866",
+    "x.com.samsung.da.cumulativePower": "364457",
+    "x.com.samsung.da.cumulativeSavedPower": "27313",
+    "x.com.samsung.da.cumulativeUnit": "Wh",
+    "x.com.samsung.da.instantaneousPower": "3",
+    "x.com.samsung.da.instantaneousPowerUnit": "W"
+  },
+  "/file/information/vs/0": {
+    "x.com.samsung.supprtedtype": 1,
+    "x.com.samsung.timeoffset": "+09:00"
+  },
+  "/information/vs/0": {
+    "x.com.samsung.da.description": "TP2X_REF_21K",
+    "x.com.samsung.da.items": [
+      {
+        "x.com.samsung.da.description": "WiFi Module",
+        "x.com.samsung.da.id": "0",
+        "x.com.samsung.da.newVersionAvailable": "0",
+        "x.com.samsung.da.number": "02144A220512",
+        "x.com.samsung.da.type": "Software"
+      },
+      {
+        "x.com.samsung.da.description": "Micom",
+        "x.com.samsung.da.id": "1",
+        "x.com.samsung.da.newVersionAvailable": "0",
+        "x.com.samsung.da.number": "24040619, FFFFFFFF",
+        "x.com.samsung.da.type": "Firmware"
+      }
+    ],
+    "x.com.samsung.da.modelNum": "TP2X_REF_21K|00192764|00090026001783457100000021010000",
+    "x.com.samsung.da.otnDUID": "JHCB7YE913TRQ",
+    "x.com.samsung.da.serialNum": "1LTF89BX200315M"
+  },
+  "/mode/0": {
+    "supportedModes": [
+      "HOMECARE_WIZARD_V2",
+      "ENERGY_REPORT_MODEL",
+      "18K_REF_OUTDOOR_CONTROL_V2"
+    ]
+  },
+  "/mode/vs/0": {
+    "x.com.samsung.da.supportedModes": [
+      "HOMECARE_WIZARD_V2",
+      "ENERGY_REPORT_MODEL",
+      "18K_REF_OUTDOOR_CONTROL_V2"
+    ]
+  },
+  "/otninformation/vs/0": {
+    "x.com.samsung.da.newVersionAvailable": "false",
+    "x.com.samsung.da.target": "Micom"
+  },
+  "/realtimenotiforclient/vs/0": {
+    "x.com.samsung.da.periodicnotisubscription": "true",
+    "x.com.samsung.da.timeforshortnoti": "0"
+  },
+  "/refrigeration/0": {
+    "defrost": false,
+    "rapidCool": false,
+    "rapidFreeze": false
+  },
+  "/refrigeration/vs/0": {
+    "x.com.samsung.da.rapidFridge": "Off"
+  },
+  "/selfcheck/vs/0": {
+    "x.com.samsung.da.error": [
+      "ErrorCode_None"
+    ],
+    "x.com.samsung.da.result": "Success",
+    "x.com.samsung.da.status": "Ready",
+    "x.com.samsung.da.supportedActions": [
+      "Start"
+    ]
+  },
+  "/status/lock/vs/0": {
+    "x.com.samsung.da.ado.soundcontrol": "On"
+  },
+  "/temperature/current/cooler/0": {
+    "range": [
+      0,
+      5
+    ],
+    "temperature": 2,
+    "units": "C"
+  },
+  "/temperature/desired/cooler/0": {
+    "range": [
+      0,
+      5
+    ],
+    "temperature": 2,
+    "units": "C"
+  },
+  "/temperatures/vs/0": {
+    "x.com.samsung.da.items": [
+      {
+        "x.com.samsung.da.current": "2",
+        "x.com.samsung.da.description": "Fridge",
+        "x.com.samsung.da.desired": "2",
+        "x.com.samsung.da.id": "1",
+        "x.com.samsung.da.maximum": "5",
+        "x.com.samsung.da.minimum": "0",
+        "x.com.samsung.da.unit": "Celsius"
+      }
+    ]
+  }
+}

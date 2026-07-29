@@ -1,0 +1,177 @@
+{
+  "/alarms/vs/0": {},
+  "/autodoor/timer/vs/0": {
+    "x.com.samsung.da.time.desired": "2",
+    "x.com.samsung.da.time.supportedOptions": [
+      "1",
+      "2",
+      "3",
+      "4"
+    ]
+  },
+  "/bespoke/vs/0": {
+    "x.com.samsung.da.BespokeProduct": "On"
+  },
+  "/configuration/vs/0": {
+    "x.com.samsung.da.countryCode": "",
+    "x.com.samsung.da.region": ""
+  },
+  "/door/onedoorfreezer/vs/0": {
+    "x.com.samsung.da.openState": "Close"
+  },
+  "/doors/vs/0": {
+    "x.com.samsung.da.items": [
+      {
+        "x.com.samsung.da.description": "Door",
+        "x.com.samsung.da.id": "3",
+        "x.com.samsung.da.openState": "Close"
+      }
+    ]
+  },
+  "/drlc/0": {
+    "DRLevel": 0
+  },
+  "/drlc/vs/0": {
+    "x.com.samsung.da.drlcLevel": "0",
+    "x.com.samsung.da.durationminutes": "0",
+    "x.com.samsung.da.realSaving": "Off"
+  },
+  "/energy/consumption/vs/0": {
+    "x.com.samsung.da.cumulativeConsumption": "33089",
+    "x.com.samsung.da.cumulativePower": "63032",
+    "x.com.samsung.da.cumulativeSavedPower": "0",
+    "x.com.samsung.da.cumulativeUnit": "Wh",
+    "x.com.samsung.da.instantaneousPower": "61",
+    "x.com.samsung.da.instantaneousPowerUnit": "W"
+  },
+  "/file/information/vs/0": {
+    "x.com.samsung.supprtedtype": 1,
+    "x.com.samsung.timeoffset": "+09:00"
+  },
+  "/information/vs/0": {
+    "x.com.samsung.da.description": "TP2X_REF_21K",
+    "x.com.samsung.da.items": [
+      {
+        "x.com.samsung.da.description": "WiFi Module",
+        "x.com.samsung.da.id": "0",
+        "x.com.samsung.da.newVersionAvailable": "0",
+        "x.com.samsung.da.number": "02144A220512",
+        "x.com.samsung.da.type": "Software"
+      },
+      {
+        "x.com.samsung.da.description": "Micom",
+        "x.com.samsung.da.id": "1",
+        "x.com.samsung.da.newVersionAvailable": "0",
+        "x.com.samsung.da.number": "24041108, FFFFFFFF",
+        "x.com.samsung.da.type": "Firmware"
+      }
+    ],
+    "x.com.samsung.da.modelNum": "TP2X_REF_21K|00173592|00080019001764233800000021000000",
+    "x.com.samsung.da.otnDUID": "H3CCN6NYAHQL6",
+    "x.com.samsung.da.serialNum": "1LTQ48TL600121N"
+  },
+  "/mode/0": {
+    "modes": [
+      "CVN_KIMCHI_STORAGE",
+      "CV_NULL",
+      "MULTIROOM_FREEZER"
+    ],
+    "supportedModes": [
+      "HOMECARE_WIZARD_V2",
+      "ENERGY_REPORT_MODEL",
+      "18K_REF_OUTDOOR_CONTROL_V2"
+    ]
+  },
+  "/mode/vs/0": {
+    "x.com.samsung.da.modes": [
+      "CVN_KIMCHI_STORAGE",
+      "CV_NULL",
+      "MULTIROOM_FREEZER"
+    ],
+    "x.com.samsung.da.supportedModes": [
+      "HOMECARE_WIZARD_V2",
+      "ENERGY_REPORT_MODEL",
+      "18K_REF_OUTDOOR_CONTROL_V2"
+    ],
+    "x.com.samsung.da.supportedOptions": [
+      "CV_TMF_KIMCHI_WEAKCOOL",
+      "CV_TMF_KIMCHI_NORMAL",
+      "CV_TMF_KIMCHI_STRONGCOOL"
+    ]
+  },
+  "/otninformation/vs/0": {
+    "x.com.samsung.da.newVersionAvailable": "false",
+    "x.com.samsung.da.target": "Micom"
+  },
+  "/realtimenotiforclient/vs/0": {
+    "x.com.samsung.da.periodicnotisubscription": "true",
+    "x.com.samsung.da.timeforshortnoti": "0"
+  },
+  "/selfcheck/vs/0": {
+    "x.com.samsung.da.error": [
+      "ErrorCode_None"
+    ],
+    "x.com.samsung.da.result": "Success",
+    "x.com.samsung.da.status": "Ready",
+    "x.com.samsung.da.supportedActions": [
+      "Start"
+    ]
+  },
+  "/status/lock/vs/0": {
+    "x.com.samsung.da.ado.soundcontrol": "On"
+  },
+  "/temperature/current/cooler/0": {
+    "range": [
+      0,
+      5
+    ],
+    "temperature": -20,
+    "units": "C"
+  },
+  "/temperature/current/freezer/0": {
+    "range": [
+      -23,
+      -17
+    ],
+    "temperature": -20,
+    "units": "C"
+  },
+  "/temperature/desired/cooler/0": {
+    "range": [
+      0,
+      5
+    ],
+    "temperature": 253,
+    "units": "C"
+  },
+  "/temperature/desired/freezer/0": {
+    "range": [
+      -23,
+      -17
+    ],
+    "temperature": -20,
+    "units": "C"
+  },
+  "/temperatures/vs/0": {
+    "x.com.samsung.da.items": [
+      {
+        "x.com.samsung.da.current": "-20",
+        "x.com.samsung.da.description": "Freezer",
+        "x.com.samsung.da.desired": "-20",
+        "x.com.samsung.da.id": "0",
+        "x.com.samsung.da.maximum": "-17",
+        "x.com.samsung.da.minimum": "-23",
+        "x.com.samsung.da.unit": "Celsius"
+      },
+      {
+        "x.com.samsung.da.current": "-20",
+        "x.com.samsung.da.description": "Fridge",
+        "x.com.samsung.da.desired": "253",
+        "x.com.samsung.da.id": "1",
+        "x.com.samsung.da.maximum": "5",
+        "x.com.samsung.da.minimum": "0",
+        "x.com.samsung.da.unit": "Celsius"
+      }
+    ]
+  }
+}

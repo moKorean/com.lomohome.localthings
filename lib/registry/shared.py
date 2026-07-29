@@ -150,6 +150,15 @@ ENERGY = (
     Spec("measure_power", HREF_ENERGY, read_power_watts,
          exists=lambda rep, _r: "x.com.samsung.da.instantaneousPower" in rep),
     Spec("meter_power", HREF_ENERGY, _kwh("x.com.samsung.da.cumulativePower")),
+    # A second, independently varying running total that some boards report
+    # alongside cumulativePower — the refrigerator gives 15496 against 884883, so
+    # they are counting different things rather than duplicating one figure. The
+    # reference exposes both for the same reason. Presence-gated: most appliances
+    # have only the first.
+    Spec("meter_power.consumption", HREF_ENERGY,
+         _kwh("x.com.samsung.da.cumulativeConsumption"),
+         exists=lambda rep, _r: "x.com.samsung.da.cumulativeConsumption" in rep,
+         titles={"en": "Consumption", "ko": "소비 전력량"}),
 )
 
 # --- water ---------------------------------------------------------------
@@ -311,6 +320,22 @@ def _any_door_open(rep, _resources):
         if str(state).strip().lower() in ("open", "opened", "true"):
             return True
     return False if seen else None
+
+
+def read_open_state(rep):
+    """A single door resource's open state.
+
+    Both spellings are checked: most /door/* resources report a bare `openState`,
+    while the family that also carries /door/onedoorfreezer/vs/0 reports it
+    vendor-prefixed. Looking up only one name leaves the capability bound and
+    permanently blank.
+    """
+    state = rep.get("openState")
+    if state is None:
+        state = rep.get("x.com.samsung.da.openState")
+    if state is None:
+        return None
+    return str(state).strip().lower() in ("open", "opened", "true")
 
 
 DOORS = (Spec("alarm_contact", "/doors/vs/0", _any_door_open),)
