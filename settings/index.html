@@ -163,6 +163,7 @@
 
     var STRINGS = {
       en: {
+        unknownError: 'Unknown error',
         lede: 'Controls Samsung appliances directly on your network, without SmartThings. Before adding an appliance, this app needs a client certificate.',
         checking: 'Checking…',
         notConfigured: 'Not set up yet — add a certificate below before adding appliances.',
@@ -198,6 +199,7 @@
         needBoth: 'Paste both the certificate chain and the private key.',
       },
       ko: {
+        unknownError: '알 수 없는 오류',
         lede: 'SmartThings 없이 삼성 가전을 집 안 네트워크에서 직접 제어합니다. 가전을 추가하기 전에 클라이언트 인증서가 필요합니다.',
         checking: '확인 중…',
         notConfigured: '아직 설정되지 않았습니다 — 가전을 추가하기 전에 아래에서 인증서를 등록하세요.',
@@ -249,9 +251,37 @@
       var s = STRINGS[LANG][key];
       if (s === undefined) s = STRINGS.en[key];
       for (var i = 1; i < arguments.length; i++) {
-        s = s.replace('{' + (i - 1) + '}', arguments[i]);
+        s = s.replace('{' + (i - 1) + '}', describe(arguments[i]));
       }
       return s;
+    }
+
+    // Rejections reaching these handlers are usually not Errors. homey.js rejects with
+    // `obj.args[0]` — the value the Python side sent, verbatim — and Homey's own API
+    // rejects with structured objects, so `err.message` is frequently absent. Casting
+    // those with String() printed "[object Object]", which told the user nothing about a
+    // real failure and nothing about which step failed. So walk the shapes that actually
+    // occur, and fall back to JSON, which is at least diagnosable.
+    function describe(err, depth) {
+      if (err === null || err === undefined) return t('unknownError');
+      if (typeof err === 'string') return err;
+      if (typeof err !== 'object') return String(err);
+      if ((depth || 0) > 4) return t('unknownError');
+      var keys = ['message', 'error', 'description', 'reason', 'detail', 'statusText'];
+      for (var i = 0; i < keys.length; i++) {
+        var value = err[keys[i]];
+        if (typeof value === 'string' && value) return value;
+        if (value && typeof value === 'object') return describe(value, (depth || 0) + 1);
+      }
+      if (Object.prototype.toString.call(err) === '[object Error]') {
+        var text = String(err);
+        if (text && text !== '[object Object]') return text;
+      }
+      try {
+        var json = JSON.stringify(err);
+        if (json && json !== '{}' && json !== 'null' && json !== '[]') return json;
+      } catch (e) { /* circular structure */ }
+      return t('unknownError');
     }
 
     function setText(id, value) {
@@ -324,7 +354,7 @@
           if (settled) return;
           settled = true;
           reject(err instanceof Error ? err
-            : new Error(String((err && err.message) || err)));
+            : new Error(describe(err)));
         }
         var args = (method === 'GET') ? [method, path] : [method, path, body || {}];
         var maybe;
@@ -371,7 +401,7 @@
           show('stored', !s.expired);
         })
         .catch(function (err) {
-          setStatus('err', String((err && err.message) || err));
+          setStatus('err', describe(err));
         });
     }
 
@@ -393,14 +423,14 @@
           })
           .catch(function (err) {
             button.disabled = false;
-            message('err', String((err && err.message) || err));
+            message('err', describe(err));
           });
       });
 
       document.getElementById('btn-clear').addEventListener('click', function () {
         api('POST', '/credentials-clear', {})
           .then(function () { message('ok', t('cleared')); return refresh(); })
-          .catch(function (err) { message('err', String((err && err.message) || err)); });
+          .catch(function (err) { message('err', describe(err)); });
       });
 
       document.getElementById('btn-check').addEventListener('click', function () {
@@ -419,7 +449,7 @@
           })
           .catch(function (err) {
             button.disabled = false;
-            checkMessage('err', String((err && err.message) || err));
+            checkMessage('err', describe(err));
           });
       });
     }

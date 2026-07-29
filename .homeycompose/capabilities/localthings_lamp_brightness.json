@@ -1,0 +1,19 @@
+{
+  "type": "number",
+  "getable": true,
+  "setable": true,
+  "title": {
+    "en": "Light brightness",
+    "ko": "조명 밝기"
+  },
+  "desc": {
+    "en": "Work-lamp brightness level.",
+    "ko": "작업등 밝기 단계입니다."
+  },
+  "min": 1,
+  "max": 10,
+  "step": 1,
+  "icon": "/assets/capabilities/mdi-brightness-6.svg",
+  "uiComponent": "slider",
+  "insights": true
+}

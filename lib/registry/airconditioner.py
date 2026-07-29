@@ -10,6 +10,7 @@ the resource itself. Echoing the untouched fields back is what the reference
 explicitly avoids.
 """
 
+from . import shared
 from .base import Registry, Spec, as_float, first_item
 
 HREF_POWER = "/power/vs/0"
@@ -229,13 +230,9 @@ def _write_airpurify(value, _rep):
     return ["option", "airpurify", "vs", "0"], {FIELD_MODES: "On" if value else "Off"}
 
 
-def _read_filter_usage(rep, _resources):
-    """Percent of the filter's rated life consumed."""
-    used = as_float(rep.get("x.com.samsung.da.filterUsage"))
-    capacity = as_float(rep.get("x.com.samsung.da.filterCapacity"))
-    if used is None or not capacity:
-        return None
-    return round(min(used / capacity * 100.0, 100.0), 1)
+# Third copy of the same wrong division. The value it produced for the verified unit
+# was 56% for a filter the appliance itself reports as `wash`.
+_read_filter_usage = shared._filter_percent
 
 
 def _read_filter_alarm(rep, _resources):
@@ -350,12 +347,11 @@ def _sensor_value(sensor_type: str):
     return read
 
 
-def _filter_usage_percent(rep, _resources):
-    used = as_float(rep.get("x.com.samsung.da.filterUsage"))
-    capacity = as_float(rep.get("x.com.samsung.da.filterCapacity"))
-    if used is None or not capacity:
-        return None
-    return round(min(used / capacity * 100.0, 100.0), 1)
+# A second copy of the same wrong division lived here, so fixing shared._filter_percent
+# left the air conditioner — the one appliance most users of this app own — still
+# reporting 56% for a filter the device itself flags as due for washing. There is no
+# reason for two implementations; the shared one carries the reasoning.
+_filter_usage_percent = shared._filter_percent
 
 
 REGISTRY = Registry(

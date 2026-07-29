@@ -5,16 +5,24 @@
   .r { stroke-width: 60; }
   .d { stroke-width: 20; }
 </style>
-<path class="r" d="M 480 130 L 820 430 L 820 810 L 140 810 L 140 430 Z"/>
-<circle cx="480" cy="545" r="66" class="o"/>
-<line x1="480.0" y1="479.0" x2="480.0" y2="400.0" class="o"/>
-<circle cx="480.0" cy="360.0" r="40" class="o"/>
-<line x1="542.8" y1="524.6" x2="617.9" y2="500.2" class="o"/>
-<circle cx="655.9" cy="487.8" r="40" class="o"/>
-<line x1="518.8" y1="598.4" x2="565.2" y2="662.3" class="o"/>
-<circle cx="588.7" cy="694.7" r="40" class="o"/>
-<line x1="441.2" y1="598.4" x2="394.8" y2="662.3" class="o"/>
-<circle cx="371.3" cy="694.7" r="40" class="o"/>
-<line x1="417.2" y1="524.6" x2="342.1" y2="500.2" class="o"/>
-<circle cx="304.1" cy="487.8" r="40" class="o"/>
+<clipPath id="badge-halo" clipPathUnits="userSpaceOnUse"><path clip-rule="evenodd" fill-rule="evenodd" d="M -200 -200 L 1200 -200 L 1200 1200 L -200 1200 Z M 925 705 L 923 675 L 916 646 L 904 619 L 889 593 L 869 571 L 847 551 L 821 536 L 794 524 L 765 517 L 735 515 L 705 517 L 676 524 L 649 536 L 623 551 L 601 571 L 581 593 L 566 619 L 554 646 L 547 675 L 545 705 L 547 735 L 554 764 L 566 791 L 581 817 L 601 839 L 623 859 L 649 874 L 676 886 L 705 893 L 735 895 L 765 893 L 794 886 L 821 874 L 847 859 L 869 839 L 889 817 L 904 791 L 916 764 L 923 735 L 925 705 Z"/></clipPath>
+<g clip-path="url(#badge-halo)"><path class="o" d="M 290 170 L 700 170 A 60 60 0 0 1 760 230 L 760 730 A 60 60 0 0 1 700 790 L 290 790 C 235 790, 160 765, 160 710 L 160 250 C 160 195, 235 170, 290 170 Z"/>
+<path class="d" d="M 282 176 C 248 186, 226 208, 226 242 L 226 718 C 226 752, 248 774, 282 784"/>
+<line x1="234" y1="310" x2="748" y2="310" class="d"/>
+<circle cx="672" cy="242" r="32" class="d"/>
+<circle cx="310" cy="242" r="12" class="d"/>
+<circle cx="378" cy="242" r="12" class="d"/>
+<circle cx="493" cy="550" r="140" class="d"/>
+<circle cx="493" cy="550" r="88" class="d"/></g>
+<circle cx="735" cy="705" r="44" class="d"/>
+<line x1="735.0" y1="661.0" x2="735.0" y2="603.0" class="d"/>
+<circle cx="735.0" cy="575.0" r="28" class="d"/>
+<line x1="776.8" y1="691.4" x2="832.0" y2="673.5" class="d"/>
+<circle cx="858.6" cy="664.8" r="28" class="d"/>
+<line x1="760.9" y1="740.6" x2="795.0" y2="787.5" class="d"/>
+<circle cx="811.4" cy="810.2" r="28" class="d"/>
+<line x1="709.1" y1="740.6" x2="675.0" y2="787.5" class="d"/>
+<circle cx="658.6" cy="810.2" r="28" class="d"/>
+<line x1="693.2" y1="691.4" x2="638.0" y2="673.5" class="d"/>
+<circle cx="611.4" cy="664.8" r="28" class="d"/>
 </svg>

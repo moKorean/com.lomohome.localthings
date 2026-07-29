@@ -1,0 +1,15 @@
+{
+  "type": "boolean",
+  "getable": true,
+  "setable": false,
+  "title": {
+    "en": "Automatic ventilation",
+    "ko": "자동 환기"
+  },
+  "desc": {
+    "en": "Whether the hood is choosing its own fan speed.",
+    "ko": "후드가 스스로 풍량을 정하고 있는지 여부입니다."
+  },
+  "icon": "/assets/capabilities/mdi-fan-auto.svg",
+  "insights": true
+}

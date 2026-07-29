@@ -12,8 +12,8 @@ import asyncio
 import cbor2
 from smartthings_local.protocol.dtls_session import DtlsCoapSession
 
-from .const import PROBE_GET_TIMEOUT_S
-from .probe import local_source_port
+from .const import DTLS_LOCAL_PORT_BASES, PROBE_GET_TIMEOUT_S
+from .probe import local_source_port, peer_holds_stale_session
 from .resources import parse_device0
 
 
@@ -65,20 +65,39 @@ class Session:
 
         self._loop = asyncio.get_running_loop()
 
-        def build():
+        def build(local_port: int):
             session = DtlsCoapSession(
                 self._host,
                 self._port,
                 cert_pem=self._cert_pem,
                 key_pem=self._key_pem,
-                local_port=local_source_port(self._host),
+                local_port=local_port,
                 on_notification=self._dispatch,
             )
             session.connect()
             session.start_reader()
             return session
 
-        self._session = await self._run(build)
+        # Attempt 0 is the stable source port. A peer that rejects the handshake
+        # because it is still holding the previous association gets one more try
+        # per remaining port window; every other failure propagates immediately,
+        # because retrying a bad certificate or an unreachable host on a new port
+        # only turns one clear error into three slow ones.
+        last_attempt = len(DTLS_LOCAL_PORT_BASES) - 1
+        for attempt in range(len(DTLS_LOCAL_PORT_BASES)):
+            local_port = local_source_port(self._host, attempt)
+            try:
+                self._session = await self._run(build, local_port)
+                break
+            except Exception as exc:
+                if attempt == last_attempt or not peer_holds_stale_session(exc):
+                    raise
+                self._log(
+                    f"handshake rejected from :{local_port} ({exc}); the appliance "
+                    f"is still holding the previous session — retrying from a new "
+                    f"source port"
+                )
+
         self._log(f"DTLS session established to {self._host}:{self._port}")
 
         # A fresh session carries no observations, so anything previously

@@ -9,6 +9,7 @@
     "not_writable": "{capability} cannot be changed on this appliance.",
     "value_unsupported": "This appliance does not support {value}.",
     "write_rejected": "The appliance refused to set {capability} to {value}.",
-    "repair_no_device": "Could not tell which device is being repaired."
+    "repair_no_device": "Could not tell which device is being repaired.",
+    "already_paired": "This appliance is already added to Homey ({model} at {host}). Open it from your device list instead."
   }
 }

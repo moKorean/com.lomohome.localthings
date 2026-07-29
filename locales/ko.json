@@ -9,6 +9,7 @@
     "not_writable": "이 가전에서는 {capability}를 바꿀 수 없습니다.",
     "value_unsupported": "이 가전은 {value}를 지원하지 않습니다.",
     "write_rejected": "가전이 {capability}를 {value}로 설정하는 것을 거부했습니다.",
-    "repair_no_device": "어느 기기를 복구하는지 판단할 수 없었습니다."
+    "repair_no_device": "어느 기기를 복구하는지 판단할 수 없었습니다.",
+    "already_paired": "이 가전은 이미 Homey에 추가되어 있습니다 ({model}, {host}). 기기 목록에서 열어 주세요."
   }
 }

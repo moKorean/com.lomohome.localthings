@@ -1,0 +1,19 @@
+{
+  "type": "number",
+  "getable": true,
+  "setable": true,
+  "title": {
+    "en": "Fan speed",
+    "ko": "풍량"
+  },
+  "desc": {
+    "en": "Extraction fan level.",
+    "ko": "환기 팬 단계입니다."
+  },
+  "min": 1,
+  "max": 10,
+  "step": 1,
+  "icon": "/assets/capabilities/mdi-fan.svg",
+  "uiComponent": "slider",
+  "insights": true
+}

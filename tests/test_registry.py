@@ -88,7 +88,14 @@ def test_reads_match_the_captured_device_state(resources):
     assert _read(reg, resources, "measure_power") == 99.0
     assert _read(reg, resources, "meter_power") == pytest.approx(146.497)
     assert _read(reg, resources, "localthings_air_purify") is True
-    assert _read(reg, resources, "localthings_filter_usage") == pytest.approx(55.6, abs=0.1)
+    # This line asserted 55.6 for a long time, which was the app dividing usage by
+    # capacity. The two assertions contradicted each other: 56% of a filter's life is
+    # not a filter the appliance flags for washing. The device reports usage as a
+    # percentage already — 100, hence `wash`.
+    air_filter = resources["/filter/airdustfilter/vs/0"]
+    assert air_filter["x.com.samsung.da.filterUsage"] == "100"
+    assert air_filter["x.com.samsung.da.filterStatus"] == "wash"
+    assert _read(reg, resources, "localthings_filter_usage") == pytest.approx(100.0, abs=0.1)
     assert _read(reg, resources, "localthings_alarm_filter") is True
 
 

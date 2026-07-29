@@ -1,6 +1,6 @@
 {
   "id": "com.lomohome.localthings",
-  "version": "0.1.0",
+  "version": "0.3.0",
   "compatibility": ">=13.0.0",
   "sdk": 3,
   "runtime": "python",
@@ -17,8 +17,8 @@
     "ko": "로컬띵스 커뮤니티"
   },
   "description": {
-    "en": "Control Samsung appliances directly on your LAN, without SmartThings",
-    "ko": "SmartThings 없이 삼성 가전을 집 안에서 바로 제어하세요"
+    "en": "Control your Samsung air conditioner, induction cooktop and range hood on your own network, without SmartThings",
+    "ko": "SmartThings 없이 삼성 에어컨·인덕션·주방 후드를 집 안에서 바로 제어하세요"
   },
   "category": [
     "appliances"
@@ -29,12 +29,10 @@
       "SmartThings",
       "local",
       "appliance",
-      "washer",
-      "dryer",
       "air conditioner",
-      "refrigerator",
-      "dishwasher",
-      "oven",
+      "induction",
+      "cooktop",
+      "range hood",
       "CoAP",
       "DTLS"
     ],
@@ -43,12 +41,11 @@
       "스마트싱스",
       "로컬제어",
       "가전",
-      "세탁기",
-      "건조기",
       "에어컨",
-      "냉장고",
-      "식기세척기",
-      "오븐",
+      "인덕션",
+      "쿡탑",
+      "주방후드",
+      "후드",
       "비스포크"
     ]
   },
@@ -74,6 +71,10 @@
       "method": "GET",
       "path": "/diagnostics"
     },
+    "resources": {
+      "method": "GET",
+      "path": "/resources"
+    },
     "set_language": {
       "method": "POST",
       "path": "/language"
@@ -93,10 +94,16 @@
       {
         "name": "Geunwon Mo",
         "email": "mokorean@gmail.com"
+      },
+      {
+        "name": "Marc Billow"
+      },
+      {
+        "name": "Jack Nagy"
       }
     ]
   },
-  "copyright": "Geunwon Mo (mokorean@gmail.com)",
+  "copyright": "Geunwon Mo (mokorean@gmail.com). Appliance resource model ported from the LocalThings Home Assistant integration by Marc Billow, and DTLS-CoAP transport by Jack Nagy, both MIT-licensed. See NOTICE.",
   "license": "GPL-3.0-or-later",
   "bugs": {
     "url": "https://github.com/moKorean/com.lomohome.localthings/issues"

@@ -45,13 +45,26 @@ LIVENESS_PROBE_TIMEOUT_S = 1.5
 # a full dump in ~8s, so 10s leaves headroom without stalling pairing.
 PROBE_GET_TIMEOUT_S = 10.0
 
-# Base for the local (client-side) DTLS source port, distinct from the
+# Bases for the local (client-side) DTLS source port, distinct from the
 # destination probe ports above. Binding the same source port on every
 # reconnect keeps the client on one 5-tuple, so the appliance evicts an
 # orphaned session left by a previous run (unclean shutdown -> no
 # close_notify) at handshake time per RFC 6347 4.2.8, instead of holding it
 # for 5-15 min while the new session's reads hang.
-DTLS_LOCAL_PORT_BASE = 49700
+#
+# That eviction is a MAY, not a MUST, and some firmware does not do it: it
+# instead reads the plaintext ClientHello as a record inside the epoch it still
+# believes is live, fails to parse it, and answers with a fatal alert
+# ("tlsv1 alert decode error", alert 50). Retrying on the same port replays the
+# same mistake forever, so the port is only the *first* choice — a peer that
+# rejects the handshake this way gets retried from the next base, which is an
+# unambiguously new association it has no stale state for.
+#
+# Each base reserves a 256-wide window (offset = last IP octet), and the
+# windows do not overlap, so no retry port can collide with another device's
+# first-choice port.
+DTLS_LOCAL_PORT_BASES = (49700, 50000, 50300)
+DTLS_LOCAL_PORT_BASE = DTLS_LOCAL_PORT_BASES[0]
 
 # How often to re-read the full /device/0 summary.
 POLL_INTERVAL_S = 30.0

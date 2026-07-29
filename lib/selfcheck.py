@@ -54,9 +54,10 @@ def _pyopenssl_dtls():
 def _udp_from_thread():
     """Bind the real source port the transport will use (see PORTING.md).
 
-    DTLS_LOCAL_PORT_BASE is 49700; binding one port in that range from a
-    background thread is exactly what DtlsCoapSession does, so this is the
-    probe most likely to reveal a sandbox restriction.
+    Binding a port from DTLS_LOCAL_PORT_BASES from a background thread is
+    exactly what DtlsCoapSession does, so this is the probe most likely to reveal
+    a sandbox restriction. One base is enough to test: all of them are ordinary
+    unprivileged ports, so a sandbox that permits one permits all.
     """
     result = {}
 

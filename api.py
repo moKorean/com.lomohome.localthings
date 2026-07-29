@@ -12,7 +12,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-from lib import cert, compat, i18n
+from lib import cert, compat, i18n, support
 from lib.const import (
     SETTING_LEAF_CERT,
     SETTING_LEAF_KEY,
@@ -33,6 +33,20 @@ def _body(kwargs: dict) -> dict:
     """
     body = kwargs.get("body")
     return body if isinstance(body, dict) else kwargs
+
+
+def _params(kwargs: dict) -> dict:
+    """Request parameters, wherever this Homey build puts them.
+
+    `_body` covers a POST. A GET's query string arrives under `query` on the builds
+    checked, which is why an earlier `?host=` filter was silently ignored and dumped
+    every appliance instead of one. Both are merged rather than chosen between.
+    """
+    merged = {}
+    for source in (kwargs.get("query"), kwargs.get("params"), _body(kwargs)):
+        if isinstance(source, dict):
+            merged.update(source)
+    return merged
 
 
 def _log(homey, message: str) -> None:
@@ -162,6 +176,54 @@ async def diagnostics(homey, **kwargs):
     )
     report["devices"] = _device_report(homey)
     return report
+
+
+async def resources(homey, **kwargs):
+    """Every resource a paired appliance reports, verbatim.
+
+    Mapping an appliance type correctly needs the actual field names and the
+    actual supported-value lists, and guessing them produces capabilities that
+    read null and writes the appliance refuses — which is indistinguishable, from
+    the outside, from the appliance not supporting the feature at all.
+
+    A device already holds this from its last poll, so nothing extra is asked of
+    the appliance. Reachable from an installed app via
+    `homey api raw --path /api/app/com.lomohome.localthings/resources`.
+
+    Per-unit identifiers are redacted by default, because the most likely thing to
+    happen to this output is being pasted somewhere public. Pass `raw=1` to see them,
+    which is only ever needed when debugging identity matching itself.
+
+    Optional `host` narrows the dump to one appliance, since a whole house of them
+    is a lot of output.
+    """
+    params = _params(kwargs)
+    wanted = str(params.get("host") or "").strip()
+    raw = str(params.get("raw") or "").strip().lower() in ("1", "true", "yes")
+    try:
+        devices = homey.drivers.get_driver("appliance").get_devices()
+    except Exception as exc:
+        return {"error": f"{type(exc).__name__}: {exc}"}
+
+    out = {}
+    for device in devices:
+        try:
+            host = (device.get_store() or {}).get("host")
+            if wanted and str(host) != wanted:
+                continue
+            resource_map = getattr(device, "_resources", {}) or {}
+            registry_name = getattr(device, "_registry", None)
+            out[str(device.get_name())] = {
+                "host": host,
+                "registry": registry_name and registry_name.name,
+                "bound_capabilities": sorted(device.get_capabilities() or ()),
+                "resources": (
+                    resource_map if raw else support.redact(resource_map)
+                ),
+            }
+        except Exception as exc:
+            out[f"error-{len(out)}"] = f"{type(exc).__name__}: {exc}"
+    return out or {"error": "no matching device"}
 
 
 def _device_report(homey) -> list:

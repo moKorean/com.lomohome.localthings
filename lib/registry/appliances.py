@@ -307,24 +307,125 @@ def _any_burner_active(rep):
 
 
 # --- range hood -----------------------------------------------------------
+#
+# Verified against an AHD-WW-TP1-22-COMMON. Every field name and every supported
+# value below was read off that unit, because the first version of this registry
+# guessed them (`fanSpeed`, `status`, `/hood/filter/vs/0`) and guessed wrong: not
+# one of them matched, so the hood paired and then sat there with no working
+# control at all. Nothing here is inferred from the field's name.
+
+HREF_HOOD_FAN = "/hood/fanspeed/vs/0"
+HREF_HOOD_LAMP = "/hood/lamp/vs/0"
+HREF_HOOD_FILTER = "/filter/hoodfilter/vs/0"
+
+FIELD_FAN_SPEED = "x.com.samsung.da.hood.fanSpeed"
+FIELD_FAN_SUPPORTED = "x.com.samsung.da.hood.supportedFanSpeed"
+FIELD_AUTO_OPERATION = "x.com.samsung.da.hood.autoOperation"
+FIELD_LAMP_POWER = "x.com.samsung.lamp.power"
+FIELD_LAMP_CURRENT = "x.com.samsung.lamp.current"
+FIELD_LAMP_RANGE = "x.com.samsung.lamp.range"
+
+
+def _codes(rep, field) -> list:
+    """The device's supported values for `field`, in the order it reports them."""
+    return [str(code) for code in (rep.get(field) or ()) if str(code) != ""]
+
+
+def _read_level(value_field, list_field):
+    """Report a device code as its 1-based position in the supported list.
+
+    The verified hood calls its five fan speeds "14" through "18" and its two lamp
+    levels "1" and "2". Surfacing the raw codes would put a slider from 14 to 18 in
+    front of the user, and would break outright on a unit whose codes are not
+    contiguous. The position is stable, reads as a level, and needs no assumption
+    about what the codes mean — only that the device lists them in order.
+    """
+
+    def read(rep, _resources):
+        codes = _codes(rep, list_field)
+        current = rep.get(value_field)
+        if current is None or not codes:
+            return None
+        try:
+            return codes.index(str(current)) + 1
+        except ValueError:
+            # A current value outside the advertised list: report nothing rather
+            # than a position that would be wrong.
+            return None
+
+    return read
+
+
+def _write_level(path, value_field, list_field):
+    def write(value, rep):
+        codes = _codes(rep, list_field)
+        index = as_int(value)
+        if not codes or index is None or not 1 <= index <= len(codes):
+            return None
+        return path, {value_field: codes[index - 1]}
+
+    return write
+
+
+def _level_options(list_field):
+    def options(rep, _resources) -> dict:
+        codes = _codes(rep, list_field)
+        return {"min": 1, "max": len(codes), "step": 1} if codes else {}
+
+    return options
+
+
+def _has(field):
+    return lambda rep, _resources: field in rep
+
+
+def _read_filter_status_alarm(rep, _resources):
+    """The hood reports filter state as a word, not as an alarm row."""
+    status = rep.get("x.com.samsung.da.filterStatus")
+    if status is None:
+        return None
+    return str(status).strip().lower() not in ("normal", "", "none")
+
 
 RANGE_HOOD = Registry(
     name="range_hood",
     device_class="fan",
-    titles={"en": "Samsung Range Hood", "ko": "삼성 주방 후드" },
+    titles={"en": "Samsung Range Hood", "ko": "삼성 주방 후드"},
     specs=(
+        # The hood answers on both power forms; POWER was missing entirely before,
+        # which is why the appliance could not be switched on or off.
+        *shared.POWER,
         *shared.ALARMS,
         *shared.ENERGY,
         *shared.FIRMWARE,
-        Spec("localthings_fan_speed_level", "/hood/fanspeed/vs/0",
-             lambda rep, _r: as_int(rep.get("fanSpeed") or rep.get("speed"))),
-        Spec("localthings_display_light", "/hood/lamp/vs/0", shared.flag("status"),
-             shared.write_flag(["hood", "lamp", "vs", "0"], "status")),
-        Spec("localthings_filter_usage", "/hood/filter/vs/0", shared._filter_percent),
-        Spec("localthings_alarm_filter", "/hood/filter/vs/0",
-             shared.read_filter_alarm),
+        Spec("localthings_hood_fan_speed", HREF_HOOD_FAN,
+             _read_level(FIELD_FAN_SPEED, FIELD_FAN_SUPPORTED),
+             _write_level(["hood", "fanspeed", "vs", "0"],
+                          FIELD_FAN_SPEED, FIELD_FAN_SUPPORTED),
+             options=_level_options(FIELD_FAN_SUPPORTED)),
+        Spec("localthings_auto_ventilation", HREF_HOOD_FAN,
+             shared.flag(FIELD_AUTO_OPERATION),
+             exists=_has(FIELD_AUTO_OPERATION)),
+        Spec("localthings_display_light", HREF_HOOD_LAMP,
+             shared.flag(FIELD_LAMP_POWER),
+             shared.write_flag(["hood", "lamp", "vs", "0"], FIELD_LAMP_POWER)),
+        Spec("localthings_lamp_brightness", HREF_HOOD_LAMP,
+             _read_level(FIELD_LAMP_CURRENT, FIELD_LAMP_RANGE),
+             _write_level(["hood", "lamp", "vs", "0"],
+                          FIELD_LAMP_CURRENT, FIELD_LAMP_RANGE),
+             exists=_has(FIELD_LAMP_RANGE),
+             options=_level_options(FIELD_LAMP_RANGE)),
+        Spec("localthings_filter_usage", HREF_HOOD_FILTER, shared._filter_percent),
+        Spec("localthings_alarm_filter", HREF_HOOD_FILTER,
+             _read_filter_status_alarm),
         Spec("localthings_air_quality", "/sensors/vs/0",
              lambda rep, _r: _sensor(rep, "CleanLevel")),
+        Spec("localthings_dust_pm10", "/sensors/vs/0",
+             lambda rep, _r: _sensor(rep, "Dust")),
+        Spec("measure_pm25", "/sensors/vs/0",
+             lambda rep, _r: _sensor(rep, "FineDust")),
+        Spec("localthings_dust_pm1", "/sensors/vs/0",
+             lambda rep, _r: _sensor(rep, "SuperFineDust")),
     ),
 )
 

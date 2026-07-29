@@ -69,6 +69,16 @@
   .meta { color: var(--muted); font-size: 12.5px; margin-top: 14px; }
   a { color: var(--blue); font-size: 13px; }
   .hidden { display: none; }
+  #report { margin-top: 12px; }
+  textarea {
+    width: 100%; margin-top: 8px; padding: 9px; border: 1px solid var(--border);
+    border-radius: 6px; font-family: ui-monospace, Menlo, monospace; font-size: 11px;
+    line-height: 1.45; resize: vertical; background: #fafafc; color: var(--text);
+    white-space: pre; overflow-x: auto;
+  }
+  .report-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+  button.secondary { background: #e8e8ee; color: var(--text); }
+  #report-url { word-break: break-all; }
 </style>
 
 <div class="wrap">
@@ -101,6 +111,21 @@
     <div id="summary" class="summary hidden"></div>
   </div>
 
+  <!-- Only appears when an appliance answered but its type is not mapped yet. The
+       dump is shown rather than sent anywhere: what leaves the house is the user's
+       decision, and they can read exactly what it contains first. -->
+  <div id="report" class="card hidden">
+    <h2 id="t-report-title"></h2>
+    <p id="t-report-lede"></p>
+    <textarea id="report-text" readonly rows="9" spellcheck="false"></textarea>
+    <div class="report-actions">
+      <button id="btn-report-copy"><span id="t-report-copy"></span></button>
+      <button id="btn-report-open" class="secondary"><span id="t-report-open"></span></button>
+    </div>
+    <p class="meta" id="report-url"></p>
+    <div id="report-msg" class="msg"></div>
+  </div>
+
   <!-- Visible from the start so a failure before init can never leave the view
        blank; replaced by one of the cards above as soon as init runs. -->
   <div id="boot" class="card">
@@ -115,6 +140,16 @@
 
   var STRINGS = {
     en: {
+      reportTitle: 'Help add support for this appliance',
+      reportLede: 'This is what the appliance reports about itself. It is what adding support needs, and it is the one thing only you can provide. Serial number and device ids have been replaced — nothing here identifies you or your unit.',
+      reportCopy: 'Copy report',
+      reportOpen: 'Open issue tracker',
+      reportCopied: 'Copied. Paste it into a new issue.',
+      reportCopyManually: 'Could not copy automatically — select the text above and copy it.',
+      reportOpenManually: 'Could not open a browser here. Use the address below.',
+      probeFailed: 'Could not reach the appliance. {0}',
+      createFailed: 'Reached the {0}, but Homey would not add it: {1}',
+      unknownError: 'Unknown error',
       boot: 'Loading…',
       setupTitle: 'Set up required',
       setupLede: 'This app needs a client certificate before it can reach your appliances. It is a one-time setup and covers every Samsung appliance on your network.',
@@ -154,6 +189,16 @@
       capabilities: '{0} controls available',
     },
     ko: {
+      reportTitle: '이 가전의 지원 추가에 도움 주기',
+      reportLede: '가전이 스스로 보고하는 내용입니다. 지원을 추가하려면 이 정보가 필요하고, 이건 사용자만 제공할 수 있습니다. 시리얼 번호와 기기 식별자는 가려져 있어 사용자나 기기를 특정할 수 있는 내용은 없습니다.',
+      reportCopy: '리포트 복사',
+      reportOpen: '이슈 등록 페이지 열기',
+      reportCopied: '복사했습니다. 새 이슈에 붙여넣어 주세요.',
+      reportCopyManually: '자동 복사가 되지 않았습니다 — 위 내용을 직접 선택해 복사해 주세요.',
+      reportOpenManually: '여기서 브라우저를 열 수 없습니다. 아래 주소를 이용해 주세요.',
+      probeFailed: '가전에 연결하지 못했습니다. {0}',
+      createFailed: '{0}에 연결했지만 Homey가 기기를 추가하지 못했습니다: {1}',
+      unknownError: '알 수 없는 오류',
       boot: '불러오는 중…',
       setupTitle: '설정이 필요합니다',
       setupLede: '가전에 연결하려면 클라이언트 인증서가 먼저 필요합니다. 최초 1회만 하면 되고, 집 안 모든 삼성 가전에 적용됩니다.',
@@ -198,9 +243,37 @@
     var s = STRINGS[LANG][key];
     if (s === undefined) s = STRINGS.en[key];
     for (var i = 1; i < arguments.length; i++) {
-      s = s.replace('{' + (i - 1) + '}', arguments[i]);
+      s = s.replace('{' + (i - 1) + '}', describe(arguments[i]));
     }
     return s;
+  }
+
+  // Rejections reaching these handlers are usually not Errors. homey.js rejects with
+  // `obj.args[0]` — the value the Python side sent, verbatim — and Homey's own API
+  // rejects with structured objects, so `err.message` is frequently absent. Casting
+  // those with String() printed "[object Object]", which told the user nothing about a
+  // real failure and nothing about which step failed. So walk the shapes that actually
+  // occur, and fall back to JSON, which is at least diagnosable.
+  function describe(err, depth) {
+    if (err === null || err === undefined) return t('unknownError');
+    if (typeof err === 'string') return err;
+    if (typeof err !== 'object') return String(err);
+    if ((depth || 0) > 4) return t('unknownError');
+    var keys = ['message', 'error', 'description', 'reason', 'detail', 'statusText'];
+    for (var i = 0; i < keys.length; i++) {
+      var value = err[keys[i]];
+      if (typeof value === 'string' && value) return value;
+      if (value && typeof value === 'object') return describe(value, (depth || 0) + 1);
+    }
+    if (Object.prototype.toString.call(err) === '[object Error]') {
+      var text = String(err);
+      if (text && text !== '[object Object]') return text;
+    }
+    try {
+      var json = JSON.stringify(err);
+      if (json && json !== '{}' && json !== 'null' && json !== '[]') return json;
+    } catch (e) { /* circular structure */ }
+    return t('unknownError');
   }
 
   function setText(id, value) {
@@ -263,7 +336,7 @@
       })
       .catch(function (err) {
         button.disabled = false;
-        searchMessage('err', String((err && err.message) || err));
+        searchMessage('err', describe(err));
       });
   }
 
@@ -361,7 +434,7 @@
       })
       .catch(function (err) {
         document.getElementById('btn-search').disabled = false;
-        searchMessage('err', String((err && err.message) || err));
+        searchMessage('err', describe(err));
       });
   }
 
@@ -378,8 +451,76 @@
       })
       .catch(function (err) {
         document.getElementById('btn-search').disabled = false;
-        searchMessage('err', String((err && err.message) || err));
+        searchMessage('err', describe(err));
       });
+  }
+
+  // An unsupported appliance is the one case where the user holds information the
+  // developer cannot get any other way: its /device/0. Asking them to "open an issue
+  // with the model number" was not enough — a model number maps nothing, which is how
+  // the range hood shipped with every field name guessed wrong. So the report is
+  // built for them, shown in full so they can see what they are sending, and put on
+  // the clipboard in one press.
+  function showReport(result) {
+    if (!result.report) return;
+    var box = document.getElementById('report');
+    document.getElementById('report-text').value = result.report;
+    setText('t-report-title', t('reportTitle'));
+    setText('t-report-lede', t('reportLede'));
+    setText('t-report-copy', t('reportCopy'));
+    setText('t-report-open', t('reportOpen'));
+    setText('report-url', result.issue_url || '');
+    show('report', true);
+
+    document.getElementById('btn-report-copy').onclick = function () {
+      copyReport(result.report);
+    };
+    var open = document.getElementById('btn-report-open');
+    open.onclick = function () {
+      // popup() is the only URL-opening call homey.js exposes here, and it is not
+      // guaranteed to work in every webview context, so the address stays visible
+      // as text either way rather than being hidden behind a button that may do
+      // nothing.
+      try {
+        if (H && typeof H.popup === 'function') H.popup(result.issue_url);
+        else reportMessage('warn', t('reportOpenManually'));
+      } catch (e) {
+        reportMessage('warn', t('reportOpenManually'));
+      }
+    };
+    box.scrollIntoView({ block: 'nearest' });
+  }
+
+  function copyReport(text) {
+    var area = document.getElementById('report-text');
+    var done = function () { reportMessage('ok', t('reportCopied')); };
+    // navigator.clipboard needs a secure context and is absent in some webviews;
+    // selecting the textarea and using execCommand works where it is not.
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done, function () { legacyCopy(area, done); });
+        return;
+      }
+    } catch (e) { /* fall through */ }
+    legacyCopy(area, done);
+  }
+
+  function legacyCopy(area, done) {
+    try {
+      area.removeAttribute('readonly');
+      area.focus();
+      area.setSelectionRange(0, area.value.length);
+      var ok = document.execCommand && document.execCommand('copy');
+      area.setAttribute('readonly', 'readonly');
+      if (ok) return done();
+    } catch (e) { /* reported below */ }
+    reportMessage('warn', t('reportCopyManually'));
+  }
+
+  function reportMessage(kind, text) {
+    var el = document.getElementById('report-msg');
+    el.className = 'msg ' + (kind || '');
+    el.textContent = text;
   }
 
   function connect() {
@@ -391,23 +532,35 @@
     button.disabled = true;
     message('', t('probing'), true);
 
+    // Reaching the appliance and having Homey accept it are separate failures with
+    // separate fixes — an unreachable address versus a device payload Homey rejects —
+    // so they are caught separately. Sharing one handler reported both as the same
+    // unattributed error, which left no way to tell which half had gone wrong.
     H.emit('probe', { host: host, language: LANG })
+      .catch(function (err) {
+        throw new Error(t('probeFailed', describe(err)));
+      })
       .then(function (result) {
         button.disabled = false;
         if (!result.recognised) {
-          message('err', t('unsupported') + '\n'
+          message('warn', t('unsupported') + '\n'
             + t('unsupportedHint', result.model, result.resource_count));
+          showReport(result);
           return;
         }
         message('ok', t('creating'), true);
         var summary = document.getElementById('summary');
         summary.textContent = result.model + ' · ' + t('capabilities', result.capability_count);
         show('summary', true);
-        return H.createDevice(result.device).then(function () { return H.done(); });
+        return H.createDevice(result.device)
+          .catch(function (err) {
+            throw new Error(t('createFailed', result.model, describe(err)));
+          })
+          .then(function () { return H.done(); });
       })
       .catch(function (err) {
         button.disabled = false;
-        message('err', String((err && err.message) || err));
+        message('err', describe(err));
       });
   }
 
@@ -480,7 +633,7 @@
         applyStrings();
         show('boot', false);
         show('host-step', true);
-        message('err', String((err && err.message) || err));
+        message('err', describe(err));
       });
   }
 

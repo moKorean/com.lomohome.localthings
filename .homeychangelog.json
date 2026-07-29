@@ -1,6 +1,6 @@
 {
-  "0.1.0": {
-    "en": "First release. Local control of Samsung appliances over DTLS/CoAP, with no SmartThings cloud involved. Verified on air conditioners and an induction cooktop; state arrives by push where the appliance supports it.",
-    "ko": "첫 릴리스. SmartThings 클라우드 없이 삼성 가전을 DTLS/CoAP로 직접 제어합니다. 에어컨과 인덕션에서 검증했고, 가전이 지원하면 상태를 푸시로 받습니다."
+  "0.3.0": {
+    "en": "First release. Controls Samsung air conditioners, induction cooktops and range hoods directly on your own network, with no SmartThings cloud involved. State arrives by push where the appliance supports it, and an appliance that changes IP address is found again by serial number without re-pairing.",
+    "ko": "첫 릴리스. SmartThings 클라우드 없이 삼성 에어컨·인덕션·주방 후드를 집 안 네트워크에서 직접 제어합니다. 가전이 지원하면 상태를 푸시로 받고, IP가 바뀐 가전은 시리얼로 다시 찾아 재페어링이 필요 없습니다."
   }
 }

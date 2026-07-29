@@ -396,12 +396,88 @@ class Device(device.Device):
                 f"registry {self._registry.name}, "
                 f"{len(unbound)} unbound resources: {unbound}"
             )
+            await self._sync_device_class()
+            await self._sync_capabilities()
             await self._sync_capability_options()
         await self._apply(self._resources)
         await self.set_available()
         self._evaluate_observe()
         await self._try_observe()
         await self._sync_settings()
+
+    async def _sync_capabilities(self) -> None:
+        """Bring the device's capability list in line with what the registry now maps.
+
+        Homey fixes a device's capabilities at creation, so a registry correction
+        reaches only appliances paired afterwards. That is how it should not work
+        here: the range hood's mapping was wrong in its first release, and once
+        fixed, the already-paired hood kept the seven broken capabilities it was
+        created with and gained none of the working ones. The only remedy was to
+        delete and re-add the appliance, losing its flows and history.
+
+        Both directions matter. Adding is what delivers a fix; removing is what
+        retires a capability that turned out to read nothing, and leaving those
+        behind is what made the hood look supported when it was not.
+
+        add_capability is documented as expensive, so nothing is touched unless the
+        sets actually differ — on an unchanged device this costs one comparison.
+        """
+        wanted = set(self._registry.capabilities(self._resources))
+        current = set(self.get_capabilities() or ())
+        if wanted == current:
+            return
+
+        for capability in sorted(wanted - current):
+            try:
+                await self.add_capability(capability)
+                self.log(f"capability added: {capability}")
+            except Exception as exc:
+                self.log(f"adding {capability} failed: {exc}")
+
+        # Removals last: a device briefly holding both sets is harmless, whereas a
+        # device that has had everything removed and then fails to add is not.
+        for capability in sorted(current - wanted):
+            try:
+                await self.remove_capability(capability)
+                self.log(f"capability removed: {capability}")
+            except Exception as exc:
+                self.log(f"removing {capability} failed: {exc}")
+
+        # Listeners are registered in on_init against the capability list as it was
+        # then, so anything added since has no listener and would accept a write
+        # that goes nowhere.
+        for capability in sorted(wanted - current):
+            try:
+                self.register_capability_listener(
+                    capability, self._make_listener(capability)
+                )
+            except Exception as exc:
+                self.log(f"listener for {capability} failed: {exc}")
+
+    async def _sync_device_class(self) -> None:
+        """Adopt the class the registry declares for what this appliance turned out
+        to be.
+
+        One driver covers every appliance type, so driver.compose.json can only
+        declare a single class and declares the neutral `other`. The actual type is
+        not known until /device/0 has been read, which is here — so the class the
+        registry carries (a thermostat for an air conditioner, a fan for a purifier
+        or hood) has to be applied at runtime or it never takes effect and Homey
+        shows every appliance as a generic device.
+
+        Cheap and idempotent, so it runs on every start rather than only at
+        creation: that is what lets a device paired before this existed pick its
+        class up, and what corrects one whose registry mapping later changes.
+        """
+        wanted = getattr(self._registry, "device_class", None)
+        if not wanted or self.get_class() == wanted:
+            return
+        try:
+            await self.set_class(wanted)
+            self.log(f"device class -> {wanted}")
+        except Exception as exc:
+            # A wrong class is a cosmetic problem; refusing to start over it is not.
+            self.log(f"device class {wanted} rejected: {exc}")
 
     async def _sync_capability_options(self) -> None:
         """Push per-device capability options (ranges, sub-capability titles).

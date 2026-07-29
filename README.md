@@ -4,7 +4,7 @@
 
 Home Assistant 통합 [mbillow/localthings](https://github.com/mbillow/localthings)를 Homey로 포팅하는 프로젝트입니다. 가전과 DTLS-over-CoAP 세션을 직접 맺어 상태를 읽고 명령을 보내므로, 클라우드 왕복이 없습니다.
 
-> **상태: 개발 중 (v0.1.0).** 에어컨 4대와 인덕션 1대가 검색·페어링·제어까지 실기기에서 동작하고, 상태는 CoAP OBSERVE로 푸시받습니다(폴링은 5분 주기 안전 스윕). 나머지 가전 종류는 미이식입니다. 설계와 실측 자료는 [`docs/PORTING.md`](docs/PORTING.md)를 참고하세요.
+> **상태: 첫 심사 제출 준비 (v0.3.0).** 에어컨 4대, 인덕션 1대, 주방 후드 1대가 검색·페어링·제어까지 실기기에서 동작하고, 상태는 CoAP OBSERVE로 푸시받습니다(폴링은 5분 주기 안전 스윕). 나머지 13종은 라우팅과 capability 매핑까지 이식했지만 실기기 검증은 못 했습니다. 설계와 실측 자료는 [`docs/PORTING.md`](docs/PORTING.md)를 참고하세요.
 
 ## 동작 방식
 
@@ -19,7 +19,11 @@ Home Assistant 통합 [mbillow/localthings](https://github.com/mbillow/localthin
 
 ## 대상 기기
 
-Tizen RT 3.x / DAWIT 3.0+ 펌웨어를 쓰는 삼성 가전(대략 2022년 이후). 세탁기, 건조기, 에어컨, 공기청정기, 제습기, 냉장고, 식기세척기, 오븐, 전자레인지, 쿡탑, 레인지, 레인지 후드, 정수기, 청소기 스테이션, 에어드레서.
+Tizen RT 3.x / DAWIT 3.0+ 펌웨어를 쓰는 삼성 가전(대략 2022년 이후).
+
+**앱이 지원한다고 밝히는 기기는 에어컨, 인덕션, 주방 후드입니다** — 실기기로 검증한 세 종입니다. 코드는 레퍼런스가 다루는 16종 전부를 라우팅하지만(아래 [지원 현황](#지원-현황)), 나머지 13종은 검증하지 못했으므로 앱 설명·태그에서 의도적으로 빼 두었습니다. 실제로는 동작할 수 있으니 시도해 보시고 결과를 알려주시면 반영하겠습니다.
+
+미지원 기기를 IP로 추가하려 하면 앱이 그 기기의 `/device/0` 덤프로 **지원요청 리포트**를 만들어 줍니다. 시리얼·MAC·Wi-Fi 이름 같은 개별 식별자는 가려지고, 종류를 매핑하는 데 필요한 리소스 경로와 필드명은 남습니다.
 
 `8888/tcp`만 열려 있는 구형 펌웨어(2018~2022년경, 토큰 기반 HTTPS)는 대상이 아닙니다.
 
@@ -149,7 +153,9 @@ drivers/appliance/
 locales/{en,ko}.json          앱 i18n (없으면 i18n.get_language가 en으로 떨어짐)
 tests/
   fixtures/                   실기기 /device/0 덤프 (민감정보 리댁션)
-  test_registry.py            레지스트리 회귀 테스트 (11개)
+  test_registry.py            레지스트리 회귀 테스트
+  test_range_hood.py          실기기 덤프로 후드 매핑 고정
+  test_support_report.py      미지원 기기 리포트의 리댁션 검증
 python_packages/              Homey CLI가 생성하는 아키텍처별 venv (커밋하지 않음)
 ```
 
@@ -159,12 +165,13 @@ python_packages/              Homey CLI가 생성하는 아키텍처별 venv (�
 
 ### 지원 현황
 
-레퍼런스가 지원하는 **16종 전부**를 라우팅합니다. 다만 검증 수준이 다릅니다.
+레퍼런스가 지원하는 **16종 전부**를 라우팅합니다. 다만 검증 수준이 다릅니다. 미검증 항목은 레퍼런스에서 이식했을 뿐 실제 기기로 확인하지 못한 것이고, 후드가 보여준 것처럼 **필드명을 추측하면 대체로 틀립니다** — 페어링은 되지만 아무 값도 읽히지 않습니다.
 
 | 가전 | 상태 |
 |---|---|
 | **에어컨** (`RAC/PRAC/KRAC/CAC/WAC/FAC/CAWW/ARA`) | **실기기 검증.** 전원·희망온도·현재온도·모드·풍량·쾌적모드·풍향·공기청정·자동건조·표시등·엣지라이팅·UV살균·부재절전·습도·전력·먼지·필터 (31개) |
 | **인덕션** (`COOKTOP`) | **실기기 검증.** 구별 화력·상태·잔열, 차일드락(쓰기), 스마트제어, 안전차단, 전력, BT 온도 프로브 (19개) |
+| **주방후드** (`AHD`) | **실기기 검증** (AHD-WW-TP1-22). 전원, 풍량 5단(쓰기), 작업등 켜기/끄기와 밝기 2단(쓰기), 자동환기 상태, 필터 사용률·교체경보, 공기질·먼지 PM10/2.5/1.0, 누적전력 (14개) |
 | 냉장고 (`REF`) | 미검증. 급속냉장·급속냉동·제빙·자동급수·내부조명·안식일·웰컴라이팅, 냉장/냉동 온도, 문열림, 정수필터 |
 | 세탁기 (`WW/WD/WF/WV/WA*`) | 미검증. 동작상태·진행률·남은시간, 세탁온도·탈수·헹굼, 누적수량 |
 | 건조기 (`DV*`) | 미검증. 동작상태·진행률·남은시간, 건조강도, 주름방지 |
@@ -173,7 +180,6 @@ python_packages/              Homey CLI가 생성하는 아키텍처별 venv (�
 | 제습기 (`DHM`) | 미검증. 습도·목표습도(쓰기)·필터 |
 | 오븐·레인지·전자레인지 (`OVEN/RANGE/MICROWAVE`) | 미검증. 동작상태·모드·내부온도·설정온도·문열림 — **가열 제어 없음** |
 | 가스쿡탑 (`CT`) | 미검증. 전원 상태·버너 사용 여부 — **읽기 전용** |
-| 주방후드 (`AHD`) | 미검증. 풍량·조명(쓰기)·필터·공기질·전력 |
 | 정수기 (`WATERPURIFIER`) | 미검증. 동작상태·차일드락·정수필터·누적수량 |
 | 청정스테이션 (`VSKR`) | 미검증. 동작상태·먼지봉투 사용량/경고 |
 | 에어드레서 (`DF`) | 미검증. 동작상태·진행률·살균 |
@@ -282,7 +288,9 @@ python3 -m venv .venv
 
 ## 라이선스
 
-GPL-3.0-or-later. 프로토콜 분석과 기기 레지스트리 설계는 [mbillow/localthings](https://github.com/mbillow/localthings)와 [QuiteYellow/SmartThings-Local](https://github.com/QuiteYellow/SmartThings-Local)의 작업에 기반합니다.
+GPL-3.0-or-later.
+
+프로토콜 분석과 기기 레지스트리 설계는 [mbillow/localthings](https://github.com/mbillow/localthings)(MIT, © Marc Billow)와 [QuiteYellow/SmartThings-Local](https://github.com/QuiteYellow/SmartThings-Local)의 작업에 기반하고, DTLS-CoAP 전송은 `smartthings-local`(MIT, © Jack Nagy)을 수정 없이 씁니다. MIT는 재사용을 허용하되 저작권·허가 표기를 함께 배포할 것을 요구하므로, 두 라이선스 전문을 [`NOTICE`](NOTICE)에 그대로 담고 어느 부분이 무엇에서 파생되었는지 적어 두었습니다. 앱 매니페스트의 `copyright`와 `contributors`에도 같은 내용을 표기했습니다(App Store 가이드라인 2.1).
 
 `assets/capabilities/mdi-*.svg`는 [Material Design Icons](https://pictogrammers.com/library/mdi/)에서 수정 없이 가져왔습니다 (Pictogrammers Free License / Apache-2.0). 새 capability 아이콘도 이 아이콘셋에서 가져옵니다:
 

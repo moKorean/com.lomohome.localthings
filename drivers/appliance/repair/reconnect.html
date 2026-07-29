@@ -96,6 +96,7 @@
 
   var STRINGS = {
     en: {
+      unknownError: 'Unknown error',
       boot: 'Loading…',
       factsTitle: 'This device',
       fHost: 'IP address', fPort: 'DTLS port', fSerial: 'Serial', fCert: 'Certificate',
@@ -123,6 +124,7 @@
       done: 'Done — you can close this window.',
     },
     ko: {
+      unknownError: '알 수 없는 오류',
       boot: '불러오는 중…',
       factsTitle: '이 기기',
       fHost: 'IP 주소', fPort: 'DTLS 포트', fSerial: '시리얼', fCert: '인증서',
@@ -154,8 +156,36 @@
   function t(key) {
     var s = STRINGS[LANG][key];
     if (s === undefined) s = STRINGS.en[key];
-    for (var i = 1; i < arguments.length; i++) s = s.replace('{' + (i - 1) + '}', arguments[i]);
+    for (var i = 1; i < arguments.length; i++) s = s.replace('{' + (i - 1) + '}', describe(arguments[i]));
     return s;
+  }
+
+  // Rejections reaching these handlers are usually not Errors. homey.js rejects with
+  // `obj.args[0]` — the value the Python side sent, verbatim — and Homey's own API
+  // rejects with structured objects, so `err.message` is frequently absent. Casting
+  // those with String() printed "[object Object]", which told the user nothing about a
+  // real failure and nothing about which step failed. So walk the shapes that actually
+  // occur, and fall back to JSON, which is at least diagnosable.
+  function describe(err, depth) {
+    if (err === null || err === undefined) return t('unknownError');
+    if (typeof err === 'string') return err;
+    if (typeof err !== 'object') return String(err);
+    if ((depth || 0) > 4) return t('unknownError');
+    var keys = ['message', 'error', 'description', 'reason', 'detail', 'statusText'];
+    for (var i = 0; i < keys.length; i++) {
+      var value = err[keys[i]];
+      if (typeof value === 'string' && value) return value;
+      if (value && typeof value === 'object') return describe(value, (depth || 0) + 1);
+    }
+    if (Object.prototype.toString.call(err) === '[object Error]') {
+      var text = String(err);
+      if (text && text !== '[object Object]') return text;
+    }
+    try {
+      var json = JSON.stringify(err);
+      if (json && json !== '{}' && json !== 'null' && json !== '[]') return json;
+    } catch (e) { /* circular structure */ }
+    return t('unknownError');
   }
 
   function setText(id, value) {
@@ -262,7 +292,7 @@
       })
       .catch(function (err) {
         button.disabled = false;
-        message('action-msg', 'err', String((err && err.message) || err));
+        message('action-msg', 'err', describe(err));
       });
   }
 
@@ -282,7 +312,7 @@
       })
       .catch(function (err) {
         button.disabled = false;
-        message('action-msg', 'err', String((err && err.message) || err));
+        message('action-msg', 'err', describe(err));
       });
   }
 
@@ -304,7 +334,7 @@
       })
       .catch(function (err) {
         button.disabled = false;
-        message('manual-msg', 'err', String((err && err.message) || err));
+        message('manual-msg', 'err', describe(err));
       });
   }
 
@@ -327,7 +357,7 @@
         applyStrings();
         show('boot', false);
         show('facts-card', true);
-        message('cert-msg', 'err', String((err && err.message) || err));
+        message('cert-msg', 'err', describe(err));
       });
   }
 

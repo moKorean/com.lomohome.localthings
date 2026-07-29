@@ -1,0 +1,216 @@
+{
+  "/airlevelcheck/vs/0": {
+    "x.com.samsung.da.autoExeState": "Sensing",
+    "x.com.samsung.da.lastSensingLevel": "Kr1",
+    "x.com.samsung.da.lastSensingTime": "1785339548",
+    "x.com.samsung.da.periodicSensingActivationState": "On",
+    "x.com.samsung.da.periodicSensingInterval": "3600",
+    "x.com.samsung.da.periodicSensingSkipStatus": "Off",
+    "x.com.samsung.da.periodicSensingSkipTime": "00000000",
+    "x.com.samsung.da.sensingState": "NonProcessing",
+    "x.com.samsung.da.startSensingOnce": "Off",
+    "x.com.samsung.da.supportedAutoExeState": [
+      "Airpurify",
+      "Alarm"
+    ]
+  },
+  "/alarms/vs/0": {
+    "x.com.samsung.da.items": [
+      {
+        "x.com.samsung.da.alarmType": "Device",
+        "x.com.samsung.da.code": "ErrorCode_OFF",
+        "x.com.samsung.da.description": "Alarm",
+        "x.com.samsung.da.id": "0",
+        "x.com.samsung.da.state": "Deleted",
+        "x.com.samsung.da.triggeredTime": "2026-07-29T15:41:49"
+      }
+    ]
+  },
+  "/autoventilation/vs/0": {
+    "action": "Start"
+  },
+  "/availablecontrolsets/vs/0": {
+    "x.com.samsung.da.id": "HOOD",
+    "x.com.samsung.da.sets": "0000000000012000000000000000",
+    "x.com.samsung.da.version": "1.0"
+  },
+  "/configuration/vs/0": {
+    "x.com.samsung.da.airconOptionList": [
+      "DR"
+    ],
+    "x.com.samsung.da.countryCode": "",
+    "x.com.samsung.da.region": "0000000000"
+  },
+  "/da/softreset/vs/0": {
+    "x.com.samsung.da.softwarereset": "false"
+  },
+  "/drlc/0": {
+    "DRLevel": 0,
+    "durationminutes": 0,
+    "override": false,
+    "start": "1970-01-01T00:00:00Z"
+  },
+  "/drlc/vs/0": {
+    "x.com.samsung.da.drlcLevel": "0",
+    "x.com.samsung.da.durationminutes": "0",
+    "x.com.samsung.da.override": "Off",
+    "x.com.samsung.da.realSaving": "Off",
+    "x.com.samsung.da.start": "1970-01-01T00:00:00Z"
+  },
+  "/energy/consumption/0": {},
+  "/energy/consumption/vs/0": {
+    "x.com.samsung.da.cumulativeDate": "1785372109",
+    "x.com.samsung.da.cumulativeDateUTC": "1785339709",
+    "x.com.samsung.da.cumulativePower": "1206",
+    "x.com.samsung.da.cumulativeSavedPower": "0",
+    "x.com.samsung.da.cumulativeUnit": "Wh"
+  },
+  "/file/information/vs/0": {
+    "x.com.samsung.timeoffset": "+09:00"
+  },
+  "/filter/hoodfilter/vs/0": {
+    "x.com.samsung.da.filterCapacity": "60",
+    "x.com.samsung.da.filterCapacityUnit": "Hour",
+    "x.com.samsung.da.filterResetType": [
+      "replaceable",
+      "washable"
+    ],
+    "x.com.samsung.da.filterStatus": "normal",
+    "x.com.samsung.da.filterUsage": "80",
+    "x.com.samsung.da.filterUsageResolution": "1"
+  },
+  "/hood/fanspeed/vs/0": {
+    "x.com.samsung.da.hood.autoOperation": "Off",
+    "x.com.samsung.da.hood.fanSpeed": "14",
+    "x.com.samsung.da.hood.supportedFanSpeed": [
+      "14",
+      "15",
+      "16",
+      "17",
+      "18"
+    ]
+  },
+  "/hood/lamp/vs/0": {
+    "x.com.samsung.lamp.current": "2",
+    "x.com.samsung.lamp.power": "Off",
+    "x.com.samsung.lamp.range": [
+      "1",
+      "2"
+    ]
+  },
+  "/information/vs/0": {
+    "x.com.samsung.da.description": "AHD-WW-TP1-22-COMMON",
+    "x.com.samsung.da.diagDumpType": "file",
+    "x.com.samsung.da.diagEndPoint": "SSM",
+    "x.com.samsung.da.diagLogType": [
+      "errCode",
+      "dump"
+    ],
+    "x.com.samsung.da.diagMinVersion": "1.0",
+    "x.com.samsung.da.diagMnid": "0AJT",
+    "x.com.samsung.da.diagProtocolType": "WIFI_HTTPS",
+    "x.com.samsung.da.diagSetupid": "KH0",
+    "x.com.samsung.da.items": [
+      {
+        "x.com.samsung.da.description": "Version",
+        "x.com.samsung.da.id": "0",
+        "x.com.samsung.da.newVersionAvailable": "0",
+        "x.com.samsung.da.number": "01294A250416",
+        "x.com.samsung.da.type": "Software"
+      },
+      {
+        "x.com.samsung.da.description": "Version",
+        "x.com.samsung.da.id": "1",
+        "x.com.samsung.da.newVersionAvailable": "0",
+        "x.com.samsung.da.number": "22102803,22072801",
+        "x.com.samsung.da.type": "Firmware"
+      },
+      {
+        "x.com.samsung.da.description": "Version",
+        "x.com.samsung.da.id": "2",
+        "x.com.samsung.da.newVersionAvailable": "0",
+        "x.com.samsung.da.number": "10000400",
+        "x.com.samsung.da.type": "Firmware"
+      },
+      {
+        "x.com.samsung.da.description": "Version",
+        "x.com.samsung.da.id": "3",
+        "x.com.samsung.da.newVersionAvailable": "0",
+        "x.com.samsung.da.number": "22021000",
+        "x.com.samsung.da.type": "Firmware"
+      }
+    ],
+    "x.com.samsung.da.modelNum": "AHD-WW-TP1-22-COMMON|20174352|7800006B001947C22F00090001010000",
+    "x.com.samsung.da.otnDUID": "KLCCMG4A9PPZQ",
+    "x.com.samsung.da.serialNum": "B8FU31SL700042R"
+  },
+  "/mode/vs/0": {
+    "x.com.samsung.da.options": [
+      "OptionCode_19322",
+      "UpdateAllow_NotAllowed"
+    ]
+  },
+  "/otninformation/vs/0": {
+    "x.com.samsung.da.newVersionAvailable": "false",
+    "x.com.samsung.da.target": ""
+  },
+  "/personality/presence/vs/0": {
+    "x.com.samsung.da.items": [
+      {
+        "x.com.samsung.da.deviceId": "",
+        "x.com.samsung.da.id": "",
+        "x.com.samsung.da.value": ""
+      }
+    ]
+  },
+  "/power/0": {
+    "value": false
+  },
+  "/power/vs/0": {
+    "x.com.samsung.da.power": "Off"
+  },
+  "/realtimenotiforclient/vs/0": {
+    "x.com.samsung.da.longnotisubscription": "true",
+    "x.com.samsung.da.periodicnotisubscription": "true",
+    "x.com.samsung.da.timeforshortnoti": "0"
+  },
+  "/sensors/vs/0": {
+    "x.com.samsung.da.items": [
+      {
+        "x.com.samsung.da.description": "Sensor for CleanLevel",
+        "x.com.samsung.da.id": "0",
+        "x.com.samsung.da.type": "CleanLevel",
+        "x.com.samsung.da.value": [
+          "1"
+        ]
+      },
+      {
+        "x.com.samsung.da.description": "Sensor for Dust",
+        "x.com.samsung.da.id": "2",
+        "x.com.samsung.da.type": "Dust",
+        "x.com.samsung.da.value": [
+          "5",
+          "1"
+        ]
+      },
+      {
+        "x.com.samsung.da.description": "Sensor for FineDust",
+        "x.com.samsung.da.id": "3",
+        "x.com.samsung.da.type": "FineDust",
+        "x.com.samsung.da.value": [
+          "9",
+          "1"
+        ]
+      },
+      {
+        "x.com.samsung.da.description": "Sensor for SuperFineDust",
+        "x.com.samsung.da.id": "4",
+        "x.com.samsung.da.type": "SuperFineDust",
+        "x.com.samsung.da.value": [
+          "5",
+          "1"
+        ]
+      }
+    ]
+  }
+}

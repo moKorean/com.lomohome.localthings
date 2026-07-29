@@ -14,7 +14,7 @@ sys.path.insert(0, str(Path(__file__).parents[2]))
 
 from homey import driver
 
-from lib import cert, compat, discovery, i18n, probe, registry
+from lib import cert, compat, discovery, i18n, probe, registry, support
 from lib.const import (
     SETTING_LEAF_CERT,
     SETTING_LEAF_KEY,
@@ -29,6 +29,11 @@ from lib.resources import read_identity
 # this one message is resolved in English. It only appears if the SDK gives neither a
 # device on the session nor an id in the payload, which no observed version does.
 _REPAIR_NO_DEVICE = i18n.translate("error.repair_no_device")
+
+# Where an unsupported appliance gets reported. Kept next to the manifest's
+# `bugs.url` rather than derived from it: the view shows it as text a user has to
+# be able to read and retype, so it must not silently become undefined.
+_ISSUE_URL = "https://github.com/moKorean/com.lomohome.localthings/issues/new"
 
 
 class Driver(driver.Driver):
@@ -470,14 +475,32 @@ class Driver(driver.Driver):
 
         if reg is None:
             # Deliberately not a hard error: the appliance is reachable, and its
-            # model number is what adding support needs. Report it instead of a
-            # bare failure.
+            # /device/0 is exactly what adding support needs. Hand the user a
+            # ready-to-send report rather than asking them to describe the device —
+            # a model number alone is not enough to map anything, which is why the
+            # range hood shipped with every field name guessed wrong.
             self.log(f"unrecognised appliance {model}, {len(resources)} resources")
             return {
                 "recognised": False,
                 "model": model,
                 "resource_count": len(resources),
+                "report": support.report(
+                    resources,
+                    model=model,
+                    port=result.get("port"),
+                    app_version=(self.homey.manifest or {}).get("version"),
+                ),
+                "issue_url": _ISSUE_URL,
             }
+
+        # The search list filters out what is already paired; entering an address by
+        # hand skipped that check, so Homey was left to reject the duplicate at
+        # createDevice — and its rejection is a structured object, which the view
+        # could only render as an unattributed error. Say it here instead.
+        _, paired_serials = self._paired_identity()
+        if str(result["serial"]) in paired_serials:
+            raise ValueError(i18n.translate(
+                "error.already_paired", language, host=host, model=model))
 
         capabilities = reg.capabilities(resources)
         unbound = registry.unbound_hrefs(resources, reg)

@@ -134,6 +134,21 @@ def test_every_type_has_a_korean_title():
         assert reg.title("ko") != name, f"{name} falls back to its key in Korean"
 
 
+def test_every_device_class_is_one_homey_accepts():
+    """The registry's class is applied at runtime by Device._sync_device_class, so a
+    typo here is not caught by `homey app validate` — driver.compose.json only ever
+    declares `other`. It would surface as one appliance type silently staying generic
+    while every other type works."""
+    # Confirmed in use by published Homey apps; `other` is the documented fallback
+    # for a device Homey has no specific class for.
+    accepted = {"other", "fan", "thermostat", "heater", "socket", "sensor", "light"}
+    for name, reg in registry._REGISTRY_BY_KEY.items():
+        assert reg.device_class in accepted, (
+            f"{name} declares class {reg.device_class!r}, which is not a known "
+            f"Homey device class"
+        )
+
+
 def test_consumer_prefixes_never_outrank_a_board_token():
     """'WAC' (window air conditioner) starts with 'WA' (top-load washer). The board
     token has to win or window units become washers."""

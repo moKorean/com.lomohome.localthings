@@ -143,7 +143,12 @@ def _kwh(field: str):
 
 
 ENERGY = (
-    Spec("measure_power", HREF_ENERGY, read_power_watts),
+    # Not every appliance meters instantaneous draw — a range hood reports only a
+    # cumulative total. Offering the capability anyway left a power tile that could
+    # never show a number, which reads as a broken app rather than as an appliance
+    # without the sensor.
+    Spec("measure_power", HREF_ENERGY, read_power_watts,
+         exists=lambda rep, _r: "x.com.samsung.da.instantaneousPower" in rep),
     Spec("meter_power", HREF_ENERGY, _kwh("x.com.samsung.da.cumulativePower")),
 )
 
@@ -156,14 +161,24 @@ WATER_METER = (
 
 
 def _filter_percent(rep, _resources):
+    """Filter life used, as the percentage the device already reports.
+
+    `filterUsage` is a percentage, not a running total to be divided by
+    `filterCapacity` — that division was this function's original guess and it was
+    wrong on every device checked. `filterCapacity` is the filter's rated life in
+    `filterCapacityUnit`, which is `Hour` on all of them, so it is a duration and
+    not a denominator for a percentage.
+
+    The evidence: an air conditioner reporting usage 100 with capacity 180 also
+    reports `filterStatus: wash`. Dividing gives 56%, which would not be a filter
+    due for washing; 100% is. Two more filters on the same unit (27 of 2400) and a
+    range hood (80 of 60 — usage above capacity, which a fraction cannot even
+    express) agree.
+    """
     used = as_float(rep.get("x.com.samsung.da.filterUsage"))
-    capacity = as_float(rep.get("x.com.samsung.da.filterCapacity"))
     if used is None:
         return None
-    if not capacity:
-        # Some boards report usage already as a percentage with no capacity.
-        return round(min(used, 100.0), 1)
-    return round(min(used / capacity * 100.0, 100.0), 1)
+    return round(min(max(used, 0.0), 100.0), 1)
 
 
 def read_filter_alarm(rep, _resources):
