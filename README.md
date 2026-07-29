@@ -31,6 +31,74 @@ nmap -Pn -sU -p 49152-49160 "$APPLIANCE_IP"
 
 앱의 **기기 추가 → 검색**이 같은 일을 네트워크 전체에 대해 해줍니다. 응답한 기기만 종류를 확인하므로 IP를 몰라도 됩니다.
 
+## 앱 설치 방법
+
+인증서를 한 번 만들어 앱 설정에 넣는 것이 전부입니다. 가전마다 반복할 필요는 없습니다.
+
+### 1단계 — 앱 설치
+
+Homey 앱스토어에는 아직 없습니다. 저장소를 클론해 직접 설치합니다. [Homey CLI](https://apps.developer.homey.app/the-basics/getting-started)와 Docker가 필요합니다.
+
+```sh
+npm install -g homey
+homey login
+
+git clone https://github.com/moKorean/com.lomohome.localthings.git
+cd com.lomohome.localthings
+homey app install
+```
+
+`homey app install`이 `pythonPackages`를 아키텍처별 venv로 해석하느라 첫 실행은 몇 분 걸립니다.
+
+> `homey app run`(개발 모드)은 영구 설치본을 **대체하고, 실행이 끝나면 앱을 제거**합니다. 개발 중이 아니라면 `homey app install`을 쓰세요.
+
+### 2단계 — 클라이언트 인증서 발급 (컴퓨터에서 1회)
+
+가전은 `AC14K_M` 중간 CA가 서명한 인증서를 신뢰합니다. [`QuiteYellow/SmartThings-Local`](https://github.com/QuiteYellow/SmartThings-Local)의 `setup_cert.py`가 발급을 자동화합니다. Python 3과 `openssl`이 필요합니다.
+
+```sh
+git clone https://github.com/QuiteYellow/SmartThings-Local.git
+cd SmartThings-Local
+python3 -m venv .venv && .venv/bin/pip install pyOpenSSL
+
+# TARGET_IP는 선택입니다. 넣으면 붙여넣기 전에 실제 가전으로 검증합니다.
+OUT_DIR=./certs TARGET_IP=192.168.1.90 \
+  .venv/bin/python setup_cert.py --test
+```
+
+`--test`가 `GET /oic/sec/acl -> 2.05`를 출력하면 가전이 인증서를 수락한 것입니다. 자세한 동작은 [`docs/CA-SETUP.md`](docs/CA-SETUP.md)에 있습니다.
+
+**인증서 하나가 집 안 모든 삼성 가전에 통용됩니다.** 인증서에 들어가는 식별자가 가전이 아니라 삼성 게이트웨이에서 오는 값이기 때문에, 기기별이 아니라 설치별로 하나만 있으면 됩니다.
+
+### 3단계 — 앱 설정에 붙여넣기
+
+Homey에서 **설정 → 앱 → 로컬띵스 커뮤니티**를 엽니다. `certs/`에 생성된 파일 중 **두 개**를 붙여넣습니다:
+
+| 파일 | 입력란 |
+|---|---|
+| `client_fullchain.pem` | 인증서 체인 |
+| `client.key` | 개인키 |
+
+`client.pem`은 안 됩니다 — 리프 하나뿐이라 가전이 검증할 체인이 없습니다. 앱이 이 경우를 감지해 알려줍니다.
+
+저장하면 상태가 **준비 완료**로 바뀌고 식별자·만료일·체인 길이가 표시됩니다. 앱은 **CA 개인키를 받지 않습니다** — 이미 발급된 인증서만 저장하므로, 서명에 쓰인 CA 키는 컴퓨터에 남습니다.
+
+### 4단계 — 가전 추가
+
+**기기 → 기기 추가 → 로컬띵스 커뮤니티 → 검색**
+
+로컬 네트워크를 훑어 응답하는 가전을 찾고 종류까지 확인합니다. 1~2분 걸리며, 발견되는 대로 목록에 나타납니다. IP를 알고 있다면 직접 입력할 수도 있습니다.
+
+### 문제가 생기면
+
+기기의 **⋯ 메뉴 → 유지보수 → 복구**에서 연결을 확인하고, 주소가 바뀐 가전을 시리얼로 다시 찾거나 주소를 직접 지정할 수 있습니다.
+
+설치된 앱의 상태는 개발 모드 없이 확인할 수 있습니다:
+
+```sh
+homey api raw --path /api/app/com.lomohome.localthings/diagnostics
+```
+
 ## IP가 바뀌어도 동작합니다
 
 정체성은 IP가 아니라 **시리얼**(기기의 data id)입니다. 주소가 바뀌면:
@@ -69,6 +137,7 @@ drivers/appliance/
   driver.py                   검색·페어링 (인증서는 앱 설정에서)
   device.py                   세션 유지, 폴링 루프, 쓰기
   pair/configure.html         페어링 화면 (en/ko). 인증서 미설정 시 설정 위치를 안내
+  repair/reconnect.html       복구 화면 — 연결 확인, 시리얼로 재탐색, 주소 직접 지정
 locales/{en,ko}.json          앱 i18n (없으면 i18n.get_language가 en으로 떨어짐)
 tests/
   fixtures/                   실기기 /device/0 덤프 (민감정보 리댁션)

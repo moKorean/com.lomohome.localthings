@@ -224,6 +224,11 @@
           "id": "configure"
         }
       ],
+      "repair": [
+        {
+          "id": "reconnect"
+        }
+      ],
       "settings": [
         {
           "type": "group",

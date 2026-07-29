@@ -1,14 +1,19 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 960">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- A house holding an appliance panel, with the signal arcs kept inside the
+       walls: control never leaves the local network, which is the whole point. -->
   <g fill="#FFFFFF">
-    <!-- house outline: the "local" half of LocalThings -->
+    <!-- Roof and walls as one outline, so the interior stays transparent and the
+         brand colour shows through. -->
     <path fill-rule="evenodd" d="
-      M480,120 L840,412 v368 a60,60 0 0 1 -60,60 h-600 a60,60 0 0 1 -60,-60 v-368 z
-      M480,232 L240,427 v329 h480 v-329 z
-    "/>
-    <!-- appliance drum inside the house: control, on the LAN -->
-    <path fill-rule="evenodd" d="
-      M480,468 a150,150 0 1 0 0,300 a150,150 0 1 0 0,-300 z
-      M480,548 a70,70 0 1 1 0,140 a70,70 0 1 1 0,-140 z
-    "/>
+      M256 44 L474 214 v226 a30 30 0 0 1-30 30 H68 a30 30 0 0 1-30-30 V214 z
+      M256 108 L92 236 v178 h328 V236 z"/>
+    <!-- Appliance panel, narrowed to leave room for the signal beside it. -->
+    <rect x="126" y="276" width="172" height="104" rx="16"/>
+    <rect x="148" y="300" width="86" height="24" rx="9" fill="#1428A0"/>
+    <circle cx="164" cy="352" r="12" fill="#1428A0"/>
+    <circle cx="204" cy="352" r="12" fill="#1428A0"/>
+    <!-- Signal, radiating toward the wall and stopping at it. -->
+    <path d="M322 300 a52 52 0 0 1 0 56 l-17 -12 a34 34 0 0 0 0 -32 z"/>
+    <path d="M352 282 a86 86 0 0 1 0 92 l-17 -12 a68 68 0 0 0 0 -68 z"/>
   </g>
 </svg>

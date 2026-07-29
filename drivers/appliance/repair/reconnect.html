@@ -1,0 +1,365 @@
+<style>
+  /* Colours pinned rather than following prefers-color-scheme: the repair webview
+     mixes in its own base styles. */
+  :root {
+    --blue: #1428A0;
+    --bg: #f2f2f5;
+    --card: #ffffff;
+    --text: #1b1b1f;
+    --muted: #66666e;
+    --border: #e2e2e8;
+    --ok: #1e8449;
+    --warn: #b9770e;
+    --err: #c0392b;
+  }
+  * { box-sizing: border-box; }
+  html, body { background: var(--bg) !important; }
+  body {
+    margin: 0; color: var(--text); font-size: 14px; line-height: 1.5;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+  .wrap { max-width: 520px; margin: 0 auto; padding: 16px 16px 32px; }
+  .card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 10px; padding: 16px; margin-bottom: 13px;
+  }
+  h2 { font-size: 16px; margin: 0 0 8px; }
+  p { margin: 0 0 10px; color: var(--muted); }
+  .facts { font-size: 13px; }
+  .facts div { display: flex; justify-content: space-between; gap: 12px; padding: 3px 0; }
+  .facts span:first-child { color: var(--muted); }
+  .facts span:last-child { font-family: ui-monospace, Menlo, monospace; word-break: break-all; }
+  label { display: block; font-weight: 600; margin: 12px 0 4px; font-size: 13px; }
+  input[type=text] {
+    width: 100%; padding: 9px; font-size: 15px;
+    border: 1px solid var(--border); border-radius: 6px;
+  }
+  button {
+    margin-top: 12px; padding: 9px 16px; border: 0; border-radius: 6px;
+    background: var(--blue); color: #fff; font-size: 14px; cursor: pointer;
+  }
+  button.secondary { background: #6b6b76; }
+  button[disabled] { opacity: .55; cursor: default; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .msg { margin-top: 12px; font-size: 13px; white-space: pre-wrap; }
+  .msg.ok { color: var(--ok); } .msg.err { color: var(--err); } .msg.warn { color: var(--warn); }
+  .spinner {
+    display: inline-block; width: 12px; height: 12px; margin-right: 7px;
+    border: 2px solid #c9c9d2; border-top-color: var(--blue);
+    border-radius: 50%; animation: spin .8s linear infinite; vertical-align: -2px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .hidden { display: none; }
+</style>
+
+<div class="wrap">
+  <div class="card" id="boot">
+    <p><span class="spinner"></span><span id="t-boot"></span></p>
+  </div>
+
+  <div class="card hidden" id="facts-card">
+    <h2 id="t-facts-title"></h2>
+    <div class="facts">
+      <div><span id="t-f-host"></span><span id="v-host">—</span></div>
+      <div><span id="t-f-port"></span><span id="v-port">—</span></div>
+      <div><span id="t-f-serial"></span><span id="v-serial">—</span></div>
+      <div><span id="t-f-cert"></span><span id="v-cert">—</span></div>
+    </div>
+    <div id="cert-msg" class="msg"></div>
+  </div>
+
+  <div class="card hidden" id="actions-card">
+    <h2 id="t-actions-title"></h2>
+    <p id="t-actions-lede"></p>
+    <div class="row">
+      <button id="btn-test"><span id="t-test"></span></button>
+      <button id="btn-find" class="secondary"><span id="t-find"></span></button>
+    </div>
+    <div id="action-msg" class="msg"></div>
+  </div>
+
+  <div class="card hidden" id="manual-card">
+    <h2 id="t-manual-title"></h2>
+    <p id="t-manual-lede"></p>
+    <label id="t-manual-label"></label>
+    <input type="text" id="host" inputmode="decimal" autocomplete="off" placeholder="192.168.1.90" />
+    <button id="btn-host"><span id="t-manual-apply"></span></button>
+    <div id="manual-msg" class="msg"></div>
+  </div>
+</div>
+
+<script type="text/javascript">
+  var H = null;
+  var started = false;
+  var LANG = 'en';
+  var STATE = null;
+
+  var STRINGS = {
+    en: {
+      boot: 'Loading…',
+      factsTitle: 'This device',
+      fHost: 'IP address', fPort: 'DTLS port', fSerial: 'Serial', fCert: 'Certificate',
+      certOk: 'valid until {0}', certNone: 'not configured', certBad: 'has a problem',
+      certExpired: 'expired {0}',
+      certNoneMsg: 'Set a certificate up in Settings → Apps → LocalThings community first; nothing here can connect without one.',
+      certBadMsg: 'The stored certificate is unusable: {0}',
+      certExpiredMsg: 'Mint a new certificate and paste it in Settings → Apps → LocalThings community. Appliances reject an expired one.',
+      actionsTitle: 'Reconnect',
+      actionsLede: 'Start with a test. If the appliance has moved to a new address, searching finds it again by serial number — the serial does not change when the IP does.',
+      test: 'Test connection', find: 'Search the network',
+      testing: 'Connecting to {0}…',
+      searching: 'Searching for this appliance… this takes a minute or two.',
+      testOk: 'Reachable at {0}:{1}. Nothing needs repairing.',
+      testUnreachable: '{0} did not answer. Either the appliance is off, or it has a different address now — try searching.',
+      wrongDevice: '{0} answers, but it is a different appliance (expected serial {1}, found {2}). Two units most likely swapped addresses. Search to find the right one.',
+      findOk: 'Found at {0}:{1}. The device now points there.',
+      findNotFound: 'No appliance with this serial answered on the network. It may be powered off, or on a different subnet than Homey.',
+      findNoSerial: 'This appliance reports no usable serial number, so it cannot be identified by search. Enter its address below instead.',
+      manualTitle: 'Set the address by hand',
+      manualLede: 'Use this when you already know the new address. It is checked against this device’s serial before being applied, so it cannot be pointed at the wrong appliance.',
+      manualLabel: 'IP address',
+      manualApply: 'Apply',
+      needHost: 'Enter an IP address.',
+      done: 'Done — you can close this window.',
+    },
+    ko: {
+      boot: '불러오는 중…',
+      factsTitle: '이 기기',
+      fHost: 'IP 주소', fPort: 'DTLS 포트', fSerial: '시리얼', fCert: '인증서',
+      certOk: '{0}까지 유효', certNone: '설정되지 않음', certBad: '문제 있음',
+      certExpired: '{0}에 만료됨',
+      certNoneMsg: '먼저 설정 → 앱 → 로컬띵스 커뮤니티에서 인증서를 등록하세요. 인증서 없이는 어떤 방법으로도 연결되지 않습니다.',
+      certBadMsg: '저장된 인증서를 사용할 수 없습니다: {0}',
+      certExpiredMsg: '인증서를 새로 발급해 설정 → 앱 → 로컬띵스 커뮤니티에 붙여넣으세요. 만료된 인증서는 가전이 거부합니다.',
+      actionsTitle: '다시 연결',
+      actionsLede: '먼저 연결을 확인해보세요. 가전의 주소가 바뀌었다면 검색이 시리얼 번호로 다시 찾아냅니다 — IP가 바뀌어도 시리얼은 변하지 않습니다.',
+      test: '연결 확인', find: '네트워크에서 찾기',
+      testing: '{0}에 연결 중…',
+      searching: '이 가전을 찾는 중… 1~2분 걸립니다.',
+      testOk: '{0}:{1}에서 정상 응답합니다. 복구할 것이 없습니다.',
+      testUnreachable: '{0}이 응답하지 않습니다. 가전이 꺼져 있거나 주소가 바뀐 것입니다 — 검색을 해보세요.',
+      wrongDevice: '{0}은 응답하지만 다른 가전입니다 (기대한 시리얼 {1}, 발견된 값 {2}). 두 대의 주소가 서로 바뀐 것으로 보입니다. 검색으로 올바른 기기를 찾으세요.',
+      findOk: '{0}:{1}에서 찾았습니다. 이 기기가 그 주소를 가리키도록 변경했습니다.',
+      findNotFound: '이 시리얼을 가진 가전이 네트워크에서 응답하지 않았습니다. 전원이 꺼져 있거나 Homey와 다른 서브넷에 있을 수 있습니다.',
+      findNoSerial: '이 가전은 사용 가능한 시리얼을 보고하지 않아 검색으로 식별할 수 없습니다. 아래에 주소를 직접 입력하세요.',
+      manualTitle: '주소 직접 지정',
+      manualLede: '새 주소를 이미 알고 있을 때 사용하세요. 적용 전에 이 기기의 시리얼과 대조하므로, 다른 가전을 가리키게 되는 일은 없습니다.',
+      manualLabel: 'IP 주소',
+      manualApply: '적용',
+      needHost: 'IP 주소를 입력하세요.',
+      done: '완료 — 이 창을 닫아도 됩니다.',
+    },
+  };
+
+  function t(key) {
+    var s = STRINGS[LANG][key];
+    if (s === undefined) s = STRINGS.en[key];
+    for (var i = 1; i < arguments.length; i++) s = s.replace('{' + (i - 1) + '}', arguments[i]);
+    return s;
+  }
+
+  function setText(id, value) {
+    var el = document.getElementById(id);
+    if (el) el.textContent = value;
+  }
+
+  function show(id, visible) {
+    document.getElementById(id).classList.toggle('hidden', !visible);
+  }
+
+  function message(id, kind, text, loading) {
+    var el = document.getElementById(id);
+    el.className = 'msg ' + (kind || '');
+    el.innerHTML = (loading ? '<span class="spinner"></span>' : '')
+      + (text || '').replace(/</g, '&lt;');
+  }
+
+  function applyStrings() {
+    setText('t-boot', t('boot'));
+    setText('t-facts-title', t('factsTitle'));
+    setText('t-f-host', t('fHost'));
+    setText('t-f-port', t('fPort'));
+    setText('t-f-serial', t('fSerial'));
+    setText('t-f-cert', t('fCert'));
+    setText('t-actions-title', t('actionsTitle'));
+    setText('t-actions-lede', t('actionsLede'));
+    setText('t-test', t('test'));
+    setText('t-find', t('find'));
+    setText('t-manual-title', t('manualTitle'));
+    setText('t-manual-lede', t('manualLede'));
+    setText('t-manual-label', t('manualLabel'));
+    setText('t-manual-apply', t('manualApply'));
+  }
+
+  // Same contract as the pairing view: getLanguage() is the UI language and is
+  // asynchronous, Homey.language is only a cached property, and the driver reports
+  // the app's language rather than the user's.
+  function resolveLanguage(fromDriver) {
+    return new Promise(function (resolve) {
+      var settled = false;
+      function done(value) {
+        if (settled) return;
+        settled = true;
+        var lang = String(value || H.language || fromDriver || '').slice(0, 2).toLowerCase();
+        if (lang === 'ko') LANG = 'ko';
+        resolve();
+      }
+      try {
+        var maybe = H.getLanguage && H.getLanguage(function (err, v) { done(err ? null : v); });
+        if (maybe && typeof maybe.then === 'function') maybe.then(done, function () { done(null); });
+        else if (typeof maybe === 'string') done(maybe);
+      } catch (e) { /* fall through */ }
+      setTimeout(function () { done(null); }, 2500);
+    });
+  }
+
+  function renderFacts(state) {
+    setText('v-host', state.host || '—');
+    setText('v-port', state.port || '—');
+    setText('v-serial', state.serial || '—');
+    var cert = state.certificate || {};
+    if (!cert.configured) {
+      setText('v-cert', t('certNone'));
+      message('cert-msg', 'err', t('certNoneMsg'));
+    } else if (!cert.valid) {
+      setText('v-cert', t('certBad'));
+      message('cert-msg', 'err', t('certBadMsg', cert.error || ''));
+    } else if (cert.expired) {
+      setText('v-cert', t('certExpired', cert.expires));
+      message('cert-msg', 'err', t('certExpiredMsg'));
+    } else {
+      setText('v-cert', t('certOk', cert.expires));
+      message('cert-msg', '');
+    }
+  }
+
+  // The driver resolves which device is being repaired from the repair session, so
+  // nothing about it needs sending from here.
+  function payload(extra) {
+    return extra || {};
+  }
+
+  function reasonText(r, fallbackId) {
+    if (r.reason === 'no_credentials') return t('certNoneMsg');
+    if (r.reason === 'no_serial') return t('findNoSerial');
+    if (r.reason === 'wrong_device') {
+      return t('wrongDevice', r.host || STATE.host, r.expected, r.found);
+    }
+    if (r.reason === 'unreachable') return t('testUnreachable', STATE.host);
+    if (r.reason === 'not_found') return t('findNotFound');
+    return r.detail || fallbackId || '';
+  }
+
+  function test() {
+    var button = document.getElementById('btn-test');
+    button.disabled = true;
+    message('action-msg', '', t('testing', STATE.host), true);
+    H.emit('repair_test', payload())
+      .then(function (r) {
+        button.disabled = false;
+        if (r.ok) return message('action-msg', 'ok', t('testOk', r.host, r.port));
+        message('action-msg', r.reason === 'wrong_device' ? 'err' : 'warn', reasonText(r));
+      })
+      .catch(function (err) {
+        button.disabled = false;
+        message('action-msg', 'err', String((err && err.message) || err));
+      });
+  }
+
+  function find() {
+    var button = document.getElementById('btn-find');
+    button.disabled = true;
+    message('action-msg', '', t('searching'), true);
+    H.emit('repair_find', payload())
+      .then(function (r) {
+        button.disabled = false;
+        if (r.ok) {
+          setText('v-host', r.host);
+          setText('v-port', r.port);
+          return message('action-msg', 'ok', t('findOk', r.host, r.port) + '\n' + t('done'));
+        }
+        message('action-msg', 'warn', reasonText(r));
+      })
+      .catch(function (err) {
+        button.disabled = false;
+        message('action-msg', 'err', String((err && err.message) || err));
+      });
+  }
+
+  function applyHost() {
+    var button = document.getElementById('btn-host');
+    var host = document.getElementById('host').value.trim();
+    if (!host) return message('manual-msg', 'err', t('needHost'));
+    button.disabled = true;
+    message('manual-msg', '', t('testing', host), true);
+    H.emit('repair_host', payload({ host: host }))
+      .then(function (r) {
+        button.disabled = false;
+        if (r.ok) {
+          setText('v-host', r.host);
+          setText('v-port', r.port);
+          return message('manual-msg', 'ok', t('findOk', r.host, r.port) + '\n' + t('done'));
+        }
+        message('manual-msg', 'err', reasonText(r));
+      })
+      .catch(function (err) {
+        button.disabled = false;
+        message('manual-msg', 'err', String((err && err.message) || err));
+      });
+  }
+
+  function bootstrap() {
+    H.emit('repair_state', {})
+      .then(function (state) {
+        STATE = state || {};
+        return resolveLanguage(STATE.language).then(function () { return STATE; });
+      })
+      .then(function (state) {
+        applyStrings();
+        renderFacts(state);
+        show('boot', false);
+        show('facts-card', true);
+        show('actions-card', true);
+        show('manual-card', true);
+        document.getElementById('host').value = state.host || '';
+      })
+      .catch(function (err) {
+        applyStrings();
+        show('boot', false);
+        show('facts-card', true);
+        message('cert-msg', 'err', String((err && err.message) || err));
+      });
+  }
+
+  // Accept the Homey object only once it has the methods needed: the global starts
+  // life as homey.js's constructor, and latching onto that leaves ready() uncalled.
+  function usable(obj) {
+    return !!obj && typeof obj.ready === 'function' && typeof obj.emit === 'function';
+  }
+
+  function init(homeyObj) {
+    if (started) return;
+    var candidate = homeyObj || (typeof Homey !== 'undefined' ? Homey : null);
+    var ref = usable(candidate) ? candidate : null;
+    if (!ref) return;
+    if (!document.getElementById('host')) return;
+    started = true;
+    H = ref;
+    try { H.ready(); } catch (e) { /* ignore */ }
+    document.getElementById('btn-test').addEventListener('click', test);
+    document.getElementById('btn-find').addEventListener('click', find);
+    document.getElementById('btn-host').addEventListener('click', applyHost);
+    bootstrap();
+  }
+
+  // The init contract varies by Homey version, so trigger from every mechanism and
+  // let the guard collapse the duplicates.
+  function onHomeyReady(homeyObj) { init(homeyObj); }
+  document.addEventListener('DOMContentLoaded', function () { init(); });
+  window.addEventListener('load', function () { init(); });
+  (function poll(n) {
+    if (started || n <= 0) return;
+    init();
+    setTimeout(function () { poll(n - 1); }, 100);
+  })(60);
+</script>

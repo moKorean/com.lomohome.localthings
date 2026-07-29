@@ -14,7 +14,7 @@ sys.path.insert(0, str(Path(__file__).parents[2]))
 
 from homey import driver
 
-from lib import compat, discovery, probe, registry
+from lib import cert, compat, discovery, probe, registry
 from lib.const import (
     SETTING_LEAF_CERT,
     SETTING_LEAF_KEY,
@@ -270,6 +270,144 @@ class Driver(driver.Driver):
             "capabilitiesOptions": reg.capability_options(resources, language),
             "class": reg.device_class,
         }
+
+    # --- repair -----------------------------------------------------------
+    #
+    # Three things break a working device and none of them should need re-pairing,
+    # because the appliance is the same appliance: the certificate expires, the
+    # address changes in a way automatic relocation could not resolve, or the unit
+    # was simply unreachable when Homey last tried.
+
+    async def on_repair(self, session, device=None) -> None:
+        self._repair_device = device
+        session.set_handler("repair_state", self._on_repair_state)
+        session.set_handler("repair_test", self._on_repair_test)
+        session.set_handler("repair_find", self._on_repair_find)
+        session.set_handler("repair_host", self._on_repair_host)
+
+    def _repair_target(self, data=None):
+        """The device being repaired.
+
+        Taken from on_repair where the SDK provides it, and from the handler payload
+        otherwise — the argument's presence is not something this app can rely on
+        across SDK versions.
+        """
+        device = getattr(self, "_repair_device", None)
+        if device is not None:
+            return device
+        device_id = (data or {}).get("device_id")
+        if device_id:
+            for candidate in self.get_devices():
+                try:
+                    if candidate.get_data().get("id") == device_id:
+                        return candidate
+                except Exception:
+                    continue
+        raise ValueError("Could not tell which device is being repaired")
+
+    async def _on_repair_state(self, data=None, **_) -> dict:
+        device = self._repair_target(data)
+        store = device.get_store() or {}
+        cert_pem, key_pem = await self._credentials()
+        certificate = {"configured": bool(cert_pem and key_pem)}
+        if certificate["configured"]:
+            try:
+                certificate.update(await self._run(cert.inspect_leaf, cert_pem, key_pem))
+                certificate["valid"] = True
+            except cert.InvalidCredentials as exc:
+                certificate.update({"valid": False, "error": str(exc)})
+        return {
+            "language": await compat.language(self.homey),
+            "name": device.get_name(),
+            "host": store.get(STORE_HOST),
+            "port": store.get(STORE_PORT),
+            "serial": store.get(STORE_SERIAL),
+            "available": bool(device.get_available()),
+            "certificate": certificate,
+        }
+
+    async def _on_repair_test(self, data=None, **_) -> dict:
+        """Read /device/0 at the stored address and confirm it is still this unit.
+
+        Reporting a serial mismatch matters as much as reporting a failure: it is the
+        case where everything looks connected but the device is driving a different
+        appliance.
+        """
+        device = self._repair_target(data)
+        store = device.get_store() or {}
+        host = store.get(STORE_HOST)
+        cert_pem, key_pem = await self._credentials()
+        if not cert_pem or not key_pem:
+            return {"ok": False, "reason": "no_credentials"}
+        try:
+            result = await self._run(probe.probe, host, cert_pem, key_pem)
+        except Exception as exc:
+            return {"ok": False, "reason": "unreachable", "detail": str(exc)[:200]}
+
+        expected = str(store.get(STORE_SERIAL) or "")
+        found = str(result["serial"])
+        if expected and ":" not in expected and found != expected:
+            return {"ok": False, "reason": "wrong_device",
+                    "expected": expected, "found": found, "host": host}
+        return {"ok": True, "host": host, "port": result["port"], "serial": found}
+
+    async def _on_repair_find(self, data=None, **_) -> dict:
+        """Sweep for this appliance by serial and re-point the device at it."""
+        device = self._repair_target(data)
+        store = device.get_store() or {}
+        serial = str(store.get(STORE_SERIAL) or "")
+        if not serial or ":" in serial:
+            return {"ok": False, "reason": "no_serial"}
+        cert_pem, key_pem = await self._credentials()
+        if not cert_pem or not key_pem:
+            return {"ok": False, "reason": "no_credentials"}
+
+        for host, _port in await discovery.sweep():
+            try:
+                result = await self._run(probe.probe, host, cert_pem, key_pem)
+            except Exception:
+                continue
+            if str(result["serial"]) != serial:
+                continue
+            await self._repoint(device, host, result["port"])
+            return {"ok": True, "host": host, "port": result["port"]}
+        return {"ok": False, "reason": "not_found"}
+
+    async def _on_repair_host(self, data=None, **_) -> dict:
+        """Re-point at an address the user supplies, after checking it is this unit."""
+        device = self._repair_target(data)
+        host = ((data or {}).get("host") or "").strip()
+        if not host:
+            raise ValueError("An IP address is required")
+        cert_pem, key_pem = await self._credentials()
+        if not cert_pem or not key_pem:
+            return {"ok": False, "reason": "no_credentials"}
+        try:
+            result = await self._run(probe.probe, host, cert_pem, key_pem)
+        except Exception as exc:
+            return {"ok": False, "reason": "unreachable", "detail": str(exc)[:200]}
+
+        expected = str((device.get_store() or {}).get(STORE_SERIAL) or "")
+        found = str(result["serial"])
+        if expected and ":" not in expected and found != expected:
+            # Pointing a device at a different appliance would silently make it
+            # control the wrong thing, so this is refused rather than confirmed.
+            return {"ok": False, "reason": "wrong_device",
+                    "expected": expected, "found": found}
+        await self._repoint(device, host, result["port"])
+        return {"ok": True, "host": host, "port": result["port"]}
+
+    async def _repoint(self, device, host: str, port: int) -> None:
+        for key, value in ((STORE_HOST, host), (STORE_PORT, port)):
+            setter = getattr(device, "set_store_value", None)
+            if callable(setter):
+                try:
+                    result = setter(key, value)
+                    if hasattr(result, "__await__"):
+                        await result
+                except Exception as exc:
+                    self.log(f"repair: storing {key} failed: {exc}")
+        self.log(f"repair: {device.get_name()} re-pointed at {host}:{port}")
 
     async def _on_report_env(self, data=None, **_) -> dict:
         """Record what the pairing webview sees, so it can be inspected without a
