@@ -18,9 +18,12 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 from homey import app as homey_app  # noqa: E402
 
+from lib import selfcheck  # noqa: E402
+
 
 class LocalThingsApp(homey_app.App):
     async def on_init(self) -> None:
+        selfcheck.run(self.log)
         self.log("LocalThings app is running...")
 
 

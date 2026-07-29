@@ -135,13 +135,30 @@ pyOpenSSL 26.3.0이 `dtls_session.py`가 실제로 호출하는 API를 노출하
 
 venv 크기는 아키텍처당 약 18 MB (두 아키텍처 합 ~36 MB)로, 앱 배포 크기에 그만큼 더해집니다.
 
+### 검증 완료: 실기기 런타임 자체 점검 통과
+
+`homey app run --remote`로 Homey Pro(펌웨어 13.4.0, platform version 2)에 설치해 `lib/selfcheck.py`를 돌린 결과입니다. 앱 아카이브는 35.78 MB / 690 파일.
+
+```
+interpreter: 3.14.6 on aarch64 (linux)
+smartthings-local: version unknown          ← import 성공 (__version__ 속성만 없음)
+cbor2: native, roundtrip=True               ← 네이티브 확장 로드됨
+pyopenssl-dtls: DTLS_METHOD ok, cipher list accepted, set_ciphertext_mtu=True
+udp-bind-from-thread: bound ('0.0.0.0', 49700)
+outbound-address: 192.168.1.133
+```
+
+의미:
+
+- **네이티브 확장이 기기에서 실제로 로드됩니다.** `cbor2`가 순수 파이썬 폴백이 아니라 native로 잡혔습니다
+- **`ECDHE-ECDSA-AES128-GCM-SHA256:@SECLEVEL=0`이 그대로 받아들여집니다.** 번들된 OpenSSL이 SECLEVEL 하향을 허용하므로 삼성 인증서 체인 문제가 없습니다
+- **`socket` + `threading` 제약이 없습니다.** `DtlsCoapSession`이 쓰는 소스 포트 49700을 백그라운드 스레드에서 바인딩했습니다
+- **앱이 LAN에 직접 붙습니다.** outbound 주소가 `192.168.1.133`(Homey 자신의 LAN IP)입니다. 도커 브리지 주소(`172.17.x.x`)가 아니므로 LAN 가전에 UDP가 도달합니다. HA 레퍼런스가 `network_mode: host`를 요구하는 이유가 여기서 자동으로 해결됩니다
+
 ### 남은 검증 항목
 
-실기기가 있어야 확인되는 것들만 남았습니다. 모두 "안 되면 우회" 수준이고, Node 경로의 "핸드셰이크가 아예 성립하지 않을 수 있음"과는 성격이 다릅니다.
-
-1. **Homey 펌웨어 버전.** `runtime: python`은 `compatibility >=13.0.0`을 요구합니다. 대상 Homey Pro가 v13 이상인지 확인
-2. **UDP 소켓과 스레드.** `DtlsCoapSession`은 리더 스레드가 UDP 소켓을 소유합니다. Homey 파이썬 런타임이 `socket` + `threading`을 허용하는지, 앱 컨테이너가 LAN에 직접 붙는지 확인 (Node 앱은 `dgram`이 되므로 가능성이 높음)
-3. **메모리.** 기기당 DTLS 세션 1개 + 상태 캐시. 파이썬 런타임 자체의 오버헤드도 포함해 실측
+1. **실기기 핸드셰이크.** `AC14K_M` CA 자격증명이 있어야 진행 가능. 이것만 남았습니다
+2. **메모리.** 기기당 DTLS 세션 1개 + 상태 캐시. 파이썬 런타임 오버헤드 포함해 실측
 
 ---
 
@@ -173,7 +190,7 @@ venv 크기는 아키텍처당 약 18 MB (두 아키텍처 합 ~36 MB)로, 앱 �
 ## 5. 제안 마일스톤 (파이썬 경로)
 
 1. ~~**스파이크 — `pythonPackages`로 의존성 체인 확인.**~~ **완료** (2절 참고). aarch64 네이티브 확장까지 정상 반입
-2. **스파이크 — 실기기 핸드셰이크.** 앱에서 `DtlsCoapSession`으로 `/device/0` 덤프 성공. 소켓·스레드 제약 확인. 여기까지 되면 최대 난관 통과
+2. **스파이크 — 실기기 핸드셰이크.** (런타임 자체 점검은 완료, CA 자격증명 대기) 앱에서 `DtlsCoapSession`으로 `/device/0` 덤프 성공. 소켓·스레드 제약 확인. 여기까지 되면 최대 난관 통과
 3. `app.py` + 제네릭 드라이버 + 페어링 뷰 — UUID 조회, 리프 인증서 발급, 포트 스윕
 4. 레지스트리 이식 — 배치 파싱 + 종류 판정. 레퍼런스의 골든 파일 덤프를 테스트 픽스처로 재사용
 5. 가전 1종(예: 세탁기) 엔드투엔드 완성
