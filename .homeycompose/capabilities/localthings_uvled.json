@@ -1,0 +1,11 @@
+{
+  "type": "boolean",
+  "title": {
+    "en": "UV sterilisation",
+    "ko": "UV 살균"
+  },
+  "getable": true,
+  "setable": true,
+  "uiComponent": "toggle",
+  "icon": "/assets/capabilities/mdi-sun-wireless.svg"
+}

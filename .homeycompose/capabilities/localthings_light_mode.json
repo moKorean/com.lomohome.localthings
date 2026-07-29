@@ -1,0 +1,34 @@
+{
+  "type": "enum",
+  "title": {
+    "en": "Panel brightness",
+    "ko": "표시등 밝기"
+  },
+  "getable": true,
+  "setable": false,
+  "uiComponent": "sensor",
+  "icon": "/assets/capabilities/mdi-led-on.svg",
+  "values": [
+    {
+      "id": "Smart",
+      "title": {
+        "en": "Smart",
+        "ko": "자동"
+      }
+    },
+    {
+      "id": "Low",
+      "title": {
+        "en": "Low",
+        "ko": "약"
+      }
+    },
+    {
+      "id": "High",
+      "title": {
+        "en": "High",
+        "ko": "강"
+      }
+    }
+  ]
+}

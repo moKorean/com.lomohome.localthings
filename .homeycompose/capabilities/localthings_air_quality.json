@@ -1,0 +1,12 @@
+{
+  "type": "number",
+  "title": {
+    "en": "Air cleanliness",
+    "ko": "공기 청정도"
+  },
+  "getable": true,
+  "setable": false,
+  "uiComponent": "sensor",
+  "decimals": 0,
+  "icon": "/assets/capabilities/mdi-blur.svg"
+}

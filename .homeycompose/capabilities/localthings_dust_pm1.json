@@ -1,0 +1,15 @@
+{
+  "type": "number",
+  "title": {
+    "en": "Dust (PM1.0)",
+    "ko": "초미세먼지 (PM1.0)"
+  },
+  "getable": true,
+  "setable": false,
+  "uiComponent": "sensor",
+  "decimals": 0,
+  "icon": "/assets/capabilities/mdi-blur.svg",
+  "units": {
+    "en": "µg/m³"
+  }
+}

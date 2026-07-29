@@ -133,8 +133,12 @@ def test_unbound_hrefs_are_reported(resources):
     looks complete while missing controls."""
     reg = registry.resolve(resources)
     gaps = registry.unbound_hrefs(resources, reg)
-    assert "/uvled/vs/0" in gaps
+    # Sound settings and AI sleep are real features still unmapped; they must keep
+    # showing up rather than being quietly dropped once coverage grows.
+    assert "/settings/sound/volume/vs/0" in gaps
+    assert "/aisleep/vs/0" in gaps
     assert "/power/vs/0" not in gaps
+    assert "/uvled/vs/0" not in gaps
 
 
 def _desired(spec, rep, value):
@@ -167,3 +171,100 @@ def test_setpoint_falls_back_to_half_steps_without_an_increment(resources):
     spec = reg.spec_for("target_temperature")
     rep = {"x.com.samsung.da.items": [{"x.com.samsung.da.id": "0"}]}
     assert _desired(spec, rep, 28.5) == "28.5"
+
+
+# --- expanded coverage ----------------------------------------------------
+
+
+def test_expanded_coverage_binds_the_features_worth_controlling(resources):
+    reg = registry.resolve(resources)
+    caps = reg.capabilities(resources)
+    for expected in (
+        "localthings_auto_clean", "localthings_mute_once",
+        "localthings_display_light", "localthings_edge_light",
+        "localthings_absence_power_saving", "localthings_absence_clean",
+        "localthings_motion_detect_wind", "localthings_smart_sensing_cooling",
+        "localthings_uvled", "localthings_convenient_mode",
+        "localthings_wind_direction", "localthings_power_save_mode",
+        "localthings_wind_target", "localthings_light_mode",
+        "localthings_alarm_code", "localthings_air_quality",
+        "measure_pm25", "localthings_dust_pm10", "localthings_dust_pm1",
+        "localthings_filter_usage.pm1",
+    ):
+        assert expected in caps, expected
+
+
+def test_active_alarm_skips_cleared_and_idle_entries(resources):
+    """The items array keeps cleared alarms around — the unit lists a deleted
+    ErrorCode_OFF alongside a live FilterAlarm — so items[0] would report a stale
+    code as current."""
+    items = resources["/alarms/vs/0"]["x.com.samsung.da.items"]
+    assert items[0]["x.com.samsung.da.code"] == "ErrorCode_OFF"
+    assert items[0]["x.com.samsung.da.state"] == "Deleted"
+    assert _read(reg_of(resources), resources, "localthings_alarm_code") == "FilterAlarm"
+
+
+def test_no_active_alarm_reads_as_none():
+    reg = registry.resolve({"/information/vs/0": {
+        "x.com.samsung.da.modelNum": "TP1X_DA-AC-CAC-01001|1|2"}})
+    spec = reg.spec_for("localthings_alarm_code")
+    rep = {"x.com.samsung.da.items": [
+        {"x.com.samsung.da.code": "ErrorCode_OFF", "x.com.samsung.da.state": "Deleted"},
+    ]}
+    assert spec.read(rep, {}) == "none"
+
+
+def test_dust_sensors_are_read_by_type_not_position(resources):
+    """/sensors/vs/0 keys its items by `type` and wraps each value in a
+    single-element list, so positional access would mis-assign the readings."""
+    reg = reg_of(resources)
+    assert _read(reg, resources, "localthings_dust_pm10") == 16.0
+    assert _read(reg, resources, "measure_pm25") == 10.0
+    assert _read(reg, resources, "localthings_dust_pm1") == 8.0
+    assert _read(reg, resources, "localthings_air_quality") == 1.0
+
+
+def test_wind_direction_accepts_a_value_absent_from_supported_modes(resources):
+    """The unit reports 'Fix' while advertising only Left_And_Right and All.
+    Dropping it would leave the capability blank on a working device."""
+    rep = resources["/wind/direction/vs/0"]
+    assert "Fix" not in rep["x.com.samsung.da.supportedModes"]
+    assert _read(reg_of(resources), resources, "localthings_wind_direction") == "Fix"
+
+
+def test_enum_writes_refuse_undeclared_values(resources):
+    """Sending a token the capability doesn't declare would be dropped silently by
+    the device and leave the tile looking stuck."""
+    reg = reg_of(resources)
+    spec = reg.spec_for("localthings_convenient_mode")
+    rep = resources[spec.href]
+    assert spec.write("Sleep", rep) == (
+        ["mode", "convenient", "vs", "0"], {"x.com.samsung.da.modes": "Sleep"})
+    assert spec.write("Nonsense", rep) is None
+
+
+def test_read_only_enums_stay_read_only(resources):
+    """The reference leaves these unwritten under its don't-guess rule; matching
+    that keeps us from writing to an unverified contract on live HVAC."""
+    reg = reg_of(resources)
+    for capability in ("localthings_power_save_mode", "localthings_wind_target",
+                       "localthings_light_mode", "localthings_alarm_code",
+                       "measure_pm25", "localthings_filter_usage.pm1"):
+        assert not reg.spec_for(capability).writable, capability
+
+
+def test_humidity_zero_is_a_reading_but_only_on_the_five_percent_field():
+    reg = registry.resolve({"/information/vs/0": {
+        "x.com.samsung.da.modelNum": "TP1X_DA-AC-CAC-01001|1|2"}})
+    spec = reg.spec_for("measure_humidity")
+    # A genuine 0% on the rounded field must pass through.
+    assert spec.read({"x.com.samsung.da.fivepercentHumidity": "0"}, {}) == 0.0
+    # On boards that only have the plain field, 0 means "not measuring".
+    assert spec.read({"x.com.samsung.da.humidity": "0"}, {}) is None
+    assert spec.read({"x.com.samsung.da.humidity": "51"}, {}) == 51.0
+
+
+def test_pm1_filter_gets_its_own_title(resources):
+    reg = reg_of(resources)
+    options = reg.capability_options(resources, "ko")
+    assert options["localthings_filter_usage.pm1"]["title"] == "PM1.0 필터"

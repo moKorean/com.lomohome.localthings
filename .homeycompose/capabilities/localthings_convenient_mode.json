@@ -1,0 +1,55 @@
+{
+  "type": "enum",
+  "title": {
+    "en": "Convenient mode",
+    "ko": "쾌적 모드"
+  },
+  "getable": true,
+  "setable": true,
+  "uiComponent": "picker",
+  "icon": "/assets/capabilities/mdi-weather-windy.svg",
+  "values": [
+    {
+      "id": "Off",
+      "title": {
+        "en": "Off",
+        "ko": "꺼짐"
+      }
+    },
+    {
+      "id": "Nano",
+      "title": {
+        "en": "Nano",
+        "ko": "나노"
+      }
+    },
+    {
+      "id": "LongWind",
+      "title": {
+        "en": "Long wind",
+        "ko": "장거리 바람"
+      }
+    },
+    {
+      "id": "Speed",
+      "title": {
+        "en": "Speed",
+        "ko": "쾌속"
+      }
+    },
+    {
+      "id": "Sleep",
+      "title": {
+        "en": "Sleep",
+        "ko": "취침"
+      }
+    },
+    {
+      "id": "NanoSleep",
+      "title": {
+        "en": "Nano sleep",
+        "ko": "나노 취침"
+      }
+    }
+  ]
+}

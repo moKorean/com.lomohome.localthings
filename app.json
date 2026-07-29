@@ -176,6 +176,28 @@
     }
   ],
   "capabilities": {
+    "localthings_absence_clean": {
+      "type": "boolean",
+      "title": {
+        "en": "Absence clean",
+        "ko": "부재 청정"
+      },
+      "getable": true,
+      "setable": true,
+      "uiComponent": "toggle",
+      "icon": "/assets/capabilities/mdi-spray-bottle.svg"
+    },
+    "localthings_absence_power_saving": {
+      "type": "boolean",
+      "title": {
+        "en": "Absence power saving",
+        "ko": "부재 절전"
+      },
+      "getable": true,
+      "setable": true,
+      "uiComponent": "toggle",
+      "icon": "/assets/capabilities/mdi-leaf.svg"
+    },
     "localthings_ac_mode": {
       "type": "enum",
       "title": {
@@ -249,6 +271,29 @@
       "uiComponent": "toggle",
       "icon": "/assets/capabilities/mdi-air-purifier.svg"
     },
+    "localthings_air_quality": {
+      "type": "number",
+      "title": {
+        "en": "Air cleanliness",
+        "ko": "공기 청정도"
+      },
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "decimals": 0,
+      "icon": "/assets/capabilities/mdi-blur.svg"
+    },
+    "localthings_alarm_code": {
+      "type": "string",
+      "title": {
+        "en": "Active alarm",
+        "ko": "발생 알람"
+      },
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "icon": "/assets/capabilities/mdi-alert-circle-outline.svg"
+    },
     "localthings_alarm_filter": {
       "type": "boolean",
       "title": {
@@ -270,6 +315,17 @@
       "setable": false,
       "uiComponent": "sensor",
       "icon": "/assets/capabilities/mdi-heat-wave.svg"
+    },
+    "localthings_auto_clean": {
+      "type": "boolean",
+      "title": {
+        "en": "Auto clean",
+        "ko": "자동 건조"
+      },
+      "getable": true,
+      "setable": true,
+      "uiComponent": "toggle",
+      "icon": "/assets/capabilities/mdi-spray-bottle.svg"
     },
     "localthings_burner_level": {
       "type": "string",
@@ -303,6 +359,113 @@
       "setable": true,
       "uiComponent": "toggle",
       "icon": "/assets/capabilities/mdi-lock.svg"
+    },
+    "localthings_convenient_mode": {
+      "type": "enum",
+      "title": {
+        "en": "Convenient mode",
+        "ko": "쾌적 모드"
+      },
+      "getable": true,
+      "setable": true,
+      "uiComponent": "picker",
+      "icon": "/assets/capabilities/mdi-weather-windy.svg",
+      "values": [
+        {
+          "id": "Off",
+          "title": {
+            "en": "Off",
+            "ko": "꺼짐"
+          }
+        },
+        {
+          "id": "Nano",
+          "title": {
+            "en": "Nano",
+            "ko": "나노"
+          }
+        },
+        {
+          "id": "LongWind",
+          "title": {
+            "en": "Long wind",
+            "ko": "장거리 바람"
+          }
+        },
+        {
+          "id": "Speed",
+          "title": {
+            "en": "Speed",
+            "ko": "쾌속"
+          }
+        },
+        {
+          "id": "Sleep",
+          "title": {
+            "en": "Sleep",
+            "ko": "취침"
+          }
+        },
+        {
+          "id": "NanoSleep",
+          "title": {
+            "en": "Nano sleep",
+            "ko": "나노 취침"
+          }
+        }
+      ]
+    },
+    "localthings_display_light": {
+      "type": "boolean",
+      "title": {
+        "en": "Panel light",
+        "ko": "표시등"
+      },
+      "getable": true,
+      "setable": true,
+      "uiComponent": "toggle",
+      "icon": "/assets/capabilities/mdi-led-on.svg"
+    },
+    "localthings_dust_pm1": {
+      "type": "number",
+      "title": {
+        "en": "Dust (PM1.0)",
+        "ko": "초미세먼지 (PM1.0)"
+      },
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "decimals": 0,
+      "icon": "/assets/capabilities/mdi-blur.svg",
+      "units": {
+        "en": "µg/m³"
+      }
+    },
+    "localthings_dust_pm10": {
+      "type": "number",
+      "title": {
+        "en": "Dust (PM10)",
+        "ko": "미세먼지 (PM10)"
+      },
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "decimals": 0,
+      "icon": "/assets/capabilities/mdi-blur.svg",
+      "units": {
+        "en": "µg/m³"
+      }
+    },
+    "localthings_edge_light": {
+      "type": "boolean",
+      "title": {
+        "en": "Edge lighting",
+        "ko": "엣지 라이팅"
+      },
+      "getable": true,
+      "setable": true,
+      "uiComponent": "toggle",
+      "icon": "/assets/capabilities/mdi-led-on.svg"
     },
     "localthings_fan_mode": {
       "type": "enum",
@@ -362,6 +525,62 @@
       "uiComponent": "sensor",
       "icon": "/assets/capabilities/mdi-air-filter.svg"
     },
+    "localthings_light_mode": {
+      "type": "enum",
+      "title": {
+        "en": "Panel brightness",
+        "ko": "표시등 밝기"
+      },
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "icon": "/assets/capabilities/mdi-led-on.svg",
+      "values": [
+        {
+          "id": "Smart",
+          "title": {
+            "en": "Smart",
+            "ko": "자동"
+          }
+        },
+        {
+          "id": "Low",
+          "title": {
+            "en": "Low",
+            "ko": "약"
+          }
+        },
+        {
+          "id": "High",
+          "title": {
+            "en": "High",
+            "ko": "강"
+          }
+        }
+      ]
+    },
+    "localthings_motion_detect_wind": {
+      "type": "boolean",
+      "title": {
+        "en": "Avoid direct wind",
+        "ko": "바람 피함"
+      },
+      "getable": true,
+      "setable": true,
+      "uiComponent": "toggle",
+      "icon": "/assets/capabilities/mdi-motion-sensor.svg"
+    },
+    "localthings_mute_once": {
+      "type": "boolean",
+      "title": {
+        "en": "Mute beep once",
+        "ko": "1회 무음"
+      },
+      "getable": true,
+      "setable": true,
+      "uiComponent": "toggle",
+      "icon": "/assets/capabilities/mdi-volume-mute.svg"
+    },
     "localthings_operation_state": {
       "type": "string",
       "title": {
@@ -372,6 +591,40 @@
       "setable": false,
       "uiComponent": "sensor",
       "icon": "/assets/capabilities/mdi-pot-steam.svg"
+    },
+    "localthings_power_save_mode": {
+      "type": "enum",
+      "title": {
+        "en": "Power saving level",
+        "ko": "절전 강도"
+      },
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "icon": "/assets/capabilities/mdi-leaf.svg",
+      "values": [
+        {
+          "id": "Eco",
+          "title": {
+            "en": "Eco",
+            "ko": "절약"
+          }
+        },
+        {
+          "id": "Normal",
+          "title": {
+            "en": "Normal",
+            "ko": "표준"
+          }
+        },
+        {
+          "id": "Comfort",
+          "title": {
+            "en": "Comfort",
+            "ko": "쾌적"
+          }
+        }
+      ]
     },
     "localthings_power_state": {
       "type": "boolean",
@@ -416,6 +669,89 @@
       "setable": false,
       "uiComponent": "sensor",
       "icon": "/assets/capabilities/mdi-wifi-check.svg"
+    },
+    "localthings_smart_sensing_cooling": {
+      "type": "boolean",
+      "title": {
+        "en": "Smart sensing cooling",
+        "ko": "스마트 센싱 냉방"
+      },
+      "getable": true,
+      "setable": true,
+      "uiComponent": "toggle",
+      "icon": "/assets/capabilities/mdi-motion-sensor.svg"
+    },
+    "localthings_uvled": {
+      "type": "boolean",
+      "title": {
+        "en": "UV sterilisation",
+        "ko": "UV 살균"
+      },
+      "getable": true,
+      "setable": true,
+      "uiComponent": "toggle",
+      "icon": "/assets/capabilities/mdi-sun-wireless.svg"
+    },
+    "localthings_wind_direction": {
+      "type": "enum",
+      "title": {
+        "en": "Airflow direction",
+        "ko": "풍향"
+      },
+      "getable": true,
+      "setable": true,
+      "uiComponent": "picker",
+      "icon": "/assets/capabilities/mdi-arrow-left-right.svg",
+      "values": [
+        {
+          "id": "Fix",
+          "title": {
+            "en": "Fixed",
+            "ko": "고정"
+          }
+        },
+        {
+          "id": "Left_And_Right",
+          "title": {
+            "en": "Left and right",
+            "ko": "좌우"
+          }
+        },
+        {
+          "id": "All",
+          "title": {
+            "en": "All directions",
+            "ko": "전체"
+          }
+        }
+      ]
+    },
+    "localthings_wind_target": {
+      "type": "enum",
+      "title": {
+        "en": "Airflow toward people",
+        "ko": "사람 방향 바람"
+      },
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "icon": "/assets/capabilities/mdi-weather-windy.svg",
+      "values": [
+        {
+          "id": "Direct",
+          "title": {
+            "en": "Direct",
+            "ko": "직바람"
+          }
+        },
+        {
+          "id": "Indirect",
+          "title": {
+            "en": "Indirect",
+            "ko": "간접풍"
+          }
+        }
+      ]
     }
   }
 }

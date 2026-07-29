@@ -1,0 +1,27 @@
+{
+  "type": "enum",
+  "title": {
+    "en": "Airflow toward people",
+    "ko": "사람 방향 바람"
+  },
+  "getable": true,
+  "setable": false,
+  "uiComponent": "sensor",
+  "icon": "/assets/capabilities/mdi-weather-windy.svg",
+  "values": [
+    {
+      "id": "Direct",
+      "title": {
+        "en": "Direct",
+        "ko": "직바람"
+      }
+    },
+    {
+      "id": "Indirect",
+      "title": {
+        "en": "Indirect",
+        "ko": "간접풍"
+      }
+    }
+  ]
+}

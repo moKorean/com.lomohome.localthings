@@ -1,0 +1,34 @@
+{
+  "type": "enum",
+  "title": {
+    "en": "Power saving level",
+    "ko": "절전 강도"
+  },
+  "getable": true,
+  "setable": false,
+  "uiComponent": "sensor",
+  "icon": "/assets/capabilities/mdi-leaf.svg",
+  "values": [
+    {
+      "id": "Eco",
+      "title": {
+        "en": "Eco",
+        "ko": "절약"
+      }
+    },
+    {
+      "id": "Normal",
+      "title": {
+        "en": "Normal",
+        "ko": "표준"
+      }
+    },
+    {
+      "id": "Comfort",
+      "title": {
+        "en": "Comfort",
+        "ko": "쾌적"
+      }
+    }
+  ]
+}

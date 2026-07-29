@@ -1,0 +1,11 @@
+{
+  "type": "string",
+  "title": {
+    "en": "Active alarm",
+    "ko": "발생 알람"
+  },
+  "getable": true,
+  "setable": false,
+  "uiComponent": "sensor",
+  "icon": "/assets/capabilities/mdi-alert-circle-outline.svg"
+}

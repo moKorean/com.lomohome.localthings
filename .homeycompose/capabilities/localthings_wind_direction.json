@@ -1,0 +1,34 @@
+{
+  "type": "enum",
+  "title": {
+    "en": "Airflow direction",
+    "ko": "풍향"
+  },
+  "getable": true,
+  "setable": true,
+  "uiComponent": "picker",
+  "icon": "/assets/capabilities/mdi-arrow-left-right.svg",
+  "values": [
+    {
+      "id": "Fix",
+      "title": {
+        "en": "Fixed",
+        "ko": "고정"
+      }
+    },
+    {
+      "id": "Left_And_Right",
+      "title": {
+        "en": "Left and right",
+        "ko": "좌우"
+      }
+    },
+    {
+      "id": "All",
+      "title": {
+        "en": "All directions",
+        "ko": "전체"
+      }
+    }
+  ]
+}
