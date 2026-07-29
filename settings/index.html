@@ -68,6 +68,12 @@
     .msg { margin-top: 12px; font-size: 13px; white-space: pre-wrap; }
     .msg.ok { color: var(--ok); } .msg.err { color: var(--err); }
     .meta { font-size: 12.5px; color: var(--muted); margin-top: 3px; }
+    .stored {
+      border: 1px solid #bfe3cd; background: #f0faf4; border-radius: 8px;
+      padding: 11px 12px; margin: 0 0 4px;
+    }
+    .stored-title { color: var(--ok); font-weight: 600; font-size: 13px; }
+    .stored-hint { color: var(--muted); font-size: 12.5px; margin-top: 3px; }
     .hidden { display: none; }
   </style>
 </head>
@@ -104,6 +110,11 @@
 
     <div class="card">
       <h2 id="t-creds"></h2>
+
+      <div id="stored" class="stored hidden">
+        <div class="stored-title" id="t-stored-title"></div>
+        <div class="stored-hint" id="t-stored-hint"></div>
+      </div>
 
       <label id="t-cert-label"></label>
       <p class="meta" id="t-cert-hint"></p>
@@ -163,6 +174,8 @@
         ],
         howNote: 'Only these two files are needed. The CA private key used to sign them stays on your computer and is never sent to Homey.',
         creds: 'Client certificate',
+        storedTitle: 'A certificate and key are stored.',
+        storedHint: 'The fields below are intentionally blank — stored keys are never shown again. To change the certificate, paste a new one and save; it replaces what is stored. Otherwise leave this alone.',
         certLabel: 'Certificate chain',
         certHint: 'Paste the whole of certs/client_fullchain.pem. It holds several certificates one after another — the leaf first, then the CA chain. Include every BEGIN/END line. Do not use client.pem: that is the leaf alone and appliances cannot verify it.',
         keyLabel: 'Private key',
@@ -195,6 +208,8 @@
         ],
         howNote: '이 두 파일만 필요합니다. 서명에 쓰인 CA 개인키는 컴퓨터에 남고 Homey로 전송되지 않습니다.',
         creds: '클라이언트 인증서',
+        storedTitle: '키가 저장되어 있습니다.',
+        storedHint: '아래 입력란은 의도적으로 비어 있습니다 — 저장된 키는 다시 표시하지 않습니다. 인증서를 변경하려면 새 값을 붙여넣고 저장하세요. 기존 값을 덮어씁니다. 변경할 필요가 없으면 그대로 두세요.',
         certLabel: '인증서 체인',
         certHint: 'certs/client_fullchain.pem 전체를 붙여넣으세요. 인증서 여러 개가 연달아 들어 있습니다 — 리프가 먼저, 그 뒤에 CA 체인입니다. BEGIN/END 줄을 모두 포함하세요. client.pem은 안 됩니다: 리프 하나뿐이어서 가전이 검증할 수 없습니다.',
         keyLabel: '개인키',
@@ -247,6 +262,8 @@
       setText('t-key-hint', t('keyHint'));
       setText('t-save', t('save'));
       setText('t-clear', t('clear'));
+      setText('t-stored-title', t('storedTitle'));
+      setText('t-stored-hint', t('storedHint'));
       document.getElementById('cmd').textContent = CMD;
       document.getElementById('ex-cert').innerHTML = EX_CERT;
       document.getElementById('ex-key').innerHTML = EX_KEY;
@@ -314,18 +331,22 @@
             setStatus('warn', t('notConfigured'));
             show('btn-check', false);
             show('btn-clear', false);
+            show('stored', false);
             return;
           }
           if (!s.valid) {
             setStatus('err', t('invalid'), s.error);
             show('btn-check', false);
             show('btn-clear', true);
+            // Stored, but unusable — don't call it ready; the error is the point.
+            show('stored', false);
             return;
           }
           var meta = t('metaFmt', s.uuid, s.expires, s.chain_length);
           setStatus(s.expired ? 'err' : 'ok', s.expired ? t('expired') : t('valid'), meta);
           show('btn-check', true);
           show('btn-clear', true);
+          show('stored', !s.expired);
         })
         .catch(function (err) {
           setStatus('err', String((err && err.message) || err));
