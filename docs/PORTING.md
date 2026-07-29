@@ -199,6 +199,25 @@ state keys:     26
 
 테스트 픽스처: `tests/fixtures/airconditioner_TP1X_DA-AC-CAC-01001.json` (시리얼·MAC·SSID·otnDUID 리댁션 완료).
 
+### 검증 완료: 쓰기(제어)도 동작합니다
+
+같은 에어컨에 전원 토글을 실행했습니다. 페이로드는 레퍼런스 `airconditioner._climate_write`의 `power` 분기 그대로입니다.
+
+```
+POST /power/vs/0   body: {'x.com.samsung.da.power': 'Off'}
+  -> 2.04 Changed, 55 bytes
+  -> body: {'x.com.samsung.da.power': 'Off', 'controlResponse': {'result': True}}
+  +2s 재조회: 'Off'   (On -> Off 확인)
+```
+
+알아둘 점:
+
+- **기기가 명시적 ack를 돌려줍니다.** 응답 body의 `controlResponse.result`가 `True`입니다. CoAP 코드(`2.04`)만 보고 성공으로 처리하지 말고 이 필드를 확인하는 것이 확실합니다. 쓰기 실패를 사용자에게 알리는 경로에 쓸 수 있습니다
+- **반영이 빠릅니다.** 2초 안에 기기가 새 상태를 보고했습니다. 레퍼런스의 optimistic apply + settle guard가 세탁기 같은 느린 기기를 위한 것이므로, 에어컨은 짧은 settle 창으로 충분할 수 있습니다
+- **변경 필드만 보냅니다.** `operationNumber` 같은 나머지 필드는 기기가 병합합니다
+- **이 보드는 `/remotectrl/0`·`/remotectrl/vs/0`을 아예 보고하지 않습니다.** 따라서 `remote_control_enabled()`가 기본값 `True`(활성 가정)를 반환해 쓰기 게이트가 걸리지 않습니다. `CONF_BYPASS_REMOTE_CONTROL` 옵션은 이 기기에 불필요합니다
+- **`close_notify`로 정상 종료됨을 확인**했습니다. 유령 세션이 남지 않습니다
+
 ### 남은 검증 항목
 
 **메모리만 남았습니다.** 기기당 DTLS 세션 1개 + 상태 캐시. 파이썬 런타임 오버헤드 포함해 실측 필요.
