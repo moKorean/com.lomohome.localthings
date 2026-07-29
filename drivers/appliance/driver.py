@@ -37,7 +37,8 @@ class Driver(driver.Driver):
         self._session = session
         session.set_handler("get_state", self._on_get_state)
         session.set_handler("report_env", self._on_report_env)
-        session.set_handler("discover", self._on_discover)
+        session.set_handler("discover_start", self._on_discover_start)
+        session.set_handler("discover_status", self._on_discover_status)
         session.set_handler("probe", self._on_probe)
 
     async def _credentials(self) -> tuple[str, str]:
@@ -79,13 +80,31 @@ class Driver(driver.Driver):
             pass
         return hosts
 
-    async def _on_discover(self, data=None, **_) -> dict:
-        """Sweep the subnet, then identify each responder.
+    # Discovery runs as a background job polled by the view, not as one call.
+    # Homey.emit has a hard 30s timeout and a full scan takes one to two minutes,
+    # so a synchronous handler cannot finish — the same constraint the reference
+    # Python app hits with its settings API. Polling also lets appliances appear as
+    # they are identified instead of all at once at the end.
 
-        Two stages because they cost very differently: the sweep rules out a whole
-        /24 in seconds, while identifying one device needs a full DTLS handshake
-        and a /device/0 read. Only addresses that answered get that treatment.
-        """
+    def _reset_discovery(self) -> None:
+        self._discovery = {
+            "running": True,
+            "phase": "sweeping",
+            "host": None,
+            "index": 0,
+            "total": 0,
+            "appliances": [],
+            "scanned": None,
+            "error": None,
+        }
+
+    async def _on_discover_start(self, data=None, **_) -> dict:
+        state = getattr(self, "_discovery", None)
+        if state and state.get("running"):
+            # Already scanning — hand back the live state rather than starting a
+            # second sweep over the same subnet.
+            return self._snapshot()
+
         cert_pem, key_pem = await self._credentials()
         if not cert_pem or not key_pem:
             raise ValueError(
@@ -95,52 +114,56 @@ class Driver(driver.Driver):
         language = ((data or {}).get("language") or "").strip() or await compat.language(
             self.homey
         )
+        self._reset_discovery()
+        asyncio.create_task(self._run_discovery(cert_pem, key_pem, language))
+        return self._snapshot()
 
-        paired = self._paired_hosts()
-        base, own = discovery.local_subnet()
-        self.log(
-            f"discovery sweeping {base}.0/24 (own {own}, {len(paired)} already paired)"
-        )
-        candidates = await discovery.sweep(skip=paired)
-        self.log(f"discovery: {len(candidates)} responded: {[h for h, _ in candidates]}")
+    async def _on_discover_status(self, data=None, **_) -> dict:
+        return self._snapshot()
 
-        if not candidates:
-            return {"appliances": [], "scanned": f"{base}.0/24"}
+    def _snapshot(self) -> dict:
+        state = getattr(self, "_discovery", None) or {"running": False}
+        return dict(state)
 
-        await self._progress({"phase": "identifying", "total": len(candidates)})
-
-        # Identified one at a time: each is a separate DTLS handshake to a
-        # different appliance, and the firmware is rate-limit sensitive enough
-        # that parallelising isn't worth the saved seconds.
-        appliances = []
-        for index, (host, port) in enumerate(candidates, start=1):
-            await self._progress({
-                "phase": "host", "host": host,
-                "index": index, "total": len(candidates),
-            })
-            try:
-                appliances.append(
-                    await self._identify(host, cert_pem, key_pem, language)
-                )
-            except Exception as exc:
-                self.log(f"discovery: {host}:{port} not identified: {exc}")
-
-        self.log(f"discovery identified {len(appliances)} of {len(candidates)}")
-        return {"appliances": appliances, "scanned": f"{base}.0/24"}
-
-    async def _progress(self, payload: dict) -> None:
-        """Tell the view where the scan is. Identification is slow enough that
-        without this the window looks hung."""
-        session = getattr(self, "_session", None)
-        if session is None:
-            return
+    async def _run_discovery(self, cert_pem: str, key_pem: str, language: str) -> None:
+        state = self._discovery
         try:
-            result = session.emit("discover_progress", payload)
-            if hasattr(result, "__await__"):
-                await result
-        except Exception:
-            # Progress is cosmetic; never let it interrupt a scan.
-            pass
+            paired = self._paired_hosts()
+            base, own = discovery.local_subnet()
+            state["scanned"] = f"{base}.0/24"
+            self.log(
+                f"discovery sweeping {base}.0/24 "
+                f"(own {own}, {len(paired)} already paired)"
+            )
+            candidates = await discovery.sweep(skip=paired)
+            self.log(
+                f"discovery: {len(candidates)} responded: {[h for h, _ in candidates]}"
+            )
+
+            state["phase"] = "identifying"
+            state["total"] = len(candidates)
+
+            for index, (host, port) in enumerate(candidates, start=1):
+                state["index"] = index
+                state["host"] = host
+                try:
+                    entry = await self._identify(host, cert_pem, key_pem, language)
+                except Exception as exc:
+                    self.log(f"discovery: {host}:{port} not identified: {exc}")
+                    continue
+                # Appended as it lands, so the view can show it immediately.
+                state["appliances"].append(entry)
+
+            self.log(
+                f"discovery identified {len(state['appliances'])} of {len(candidates)}"
+            )
+        except Exception as exc:
+            state["error"] = str(exc)
+            self.log(f"discovery failed: {exc}")
+        finally:
+            state["phase"] = "done"
+            state["host"] = None
+            state["running"] = False
 
     async def _identify(self, host: str, cert_pem: str, key_pem: str,
                         language: str) -> dict:

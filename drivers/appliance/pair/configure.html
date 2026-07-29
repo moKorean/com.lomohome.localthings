@@ -124,11 +124,12 @@
       searchTitle: 'Find appliances',
       searchLede: 'Scans your network for Samsung appliances that speak the local protocol, then identifies each one. Takes under a minute.',
       search: 'Search',
-      searching: 'Scanning the network… about 15 seconds.',
+      searching: 'Searching the local network… about 15 seconds.',
       identifying: 'Found {0} that answered — identifying each. This is the slow part: every one needs its own encrypted handshake, and devices that turn out not to be Samsung appliances take longest to rule out.',
       progress: 'Checking {0} ({1} of {2})…',
       foundNone: 'No appliances answered on {0}. Older firmware and units on another subnet are not found this way; you can still enter an address by hand.',
       foundSome: 'Found {0} on {1}.',
+      searchFailed: 'The search stopped: {0}',
       addThis: 'Add',
       unknownType: 'Unsupported type',
       unknownSub: '{0} · {1} resources · cannot be added yet',
@@ -158,11 +159,12 @@
       searchTitle: '가전 검색',
       searchLede: '로컬 프로토콜을 사용하는 삼성 가전을 네트워크에서 찾아 종류까지 확인합니다. 1분 이내에 끝납니다.',
       search: '검색',
-      searching: '네트워크를 훑는 중… 약 15초 걸립니다.',
+      searching: '로컬 네트워크를 검색 중… 약 15초 걸립니다.',
       identifying: '응답한 기기 {0}대 발견 — 각각 확인 중입니다. 이 단계가 오래 걸립니다: 기기마다 암호화 핸드셰이크를 따로 해야 하고, 삼성 가전이 아닌 기기는 판정에 가장 오래 걸립니다.',
       progress: '{0} 확인 중 ({2}대 중 {1}번째)…',
       foundNone: '{0}에서 응답한 가전이 없습니다. 구형 펌웨어나 다른 서브넷의 기기는 이 방식으로 찾지 못합니다. 주소를 직접 입력할 수도 있습니다.',
       foundSome: '{1}에서 {0}대를 찾았습니다.',
+      searchFailed: '검색이 중단되었습니다: {0}',
       addThis: '추가',
       unknownType: '미지원 종류',
       unknownSub: '{0} · 리소스 {1}개 · 아직 추가할 수 없습니다',
@@ -277,36 +279,66 @@
     });
   }
 
+  // Discovery is a background job polled for status, not a single call:
+  // Homey.emit times out after 30s and a full scan takes one to two minutes.
+  // Polling also lets each appliance appear as it is identified.
+  var pollTimer = null;
+
+  function stopPolling() {
+    if (pollTimer) { clearTimeout(pollTimer); pollTimer = null; }
+  }
+
+  function renderState(state) {
+    var found = (state && state.appliances) || [];
+    if (found.length) renderResults(found);
+
+    if (state && state.running) {
+      if (state.phase === 'identifying' && state.total) {
+        searchMessage('', state.host
+          ? t('progress', state.host, state.index, state.total)
+          : t('identifying', state.total), true);
+      } else {
+        searchMessage('', t('searching'), true);
+      }
+      return false;
+    }
+
+    document.getElementById('btn-search').disabled = false;
+    if (state && state.error) {
+      searchMessage('err', t('searchFailed', state.error));
+    } else if (!found.length) {
+      searchMessage('warn', t('foundNone', (state && state.scanned) || ''));
+    } else {
+      searchMessage('ok', t('foundSome', found.length, state.scanned || ''));
+    }
+    return true;
+  }
+
+  function poll() {
+    H.emit('discover_status', {})
+      .then(function (state) {
+        if (renderState(state)) return;
+        pollTimer = setTimeout(poll, 1200);
+      })
+      .catch(function (err) {
+        document.getElementById('btn-search').disabled = false;
+        searchMessage('err', String((err && err.message) || err));
+      });
+  }
+
   function search() {
-    var button = document.getElementById('btn-search');
-    button.disabled = true;
+    stopPolling();
+    document.getElementById('btn-search').disabled = true;
     document.getElementById('results').innerHTML = '';
     searchMessage('', t('searching'), true);
 
-    if (H.on) {
-      H.on('discover_progress', function (p) {
-        if (!p) return;
-        if (p.phase === 'identifying') {
-          searchMessage('', t('identifying', p.total), true);
-        } else if (p.phase === 'host') {
-          searchMessage('', t('progress', p.host, p.index, p.total), true);
-        }
-      });
-    }
-
-    H.emit('discover', { language: LANG })
-      .then(function (result) {
-        button.disabled = false;
-        var found = (result && result.appliances) || [];
-        if (!found.length) {
-          searchMessage('warn', t('foundNone', (result && result.scanned) || ''));
-          return;
-        }
-        searchMessage('ok', t('foundSome', found.length, result.scanned));
-        renderResults(found);
+    H.emit('discover_start', { language: LANG })
+      .then(function (state) {
+        if (renderState(state)) return;
+        pollTimer = setTimeout(poll, 1200);
       })
       .catch(function (err) {
-        button.disabled = false;
+        document.getElementById('btn-search').disabled = false;
         searchMessage('err', String((err && err.message) || err));
       });
   }
