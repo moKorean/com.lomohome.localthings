@@ -378,6 +378,30 @@
       if (el) el.textContent += ' · ' + step;
     }
 
+    // homey.js exposes the language two ways and neither is synchronous in the
+    // way it first appears: Homey.language is only set once i18n has loaded, and
+    // getLanguage() returns a Promise. Comparing its return value directly — as
+    // this did — compares against a Promise and always falls through to English.
+    function resolveLanguage() {
+      return new Promise(function (resolve) {
+        function done(value) {
+          if (typeof value === 'string' && value.slice(0, 2).toLowerCase() === 'ko') {
+            LANG = 'ko';
+          }
+          resolve();
+        }
+        try {
+          if (typeof H.language === 'string' && H.language) return done(H.language);
+          var maybe = H.getLanguage && H.getLanguage(function (err, value) {
+            done(err ? null : value);
+          });
+          if (maybe && typeof maybe.then === 'function') return maybe.then(done, function () { done(null); });
+          if (typeof maybe === 'string') return done(maybe);
+        } catch (e) { /* fall through to English */ }
+        setTimeout(function () { resolve(); }, 3000);
+      });
+    }
+
     // homey.js defines a global `Homey` *constructor* up front and only replaces
     // it with the ready instance at the very end (window.Homey = this, right
     // before onHomeyReady). Accepting the global on sight therefore latches onto
@@ -400,14 +424,10 @@
       var boot = document.getElementById('boot');
       if (boot) boot.parentNode.removeChild(boot);
 
-      try {
-        var lang = H.getLanguage && H.getLanguage();
-        if (lang === 'ko') LANG = 'ko';
-      } catch (e) { /* default en */ }
-
       applyStrings();
       wire();
       try { H.ready(); } catch (e) { /* ignore */ }
+      resolveLanguage().then(applyStrings);
       refresh();
     }
 

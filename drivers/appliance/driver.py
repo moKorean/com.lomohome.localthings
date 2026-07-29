@@ -14,7 +14,7 @@ sys.path.insert(0, str(Path(__file__).parents[2]))
 
 from homey import driver  # noqa: E402
 
-from lib import probe, registry  # noqa: E402
+from lib import compat, probe, registry  # noqa: E402
 from lib.const import (  # noqa: E402
     SETTING_LEAF_CERT,
     SETTING_LEAF_KEY,
@@ -36,21 +36,23 @@ class Driver(driver.Driver):
         session.set_handler("get_state", self._on_get_state)
         session.set_handler("probe", self._on_probe)
 
-    def _credentials(self) -> tuple[str, str]:
+    async def _credentials(self) -> tuple[str, str]:
         return (
-            self.homey.settings.get(SETTING_LEAF_CERT) or "",
-            self.homey.settings.get(SETTING_LEAF_KEY) or "",
+            await compat.setting_get(self.homey, SETTING_LEAF_CERT),
+            await compat.setting_get(self.homey, SETTING_LEAF_KEY),
         )
 
     async def _on_get_state(self, data=None, **_) -> dict:
         """Lets the view send the user to app settings instead of failing at
         Connect when no certificate has been configured yet."""
-        cert_pem, key_pem = self._credentials()
-        language = "en"
-        try:
-            language = self.homey.i18n.get_language()
-        except Exception:
-            pass
+        cert_pem, key_pem = await self._credentials()
+        language = await compat.language(self.homey)
+        # Logged because "the certificate is stored but pairing says otherwise"
+        # is otherwise indistinguishable from "it was never stored".
+        self.log(
+            f"pair get_state: cert={len(cert_pem)}B key={len(key_pem)}B "
+            f"language={language}"
+        )
         return {
             "has_credentials": bool(cert_pem and key_pem),
             "language": language,
@@ -61,7 +63,7 @@ class Driver(driver.Driver):
         if not host:
             raise ValueError("An IP address is required")
 
-        cert_pem, key_pem = self._credentials()
+        cert_pem, key_pem = await self._credentials()
         if not cert_pem or not key_pem:
             raise ValueError(
                 "No client certificate configured. Set one up in "

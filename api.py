@@ -12,7 +12,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-from lib import cert  # noqa: E402
+from lib import cert, compat  # noqa: E402
 from lib.const import SETTING_LEAF_CERT, SETTING_LEAF_KEY  # noqa: E402
 
 
@@ -42,10 +42,10 @@ def _log(homey, message: str) -> None:
                 pass
 
 
-def _stored(homey) -> tuple[str, str]:
+async def _stored(homey) -> tuple[str, str]:
     return (
-        homey.settings.get(SETTING_LEAF_CERT) or "",
-        homey.settings.get(SETTING_LEAF_KEY) or "",
+        await compat.setting_get(homey, SETTING_LEAF_CERT),
+        await compat.setting_get(homey, SETTING_LEAF_KEY),
     )
 
 
@@ -56,7 +56,7 @@ async def get_status(homey, **kwargs):
     present and healthy, and echoing key material into a webview serves no
     purpose.
     """
-    cert_pem, key_pem = _stored(homey)
+    cert_pem, key_pem = await _stored(homey)
     # Logged so the settings page reaching the backend can be told apart from it
     # failing before the request — the two look identical in the UI.
     _log(homey, f"settings GET /status (configured={bool(cert_pem and key_pem)})")
@@ -75,7 +75,7 @@ async def check_uuid(homey, **kwargs):
     """Compare the stored certificate's identity with the one appliances
     currently expect. A mismatch means the certificate needs re-minting; it is
     the one failure mode that looks like a broken network but isn't."""
-    cert_pem, key_pem = _stored(homey)
+    cert_pem, key_pem = await _stored(homey)
     if not cert_pem:
         return {"configured": False}
     try:
@@ -99,19 +99,26 @@ async def save_credentials(homey, **kwargs):
 
     info = await _run(cert.inspect_leaf, cert_pem, key_pem)
 
-    homey.settings.set(SETTING_LEAF_CERT, cert_pem + "\n")
-    homey.settings.set(SETTING_LEAF_KEY, key_pem + "\n")
-    _log(homey, f"Client certificate stored (uuid:{info['uuid']}, expires {info['expires']})")
+    await compat.setting_set(homey, SETTING_LEAF_CERT, cert_pem + "\n")
+    await compat.setting_set(homey, SETTING_LEAF_KEY, key_pem + "\n")
+
+    # Read back before reporting success. A write that silently stored nothing
+    # would otherwise surface much later as "set up required" during pairing,
+    # with no clue that saving was what failed.
+    stored_cert, stored_key = await _stored(homey)
+    if not stored_cert or not stored_key:
+        _log(homey, "settings POST /credentials: write did not persist")
+        raise RuntimeError(
+            "Homey did not persist the certificate. Please try again, or "
+            "restart the app if it keeps happening."
+        )
+    _log(homey, f"Client certificate stored (uuid:{info['uuid']}, expires {info['expires']}, "
+                f"cert={len(stored_cert)}B key={len(stored_key)}B)")
     return {"ok": True, **info}
 
 
 async def clear_credentials(homey, **kwargs):
     for key in (SETTING_LEAF_CERT, SETTING_LEAF_KEY):
-        try:
-            homey.settings.unset(key)
-        except Exception:
-            # Not every build exposes unset(); an empty value reads the same to
-            # every consumer here.
-            homey.settings.set(key, "")
+        await compat.setting_unset(homey, key)
     _log(homey, "Client certificate cleared")
     return {"ok": True}
