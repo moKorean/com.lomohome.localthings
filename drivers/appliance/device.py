@@ -385,11 +385,35 @@ class Device(device.Device):
                 f"registry {self._registry.name}, "
                 f"{len(unbound)} unbound resources: {unbound}"
             )
+            await self._sync_capability_options()
         await self._apply(self._resources)
         await self.set_available()
         self._evaluate_observe()
         await self._try_observe()
         await self._sync_settings()
+
+    async def _sync_capability_options(self) -> None:
+        """Push per-device capability options (ranges, sub-capability titles).
+
+        Done here rather than only at creation so a device paired before a fix picks
+        the corrected bounds up on its next start — a slider whose range came from
+        Homey's defaults instead of the appliance offers values the device refuses.
+        """
+        setter = getattr(self, "set_capability_options", None)
+        if not callable(setter):
+            return
+        language = await compat.language(self.homey)
+        options = self._registry.capability_options(self._resources, language)
+        own = set(self.get_capabilities())
+        for capability, values in options.items():
+            if capability not in own:
+                continue
+            try:
+                result = setter(capability, values)
+                if hasattr(result, "__await__"):
+                    await result
+            except Exception as exc:
+                self.log(f"capability options for {capability} failed: {exc}")
 
     async def _apply(self, resources: dict, only_href: str = None) -> None:
         """Push every readable value into its capability.

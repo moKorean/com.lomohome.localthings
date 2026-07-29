@@ -91,7 +91,18 @@ def _read_mode(rep, _resources):
     return str(modes) if modes in AC_MODES else None
 
 
-def _write_mode(value, _rep):
+def _write_mode(value, rep):
+    """Reject a mode this unit doesn't advertise.
+
+    AC_MODES is the union across board families, so it necessarily contains values a
+    given unit lacks — 'Heat' on a cooling-only Korean model, for instance. Sending
+    one is silently dropped by the device, which reads as the tile being stuck.
+    """
+    if value not in AC_MODES:
+        return None
+    supported = (rep or {}).get(FIELD_SUPPORTED)
+    if isinstance(supported, list) and supported and value not in supported:
+        return None
     return ["mode", "vs", "0"], {FIELD_MODES: [value]}
 
 
@@ -130,6 +141,28 @@ def _write_target_temp(value, rep):
             ]
         },
     )
+
+
+def _setpoint_options(rep, _resources) -> dict:
+    """Slider bounds taken from the appliance rather than Homey's defaults.
+
+    The verified unit allows 18-30 in 0.5 steps; Homey's default target_temperature
+    range is wider, so without this the slider offers values the device refuses and
+    the app looks broken.
+    """
+    item = first_item(rep)
+    options = {}
+    minimum = as_float(item.get("x.com.samsung.da.minimum"))
+    maximum = as_float(item.get("x.com.samsung.da.maximum"))
+    step = as_float(item.get("x.com.samsung.da.increment"))
+    if minimum is not None:
+        options["min"] = minimum
+    if maximum is not None:
+        options["max"] = maximum
+    if step:
+        options["step"] = step
+        options["decimals"] = 1 if step < 1 else 0
+    return options
 
 
 def _read_current_temp(rep, _resources):
@@ -240,11 +273,18 @@ def _read_enum(field: str, allowed: tuple):
     return read
 
 
-def _write_enum(path: list, field: str, allowed: tuple):
-    def write(value, _rep):
-        # Refuse rather than send a token the capability doesn't declare; the
-        # device would silently drop it and the tile would look stuck.
-        return (path, {field: value}) if value in allowed else None
+def _write_enum(path: list, field: str, allowed: tuple, supported_field=FIELD_SUPPORTED):
+    def write(value, rep):
+        # Two gates. The static list catches a value this app never declared; the
+        # device's own supportedModes catches one it declared for other boards but
+        # this unit doesn't have. Sending either would be silently dropped, leaving
+        # the tile looking stuck rather than reporting a refusal.
+        if value not in allowed:
+            return None
+        supported = (rep or {}).get(supported_field)
+        if isinstance(supported, list) and supported and value not in supported:
+            return None
+        return path, {field: value}
 
     return write
 
@@ -320,7 +360,8 @@ REGISTRY = Registry(
     titles={"en": "Samsung Air Conditioner", "ko": "삼성 에어컨"},
     specs=(
         Spec("onoff", HREF_POWER, _read_power, _write_power),
-        Spec("target_temperature", HREF_TEMPS, _read_target_temp, _write_target_temp),
+        Spec("target_temperature", HREF_TEMPS, _read_target_temp, _write_target_temp,
+             options=_setpoint_options),
         Spec("measure_temperature", HREF_TEMPS, _read_current_temp),
         Spec("localthings_ac_mode", HREF_MODE, _read_mode, _write_mode),
         Spec("localthings_fan_mode", HREF_WIND_STRENGTH, _read_fan, _write_fan),

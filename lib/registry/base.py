@@ -34,6 +34,11 @@ class Spec:
     # Per-language title for a sub-capability (e.g. burner 2), which Homey needs
     # supplied per device via capabilitiesOptions rather than in the manifest.
     titles: Optional[dict] = None
+    # (rep, resources) -> extra capabilityOptions for this capability. Ranges have
+    # to come from the device: a slider offering values the appliance rejects looks
+    # like the app is broken. Homey only accepts these per device, not in the
+    # manifest, because they differ per unit.
+    options: Optional[Callable[[dict, dict], dict]] = None
 
     @property
     def writable(self) -> bool:
@@ -86,14 +91,26 @@ class Registry:
         Sub-capabilities (burner 1, burner 2, …) are indistinguishable in the UI
         without a per-instance title, and Homey only accepts those per device.
         """
-        options = {}
+        result = {}
         for spec in self.specs:
-            if not spec.titles or not spec.applies(resources):
+            if not spec.applies(resources):
                 continue
-            title = spec.titles.get((language or "en")[:2].lower()) or spec.titles.get("en")
-            if title:
-                options[spec.capability] = {"title": title}
-        return options
+            entry = {}
+            if spec.titles:
+                title = (spec.titles.get((language or "en")[:2].lower())
+                         or spec.titles.get("en"))
+                if title:
+                    entry["title"] = title
+            if spec.options:
+                try:
+                    extra = spec.options(resources.get(spec.href) or {}, resources)
+                except Exception:
+                    extra = None
+                if isinstance(extra, dict):
+                    entry.update(extra)
+            if entry:
+                result[spec.capability] = entry
+        return result
 
     def spec_for(self, capability: str) -> Optional[Spec]:
         for spec in self.specs:

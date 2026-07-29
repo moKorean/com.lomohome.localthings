@@ -462,10 +462,12 @@ DHCP로 주소가 바뀌는 것은 흔한 일이고, 세 가지 서로 다른 �
 실측 확인:
 
 ```
-삼성 안방 에어컨   <serial>   push, 22 subscriptions
-삼성 예린방 에어컨 <serial>   push, 22 subscriptions
-삼성 인덕션        <serial>   push, 4 subscriptions
+삼성 에어컨   <serial>   push, 22 subscriptions
+삼성 에어컨   <serial>   push, 22 subscriptions
+삼성 인덕션   <serial>   push, 4 subscriptions
 ```
+
+(시리얼은 기기를 식별하는 값이라 문서에는 남기지 않습니다. 실제 값은 각 기기의 고급 설정에서 확인할 수 있습니다.)
 
 ### 남는 권장사항
 
