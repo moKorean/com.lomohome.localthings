@@ -4,7 +4,7 @@
 
 Home Assistant 통합 [mbillow/localthings](https://github.com/mbillow/localthings)를 Homey로 포팅하는 프로젝트입니다. 가전과 DTLS-over-CoAP 세션을 직접 맺어 상태를 읽고 명령을 보내므로, 클라우드 왕복이 없습니다.
 
-> **상태: 개발 중 (v0.1.0).** 에어컨 1종이 페어링·폴링·제어까지 동작합니다. OBSERVE(푸시) 미구현으로 상태는 폴링으로만 갱신되며, 나머지 가전 15종은 미이식입니다. 설계와 남은 작업은 [`docs/PORTING.md`](docs/PORTING.md)를 참고하세요.
+> **상태: 개발 중 (v0.1.0).** 에어컨이 검색·페어링·폴링·제어까지 실기기에서 동작합니다. 상태 갱신은 폴링(기본 30초)이며 OBSERVE(푸시)는 미구현, 나머지 가전 종류는 미이식입니다. 설계와 실측 자료는 [`docs/PORTING.md`](docs/PORTING.md)를 참고하세요.
 
 ## 동작 방식
 
@@ -29,6 +29,8 @@ Tizen RT 3.x / DAWIT 3.0+ 펌웨어를 쓰는 삼성 가전(대략 2022년 이�
 nmap -Pn -sU -p 49152-49160 "$APPLIANCE_IP"
 ```
 
+앱의 **기기 추가 → 검색**이 같은 일을 네트워크 전체에 대해 해줍니다. 응답한 기기만 종류를 확인하므로 IP를 몰라도 됩니다.
+
 ## 요구 사항
 
 - **Homey Pro, 펌웨어 v13.0.0 이상.** 이 앱은 Homey의 파이썬 런타임(`"runtime": "python"`, Python 3.14)으로 동작하므로 v13 미만에서는 설치되지 않습니다.
@@ -47,17 +49,20 @@ lib/
   const.py                    실측 프로토콜 상수 (포트 범위, 타임아웃, 소스 포트 base)
   cert.py                     인증서 검증·설명, 게이트웨이 UUID 대조 (순수 cryptography)
   probe.py                    UDP 라이브니스 스윕 + 페어링 프로브
+  discovery.py                서브넷 스윕 (응답 기반, 오탐 없음)
+  compat.py                   SDK 계약 어댑터 (settings·i18n 동기/비동기 양쪽)
   session.py                  DtlsCoapSession의 asyncio 래퍼
   resources.py                /device/0 배치 파싱, 시리얼 처리
   registry/                   보드 토큰 라우팅 + 가전별 capability 맵
   selfcheck.py                런타임 자체 점검 (기동 시 1회)
 drivers/appliance/
-  driver.py                   페어링 (IP만; 인증서는 앱 설정에서)
+  driver.py                   검색·페어링 (인증서는 앱 설정에서)
   device.py                   세션 유지, 폴링 루프, 쓰기
   pair/configure.html         페어링 화면 (en/ko). 인증서 미설정 시 설정 위치를 안내
+locales/{en,ko}.json          앱 i18n (없으면 i18n.get_language가 en으로 떨어짐)
 tests/
   fixtures/                   실기기 /device/0 덤프 (민감정보 리댁션)
-  test_registry.py            레지스트리 회귀 테스트
+  test_registry.py            레지스트리 회귀 테스트 (11개)
 python_packages/              Homey CLI가 생성하는 아키텍처별 venv (커밋하지 않음)
 ```
 

@@ -218,9 +218,64 @@ POST /power/vs/0   body: {'x.com.samsung.da.power': 'Off'}
 - **이 보드는 `/remotectrl/0`·`/remotectrl/vs/0`을 아예 보고하지 않습니다.** 따라서 `remote_control_enabled()`가 기본값 `True`(활성 가정)를 반환해 쓰기 게이트가 걸리지 않습니다. `CONF_BYPASS_REMOTE_CONTROL` 옵션은 이 기기에 불필요합니다
 - **`close_notify`로 정상 종료됨을 확인**했습니다. 유령 세션이 남지 않습니다
 
+### 검증 완료: Homey에서 엔드투엔드 동작
+
+앱 설정에서 인증서 등록 → 검색으로 가전 발견 → 기기 생성 → 폴링 → 타일에서 제어까지 실기기로 확인했습니다. 전원 토글, 희망온도(0.5도 단위), 풍량 변경이 모두 반영됩니다. 앱 메모리는 약 45 MB.
+
+### 파이썬 SDK 실측 (문서에 없어 런타임 조회로 확인)
+
+`dir()`로 확인한 실제 표면:
+
+```
+homey        api app app_dir app_tmpdir apps arp ble clear_interval clear_timeout clock
+             cloud dashboards debug discovery drivers emit env error flow geolocation
+             has_feature has_permission i18n images insights log manifest mark_ready
+             notifications on ... settings ...
+homey.i18n       get_language get_strings get_units translate
+homey.settings   get get_settings set unset
+homey.arp        get_mac
+homey.discovery  get_strategy
+homey.api        get post put delete get_api get_api_app get_local_url
+                 get_owner_api_token realtime unregister_api
+```
+
+주의할 점:
+
+- **`settings.get/set/unset`은 동기입니다.** 다만 확증 전에는 코루틴 가능성을 배제할 수 없었고, `await` 없이 코루틴을 호출하면 **저장이 안 되면서 성공처럼 보입니다**. `lib/compat.py`가 awaitable이면 await하도록 감싸고, 저장 후 되읽어 검증합니다
+- **`i18n.get_language()`는 앱의 i18n 언어**를 반환합니다. Homey UI가 한국어여도 `locales/ko.json`이 없으면 `'en'`이 나옵니다(`get_strings()`가 `{}`). 접근자 문제가 아니라 로케일 누락이었습니다
+- **`homey:manager:api` 권한은 불필요합니다.** `homey.api.*`(앱이 Homey Web API 호출)를 쓸 때만 필요하고, 설정 페이지가 자기 앱 API를 부르는 것은 CrossFrame 경로입니다. 선언하면 Athom 심사가 강화된다는 경고가 나옵니다
+
+### 웹뷰(설정·페어링) 실측
+
+`homey.js`를 기기에서 직접 받아 확인한 계약입니다. 여기서 두 번 막혔으므로 기록합니다.
+
+```js
+Homey.prototype._onWindowLoad = function () {
+  this._getOrigin()                                  // /js/homey.<origin>.js 로드
+    .then(() => this._onWindowLoadExtended())        // css + getAppLocales + i18n
+    .then(() => { window.Homey = this;               // ← 여기서야 인스턴스
+                  window.onHomeyReady && window.onHomeyReady(this); })
+    .catch(error => this.alert(error));
+};
+```
+
+- **전역 `Homey`는 처음엔 생성자입니다.** `typeof Homey !== 'undefined'`로 판별하면 생성자를 붙잡게 되고, 그러면 `ready()`가 인스턴스에서 호출되지 않아 **설정 화면은 로딩이 안 걷히고 페어링 뷰는 흰 화면**이 됩니다. 필요한 **메서드 유무로 판별**해야 합니다
+- **설정 페이지는 `<script src="/homey.js" data-origin="settings">`가 필요**하고, **페어링 뷰는 넣으면 안 됩니다** — `/js/homey.pair.js`가 404이므로 `loadScript`가 실패합니다. 페어링 뷰용 스크립트는 Homey가 주입합니다
+- **설정 페이지는 완전한 HTML 문서**여야 합니다(`<!DOCTYPE html>` + `<head>`)
+- `Homey.api(method, path, body, callback)`는 **프로미스와 콜백 둘 다** 지원합니다. `Homey.emit`도 프로미스입니다
+- `getLanguage()`는 **프로미스**를 반환합니다. `Homey.language`는 i18n 로드 후에 채워집니다
+- `onHomeyReady`가 한 번만 불리므로, 초기화는 `onHomeyReady`/`DOMContentLoaded`/`load`/폴링을 함께 걸고 가드로 중복을 접는 편이 안전합니다
+
+### 디스커버리 실측
+
+- **mDNS·SSDP로는 찾을 수 없습니다.** 실제 네트워크를 훑은 결과 Matter/Thread와 타사 서비스만 있었고, 16진 이름 서비스들은 인스턴스가 없었습니다. `homey.discovery` 전략은 쓸 수 없습니다
+- **`arp.get_mac(ip)`은 개별 조회만** 됩니다. 호스트 열거는 불가
+- **살아있는 가전은 DTLS 포트로 온 쓰레기 datagram에 alert(15바이트)로 응답합니다.** 이것이 스윕을 가능하게 하는 핵심입니다 — 응답만 후보로 세면 없는 호스트와 닫힌 포트가 모두 걸러지고 오탐이 0입니다. `probe.py`의 단일 호스트 검사는 "무응답 = 후보"로 보는데, 서브넷 전체에서는 그 반대가 필요합니다
+- 실측: /24에서 2286개 조합 약 15초, 응답 10곳
+
 ### 남은 검증 항목
 
-**메모리만 남았습니다.** 기기당 DTLS 세션 1개 + 상태 캐시. 파이썬 런타임 오버헤드 포함해 실측 필요.
+없습니다. 기능 확장만 남았습니다.
 
 ---
 
@@ -255,13 +310,9 @@ POST /power/vs/0   body: {'x.com.samsung.da.power': 'Off'}
 2. ~~**스파이크 — 실기기 핸드셰이크.**~~ **완료** (2절 참고). `/device/0` 덤프까지 성공
 3. ~~`app.py` + 제네릭 드라이버 + 페어링 뷰~~ **완료.** `homey app validate --level publish` 통과, 실기기에 설치해 앱·드라이버 정상 init 확인
 4. ~~레지스트리 이식 — 배치 파싱 + 종류 판정~~ **완료** (에어컨). 실기기 덤프를 픽스처로 회귀 테스트 9개
-5. **가전 1종 엔드투엔드** — 페어링(CA 입력 → IP → 기기 생성)과 타일 동작을 실제로 확인하는 단계. Homey 앱 UI 조작이 필요
-6. OBSERVE 구독 및 폴링 강등/복구 — 현재는 폴링만
-7. 나머지 가전 종류 레지스트리 확장 (기계적 작업)
+5. ~~**가전 1종 엔드투엔드**~~ **완료.** 에어컨 페어링·폴링·제어 확인
+6. **OBSERVE 구독 및 폴링 강등/복구** — 현재는 폴링만이라 상태 반영이 최대 30초 지연
+7. **나머지 가전 종류 레지스트리 확장** — 냉장고·인덕션·후드·공기청정기 등
+8. **에어컨 커버리지 확장** — 현재 8개 리소스 바인딩(51개 중). 운전 상태 상세, 알람 코드, 예약, 자동청소, AI수면, 절전, 모션 감지 풍향, 자가진단, 엣지 라이팅, UV LED, PM1 필터, 사운드 설정 미커버
 
-### 마일스톤 5에서 확인할 것
-
-- 페어링 화면이 CA 저장 → IP 프로브 → 기기 생성까지 도는지
-- 타일에 capability가 뜨고 폴링으로 값이 갱신되는지
-- 타일에서 전원·온도·모드·풍량을 바꿀 때 `_write`의 optimistic apply가 자연스럽게 보이는지
-- 파이썬 SDK 메서드 이름 확인 필요: `get_store()`, `get_settings()`, `get_capabilities()`, `get_capability_value()`, `set_available()`/`set_unavailable()`, `homey.settings.get/set`, `homey.i18n.get_language()`. JS SDK를 snake_case로 옮긴 형태로 작성했고 `set_capability_value`·`register_capability_listener`·`on_pair`·`session.set_handler`는 공식 문서로 확인했지만, 나머지는 문서에 파이썬 예시가 없어 실행으로 검증해야 합니다
+파이썬 SDK 메서드는 모두 실행으로 확인됐습니다: `get_store()`, `get_settings()`, `get_capabilities()`, `get_capability_value()`, `set_capability_value()`, `register_capability_listener()`, `set_available()`/`set_unavailable()`, `on_pair`, `session.set_handler`, `homey.settings.*`, `homey.i18n.*`.

@@ -29,54 +29,6 @@ class Driver(driver.Driver):
 
     async def on_init(self) -> None:
         self.log("LocalThings appliance driver init")
-        self._log_sdk_surface()
-        await self._log_language_probe()
-
-    def _log_sdk_surface(self) -> None:
-        """One-time dump of what this SDK build actually exposes.
-
-        The Python SDK's surface is only partly documented and the i18n accessor
-        guessed at in lib/compat.py resolves to nothing on this firmware, so log
-        the real attribute names instead of guessing again.
-        """
-        try:
-            names = sorted(a for a in dir(self.homey) if not a.startswith("_"))
-            self.log(f"sdk homey: {names}")
-            for attr in ("i18n", "settings", "app", "arp", "discovery", "api"):
-                target = getattr(self.homey, attr, None)
-                if target is None:
-                    self.log(f"sdk homey.{attr}: absent")
-                    continue
-                members = sorted(a for a in dir(target) if not a.startswith("_"))
-                self.log(f"sdk homey.{attr}: {members}")
-        except Exception as exc:
-            self.log(f"sdk surface dump failed: {exc}")
-
-    async def _log_language_probe(self) -> None:
-        """Log what each language accessor actually returns.
-
-        get_language exists on this build, yet compat.language() still fell back
-        to English — so the accessor is returning something unexpected rather than
-        being absent, and only the raw value shows which.
-        """
-        import inspect as _inspect
-
-        for label, get in (
-            ("i18n.get_language", lambda: self.homey.i18n.get_language()),
-            ("i18n.get_strings", lambda: self.homey.i18n.get_strings()),
-            ("manifest.name", lambda: self.homey.manifest.get("name")),
-        ):
-            try:
-                raw = get()
-                awaited = None
-                if _inspect.isawaitable(raw):
-                    awaited = await raw
-                self.log(
-                    f"lang probe {label}: raw={type(raw).__name__} {raw!r:.120} "
-                    f"awaited={type(awaited).__name__} {awaited!r:.120}"
-                )
-            except Exception as exc:
-                self.log(f"lang probe {label}: raised {type(exc).__name__}: {exc}")
 
     # --- pairing ----------------------------------------------------------
 
@@ -218,10 +170,10 @@ class Driver(driver.Driver):
         if not host:
             raise ValueError("An IP address is required")
 
-        # The view resolves the language from its own Homey object, which works;
-        # the Python i18n accessors do not on this firmware (see
-        # _log_sdk_surface). Prefer what the view reports and keep the Python
-        # lookup as the fallback.
+        # Prefer the language the view reports. Both paths work, but the view's is
+        # the UI language directly, while the Python side resolves the *app's*
+        # i18n language — which only matches once locales/<lang>.json exists (see
+        # docs/PORTING.md).
         language = (data.get("language") or "").strip() or await compat.language(self.homey)
 
         cert_pem, key_pem = await self._credentials()
