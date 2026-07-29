@@ -74,6 +74,12 @@
     }
     .stored-title { color: var(--ok); font-weight: 600; font-size: 13px; }
     .stored-hint { color: var(--muted); font-size: 12.5px; margin-top: 3px; }
+    .spinner {
+      display: inline-block; width: 12px; height: 12px; margin-right: 7px;
+      border: 2px solid #c9c9d2; border-top-color: var(--blue);
+      border-radius: 50%; animation: spin .8s linear infinite; vertical-align: -2px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
     .hidden { display: none; }
   </style>
 </head>
@@ -97,7 +103,9 @@
           <div id="status-meta" class="meta"></div>
         </div>
       </div>
+      <p class="meta hidden" id="t-check-hint"></p>
       <button id="btn-check" class="secondary hidden"><span id="t-check"></span></button>
+      <div id="check-msg" class="msg"></div>
     </div>
 
     <div class="card">
@@ -162,8 +170,9 @@
         invalid: 'The stored certificate has a problem.',
         expired: 'The stored certificate has expired. Mint a new one and paste it below.',
         metaFmt: 'Identity uuid:{0} · expires {1} · {2} certificates in chain',
-        check: 'Check against Samsung’s gateway',
-        checking2: 'Checking…',
+        check: 'Verify the identity',
+        checking2: 'Reading the current identity from Samsung’s gateway…',
+        checkHint: 'Appliances only accept a certificate carrying the identity published by Samsung’s cloud gateway. This reads that identity now and compares it with the stored certificate. A mismatch is the one failure that looks like a network problem but is really a certificate that needs re-minting.',
         uuidOk: 'The stored identity still matches what appliances expect.',
         uuidBad: 'Identity mismatch — stored uuid:{0}, appliances now expect uuid:{1}. Mint a new certificate.',
         how: 'How to get a certificate',
@@ -196,8 +205,9 @@
         invalid: '저장된 인증서에 문제가 있습니다.',
         expired: '저장된 인증서가 만료되었습니다. 새로 발급해 아래에 붙여넣으세요.',
         metaFmt: '식별자 uuid:{0} · 만료 {1} · 체인 인증서 {2}개',
-        check: '삼성 게이트웨이와 대조',
-        checking2: '확인 중…',
+        check: '식별자 확인',
+        checking2: '삼성 게이트웨이에서 현재 식별자를 읽는 중…',
+        checkHint: '가전은 삼성 클라우드 게이트웨이가 공개한 식별자를 담은 인증서만 받아들입니다. 이 버튼은 그 식별자를 지금 읽어와 저장된 인증서와 비교합니다. 불일치는 네트워크 장애처럼 보이지만 실제로는 인증서를 다시 발급해야 하는 유일한 경우입니다.',
         uuidOk: '저장된 식별자가 가전이 기대하는 값과 일치합니다.',
         uuidBad: '식별자 불일치 — 저장값 uuid:{0}, 현재 기대값 uuid:{1}. 인증서를 다시 발급하세요.',
         how: '인증서 발급 방법',
@@ -253,6 +263,7 @@
       setText('t-lede', t('lede'));
       setText('status-text', t('checking'));
       setText('t-check', t('check'));
+      setText('t-check-hint', t('checkHint'));
       setText('t-how', t('how'));
       setText('t-how-lede', t('howLede'));
       setText('t-how-note', t('howNote'));
@@ -295,6 +306,13 @@
       el.textContent = text || '';
     }
 
+    function checkMessage(kind, text, loading) {
+      var el = document.getElementById('check-msg');
+      el.className = 'msg ' + (kind || '');
+      el.innerHTML = (loading ? '<span class="spinner"></span>' : '')
+        + (text || '').replace(/</g, '&lt;');
+    }
+
     // Homey.api is promise-based and takes no callback; older builds are
     // callback-style. Support both, because waiting on a callback a
     // promise-based implementation never invokes is an infinite spinner.
@@ -331,6 +349,7 @@
           if (!s.configured) {
             setStatus('warn', t('notConfigured'));
             show('btn-check', false);
+            show('t-check-hint', false);
             show('btn-clear', false);
             show('stored', false);
             return;
@@ -338,6 +357,7 @@
           if (!s.valid) {
             setStatus('err', t('invalid'), s.error);
             show('btn-check', false);
+            show('t-check-hint', false);
             show('btn-clear', true);
             // Stored, but unusable — don't call it ready; the error is the point.
             show('stored', false);
@@ -346,6 +366,7 @@
           var meta = t('metaFmt', s.uuid, s.expires, s.chain_length);
           setStatus(s.expired ? 'err' : 'ok', s.expired ? t('expired') : t('valid'), meta);
           show('btn-check', true);
+          show('t-check-hint', true);
           show('btn-clear', true);
           show('stored', !s.expired);
         })
