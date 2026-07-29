@@ -55,6 +55,20 @@ class Driver(driver.Driver):
         session.set_handler("discover_status", self._on_discover_status)
         session.set_handler("probe", self._on_probe)
 
+    async def _language(self, data=None) -> str:
+        """The UI language, preferring what the view just reported.
+
+        A view resolves it from its own Homey object, which knows the user's language;
+        the Python i18n manager reports the *app's* and answers 'en' regardless. What
+        the view reports is also remembered, so messages raised later — from a poll
+        loop, with no view in sight — can still be in the right language.
+        """
+        reported = ((data or {}).get("language") or "").strip()
+        if reported:
+            await compat.remember_ui_language(self.homey, reported)
+            return reported[:2].lower()
+        return await compat.ui_language(self.homey)
+
     async def _credentials(self) -> tuple[str, str]:
         return (
             await compat.setting_get(self.homey, SETTING_LEAF_CERT),
