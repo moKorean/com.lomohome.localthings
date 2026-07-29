@@ -431,12 +431,21 @@ class Device(device.Device):
         add_capability is documented as expensive, so nothing is touched unless the
         sets actually differ — on an unchanged device this costs one comparison.
         """
-        wanted = set(self._registry.capabilities(self._resources))
+        # Registry order, not a set: the order a device holds its capabilities in is
+        # the order Homey shows them, and the registry declares power first for every
+        # appliance type. Adding alphabetically put `onoff` after everything on the
+        # range hood, so the tile led with the light instead.
+        ordered = self._registry.capabilities(self._resources)
+        wanted = set(ordered)
         current = set(self.get_capabilities() or ())
         if wanted == current:
             return
 
-        for capability in sorted(wanted - current):
+        # add_capability appends, so this only fixes the relative order of what is
+        # added now — a device created before a capability existed keeps it at the end
+        # until it is re-paired. There is no reorder call in the SDK, and rebuilding
+        # the whole list means removing capabilities, which breaks any Flow using them.
+        for capability in [c for c in ordered if c in wanted - current]:
             try:
                 await self.add_capability(capability)
                 self.log(f"capability added: {capability}")
@@ -455,7 +464,7 @@ class Device(device.Device):
         # Listeners are registered in on_init against the capability list as it was
         # then, so anything added since has no listener and would accept a write
         # that goes nowhere.
-        for capability in sorted(wanted - current):
+        for capability in [c for c in ordered if c in wanted - current]:
             try:
                 self.register_capability_listener(
                     capability, self._make_listener(capability)

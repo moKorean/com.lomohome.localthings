@@ -216,7 +216,9 @@ async def resources(homey, **kwargs):
             out[str(device.get_name())] = {
                 "host": host,
                 "registry": registry_name and registry_name.name,
-                "bound_capabilities": sorted(device.get_capabilities() or ()),
+                # Not sorted: the order a device holds these in is the order Homey
+                # renders them, so sorting here hid a real ordering problem.
+                "bound_capabilities": list(device.get_capabilities() or ()),
                 "resources": (
                     resource_map if raw else support.redact(resource_map)
                 ),

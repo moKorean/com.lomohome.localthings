@@ -7,8 +7,8 @@
     "ko": "조명 밝기"
   },
   "desc": {
-    "en": "Work-lamp brightness level.",
-    "ko": "작업등 밝기 단계입니다."
+    "en": "Brightness level of the hood light.",
+    "ko": "후드 조명의 밝기 단계입니다."
   },
   "min": 1,
   "max": 10,

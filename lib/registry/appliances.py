@@ -680,9 +680,13 @@ RANGE_HOOD = Registry(
         Spec("localthings_auto_ventilation", HREF_HOOD_FAN,
              shared.flag(FIELD_AUTO_OPERATION),
              exists=_has(FIELD_AUTO_OPERATION)),
+        # Titled per device: the shared capability is the air conditioner's panel
+        # indicator, which "표시등" describes correctly, but on a hood the same
+        # capability drives the light over the cooktop.
         Spec("localthings_display_light", HREF_HOOD_LAMP,
              shared.flag(FIELD_LAMP_POWER),
-             shared.write_flag(["hood", "lamp", "vs", "0"], FIELD_LAMP_POWER)),
+             shared.write_flag(["hood", "lamp", "vs", "0"], FIELD_LAMP_POWER),
+             titles={"en": "Light", "ko": "조명"}),
         Spec("localthings_lamp_brightness", HREF_HOOD_LAMP,
              _read_level(FIELD_LAMP_CURRENT, FIELD_LAMP_RANGE),
              _write_level(["hood", "lamp", "vs", "0"],
