@@ -38,13 +38,37 @@ nmap -Pn -sU -p 49152-49160 "$APPLIANCE_IP"
 ## 구조
 
 ```
-app.py                  진입점 (homey.app.App 상속, homey_export로 내보냄)
-drivers/appliance/       제네릭 드라이버 — driver.py(페어링) + device.py(세션·폴링)
-lib/                     전송 글루, 인증서 발급, 기기 레지스트리
-python_packages/         Homey CLI가 생성하는 아키텍처별 venv (커밋하지 않음)
+app.py                        진입점 (homey.app.App 상속, homey_export로 내보냄)
+lib/
+  const.py                    실측 프로토콜 상수 (포트 범위, 타임아웃, 소스 포트 base)
+  cert.py                     UUID 조회 + 리프 인증서 발급 (순수 cryptography)
+  probe.py                    UDP 라이브니스 스윕 + 페어링 프로브
+  session.py                  DtlsCoapSession의 asyncio 래퍼
+  resources.py                /device/0 배치 파싱, 시리얼 처리
+  registry/                   보드 토큰 라우팅 + 가전별 capability 맵
+  selfcheck.py                런타임 자체 점검 (기동 시 1회)
+drivers/appliance/
+  driver.py                   페어링 (CA 1회 → IP만)
+  device.py                   세션 유지, 폴링 루프, 쓰기
+  pair/configure.html         페어링 화면 (en/ko)
+tests/
+  fixtures/                   실기기 /device/0 덤프 (민감정보 리댁션)
+  test_registry.py            레지스트리 회귀 테스트
+python_packages/              Homey CLI가 생성하는 아키텍처별 venv (커밋하지 않음)
 ```
 
 전송 계층은 직접 구현하지 않고 [`smartthings-local`](https://pypi.org/project/smartthings-local/)에 위임합니다. `app.json`의 `pythonPackages`에 선언되어 있고, Homey CLI가 빌드 시 `uv`로 아키텍처별 venv에 설치합니다.
+
+**드라이버는 가전 종류별로 나누지 않고 하나입니다.** 레퍼런스가 리소스 표면을 보고 종류를 런타임에 판정하므로 페어링 시점에는 드라이버를 고를 근거가 없습니다. 대신 기기 생성 시 `Registry.capabilities()`가 계산한 capability만 부여하므로, 각 유닛은 실제로 보고한 기능만 갖습니다.
+
+### 지원 현황
+
+| 가전 | 상태 |
+|---|---|
+| 에어컨 (`RAC/PRAC/KRAC/CAC/WAC/FAC/CAWW/ARA`) | 전원·온도·모드·풍량·공기청정·습도·전력·필터 |
+| 그 외 15종 | 미이식 ([`docs/PORTING.md`](docs/PORTING.md) 마일스톤 7) |
+
+`CAC`(국내 천장형/상업용)는 레퍼런스 라우팅 표에 없어서 이 포트에서 추가했습니다.
 
 ## 참조 프로젝트
 

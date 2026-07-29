@@ -253,8 +253,15 @@ POST /power/vs/0   body: {'x.com.samsung.da.power': 'Off'}
 
 1. ~~**스파이크 — `pythonPackages`로 의존성 체인 확인.**~~ **완료** (2절 참고). aarch64 네이티브 확장까지 정상 반입
 2. ~~**스파이크 — 실기기 핸드셰이크.**~~ **완료** (2절 참고). `/device/0` 덤프까지 성공
-3. `app.py` + 제네릭 드라이버 + 페어링 뷰 — UUID 조회, 리프 인증서 발급, 포트 스윕
-4. 레지스트리 이식 — 배치 파싱 + 종류 판정. 레퍼런스의 골든 파일 덤프를 테스트 픽스처로 재사용
-5. 가전 1종(예: 세탁기) 엔드투엔드 완성
-6. OBSERVE 구독 및 폴링 강등/복구
+3. ~~`app.py` + 제네릭 드라이버 + 페어링 뷰~~ **완료.** `homey app validate --level publish` 통과, 실기기에 설치해 앱·드라이버 정상 init 확인
+4. ~~레지스트리 이식 — 배치 파싱 + 종류 판정~~ **완료** (에어컨). 실기기 덤프를 픽스처로 회귀 테스트 9개
+5. **가전 1종 엔드투엔드** — 페어링(CA 입력 → IP → 기기 생성)과 타일 동작을 실제로 확인하는 단계. Homey 앱 UI 조작이 필요
+6. OBSERVE 구독 및 폴링 강등/복구 — 현재는 폴링만
 7. 나머지 가전 종류 레지스트리 확장 (기계적 작업)
+
+### 마일스톤 5에서 확인할 것
+
+- 페어링 화면이 CA 저장 → IP 프로브 → 기기 생성까지 도는지
+- 타일에 capability가 뜨고 폴링으로 값이 갱신되는지
+- 타일에서 전원·온도·모드·풍량을 바꿀 때 `_write`의 optimistic apply가 자연스럽게 보이는지
+- 파이썬 SDK 메서드 이름 확인 필요: `get_store()`, `get_settings()`, `get_capabilities()`, `get_capability_value()`, `set_available()`/`set_unavailable()`, `homey.settings.get/set`, `homey.i18n.get_language()`. JS SDK를 snake_case로 옮긴 형태로 작성했고 `set_capability_value`·`register_capability_listener`·`on_pair`·`session.set_handler`는 공식 문서로 확인했지만, 나머지는 문서에 파이썬 예시가 없어 실행으로 검증해야 합니다
