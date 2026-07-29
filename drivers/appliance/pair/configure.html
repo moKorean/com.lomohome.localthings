@@ -1,0 +1,163 @@
+<script type="text/javascript" src="/homey.js" data-origin="pair"></script>
+
+<style>
+  body { font-family: -apple-system, "Segoe UI", Roboto, sans-serif; }
+  .step { display: none; }
+  .step.active { display: block; }
+  label { display: block; margin: 14px 0 4px; font-weight: 600; font-size: 13px; }
+  input[type=text], textarea {
+    width: 100%; box-sizing: border-box; padding: 8px;
+    border: 1px solid #ccc; border-radius: 6px; font-size: 13px;
+  }
+  textarea { font-family: ui-monospace, Menlo, monospace; font-size: 11px; height: 110px; }
+  .hint { color: #666; font-size: 12px; margin-top: 4px; line-height: 1.45; }
+  .error { color: #c0392b; font-size: 13px; margin-top: 12px; white-space: pre-wrap; }
+  .ok { color: #1e8449; font-size: 13px; margin-top: 12px; }
+  button {
+    margin-top: 18px; padding: 10px 18px; border: 0; border-radius: 6px;
+    background: #1428A0; color: #fff; font-size: 14px; cursor: pointer;
+  }
+  button[disabled] { opacity: .55; cursor: default; }
+  .summary { background: #f4f5f7; border-radius: 6px; padding: 12px; margin-top: 14px; font-size: 13px; }
+  .summary div { margin: 3px 0; }
+</style>
+
+<div id="step-ca" class="step">
+  <h2 data-i18n="ca_title">CA credentials</h2>
+  <p class="hint" id="ca-intro"></p>
+
+  <label data-i18n="ca_cert_label">CA certificate (PEM)</label>
+  <textarea id="ca-cert" spellcheck="false" placeholder="-----BEGIN CERTIFICATE-----"></textarea>
+
+  <label data-i18n="ca_key_label">CA private key (PEM)</label>
+  <textarea id="ca-key" spellcheck="false" placeholder="-----BEGIN PRIVATE KEY-----"></textarea>
+
+  <p class="hint" id="ca-hint"></p>
+  <button id="ca-save" data-i18n="ca_save">Save and continue</button>
+  <div id="ca-error" class="error"></div>
+</div>
+
+<div id="step-host" class="step">
+  <h2 data-i18n="host_title">Appliance address</h2>
+  <p class="hint" id="host-intro"></p>
+
+  <label data-i18n="host_label">IP address</label>
+  <input type="text" id="host" placeholder="192.168.1.90" inputmode="decimal" />
+
+  <button id="host-probe" data-i18n="host_probe">Connect</button>
+  <div id="host-error" class="error"></div>
+  <div id="host-status" class="ok"></div>
+  <div id="host-summary" class="summary" style="display:none"></div>
+</div>
+
+<script>
+  // The pairing view has no i18n of its own, so carry both languages here and
+  // pick with the language the driver reports.
+  const STRINGS = {
+    en: {
+      ca_title: 'CA credentials',
+      ca_intro: 'Needed once. Every appliance you add afterwards only asks for an IP address.',
+      ca_cert_label: 'CA certificate (PEM)',
+      ca_key_label: 'CA private key (PEM)',
+      ca_hint: 'Paste the AC14K_M intermediate CA. See docs/CA-SETUP.md in the app repository for how to obtain it. The key is stored on your Homey and never leaves it.',
+      ca_save: 'Save and continue',
+      host_title: 'Appliance address',
+      host_intro: 'Enter the appliance’s IP address. The DTLS port is detected automatically.',
+      host_label: 'IP address',
+      host_probe: 'Connect',
+      probing: 'Minting certificate, scanning ports and reading device state…',
+      unrecognised: 'Connected, but this appliance type is not supported yet.',
+      creating: 'Connected. Adding the device…',
+    },
+    ko: {
+      ca_title: 'CA 자격증명',
+      ca_intro: '최초 1회만 입력합니다. 이후 추가하는 가전은 IP 주소만 물어봅니다.',
+      ca_cert_label: 'CA 인증서 (PEM)',
+      ca_key_label: 'CA 개인키 (PEM)',
+      ca_hint: 'AC14K_M 중간 CA를 붙여넣으세요. 획득 방법은 앱 저장소의 docs/CA-SETUP.md를 참고하세요. 키는 Homey에만 저장되며 외부로 전송되지 않습니다.',
+      ca_save: '저장하고 계속',
+      host_title: '가전 주소',
+      host_intro: '가전의 IP 주소를 입력하세요. DTLS 포트는 자동으로 찾습니다.',
+      host_label: 'IP 주소',
+      host_probe: '연결',
+      probing: '인증서 발급, 포트 탐색, 기기 상태 읽는 중…',
+      unrecognised: '연결은 됐지만 아직 지원되지 않는 가전 종류입니다.',
+      creating: '연결됨. 기기를 추가하는 중…',
+    },
+  };
+
+  let T = STRINGS.en;
+
+  function show(id) {
+    document.querySelectorAll('.step').forEach(el => el.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+  }
+
+  function applyStrings() {
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+      const key = el.getAttribute('data-i18n');
+      if (T[key]) el.textContent = T[key];
+    });
+    document.getElementById('ca-intro').textContent = T.ca_intro;
+    document.getElementById('ca-hint').textContent = T.ca_hint;
+    document.getElementById('host-intro').textContent = T.host_intro;
+  }
+
+  Homey.emit('get_state', {})
+    .then(state => {
+      T = STRINGS[state.language] || STRINGS.en;
+      applyStrings();
+      show(state.has_ca ? 'step-host' : 'step-ca');
+    })
+    .catch(err => {
+      applyStrings();
+      show('step-ca');
+      document.getElementById('ca-error').textContent = String(err.message || err);
+    });
+
+  document.getElementById('ca-save').addEventListener('click', () => {
+    const button = document.getElementById('ca-save');
+    const error = document.getElementById('ca-error');
+    error.textContent = '';
+    button.disabled = true;
+    Homey.emit('save_ca', {
+      ca_cert_pem: document.getElementById('ca-cert').value,
+      ca_key_pem: document.getElementById('ca-key').value,
+    })
+      .then(() => { button.disabled = false; show('step-host'); })
+      .catch(err => { button.disabled = false; error.textContent = String(err.message || err); });
+  });
+
+  document.getElementById('host-probe').addEventListener('click', () => {
+    const button = document.getElementById('host-probe');
+    const error = document.getElementById('host-error');
+    const status = document.getElementById('host-status');
+    const summary = document.getElementById('host-summary');
+    error.textContent = '';
+    summary.style.display = 'none';
+    status.textContent = T.probing;
+    button.disabled = true;
+
+    Homey.emit('probe', { host: document.getElementById('host').value })
+      .then(result => {
+        button.disabled = false;
+        if (!result.recognised) {
+          status.textContent = '';
+          error.textContent = T.unrecognised + '\n' + result.model
+            + ' (' + result.resource_count + ' resources)';
+          return;
+        }
+        status.textContent = T.creating;
+        summary.style.display = 'block';
+        summary.innerHTML =
+          '<div><b>' + result.model + '</b></div>' +
+          '<div>' + result.registry + ' &middot; ' + result.capability_count + ' capabilities</div>';
+        return Homey.createDevice(result.device).then(() => Homey.done());
+      })
+      .catch(err => {
+        button.disabled = false;
+        status.textContent = '';
+        error.textContent = String(err.message || err);
+      });
+  });
+</script>

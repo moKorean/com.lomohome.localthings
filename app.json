@@ -76,5 +76,229 @@
   "bugs": {
     "url": "https://github.com/moKorean/com.lomohome.localthings/issues"
   },
-  "source": "https://github.com/moKorean/com.lomohome.localthings"
+  "source": "https://github.com/moKorean/com.lomohome.localthings",
+  "drivers": [
+    {
+      "name": {
+        "en": "Samsung Appliance",
+        "ko": "삼성 가전"
+      },
+      "class": "other",
+      "capabilities": [],
+      "platforms": [
+        "local"
+      ],
+      "connectivity": [
+        "lan"
+      ],
+      "images": {
+        "small": "/drivers/appliance/assets/images/small.png",
+        "large": "/drivers/appliance/assets/images/large.png",
+        "xlarge": "/drivers/appliance/assets/images/xlarge.png"
+      },
+      "pair": [
+        {
+          "id": "configure"
+        }
+      ],
+      "settings": [
+        {
+          "type": "group",
+          "label": {
+            "en": "Connection",
+            "ko": "연결"
+          },
+          "children": [
+            {
+              "id": "host",
+              "type": "label",
+              "label": {
+                "en": "IP address",
+                "ko": "IP 주소"
+              },
+              "value": ""
+            },
+            {
+              "id": "port",
+              "type": "label",
+              "label": {
+                "en": "DTLS port",
+                "ko": "DTLS 포트"
+              },
+              "value": ""
+            },
+            {
+              "id": "model",
+              "type": "label",
+              "label": {
+                "en": "Model",
+                "ko": "모델"
+              },
+              "value": ""
+            },
+            {
+              "id": "poll_interval",
+              "type": "number",
+              "label": {
+                "en": "Poll interval (seconds)",
+                "ko": "폴링 간격 (초)"
+              },
+              "hint": {
+                "en": "How often the full device state is re-read. The appliance firmware limits request rate, so values below 10s are not recommended.",
+                "ko": "전체 상태를 다시 읽는 간격입니다. 가전 펌웨어에 요청 속도 제한이 있어 10초 미만은 권장하지 않습니다."
+              },
+              "value": 30,
+              "min": 10,
+              "max": 600
+            }
+          ]
+        }
+      ],
+      "id": "appliance"
+    }
+  ],
+  "capabilities": {
+    "localthings_ac_mode": {
+      "type": "enum",
+      "title": {
+        "en": "Mode",
+        "ko": "운전 모드"
+      },
+      "getable": true,
+      "setable": true,
+      "uiComponent": "picker",
+      "icon": "/assets/capabilities/mode.svg",
+      "values": [
+        {
+          "id": "AIComfort",
+          "title": {
+            "en": "AI Comfort",
+            "ko": "AI 쾌적"
+          }
+        },
+        {
+          "id": "Auto",
+          "title": {
+            "en": "Auto",
+            "ko": "자동"
+          }
+        },
+        {
+          "id": "Cool",
+          "title": {
+            "en": "Cool",
+            "ko": "냉방"
+          }
+        },
+        {
+          "id": "Dry",
+          "title": {
+            "en": "Dry",
+            "ko": "제습"
+          }
+        },
+        {
+          "id": "Fan",
+          "title": {
+            "en": "Fan",
+            "ko": "송풍"
+          }
+        },
+        {
+          "id": "Heat",
+          "title": {
+            "en": "Heat",
+            "ko": "난방"
+          }
+        },
+        {
+          "id": "Wind",
+          "title": {
+            "en": "Wind-free",
+            "ko": "무풍"
+          }
+        }
+      ]
+    },
+    "localthings_air_purify": {
+      "type": "boolean",
+      "title": {
+        "en": "Air purify",
+        "ko": "공기청정"
+      },
+      "getable": true,
+      "setable": true,
+      "uiComponent": "toggle",
+      "icon": "/assets/capabilities/air-purify.svg"
+    },
+    "localthings_alarm_filter": {
+      "type": "boolean",
+      "title": {
+        "en": "Filter needs attention",
+        "ko": "필터 점검 필요"
+      },
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "icon": "/assets/capabilities/filter.svg"
+    },
+    "localthings_fan_mode": {
+      "type": "enum",
+      "title": {
+        "en": "Fan speed",
+        "ko": "풍량"
+      },
+      "getable": true,
+      "setable": true,
+      "uiComponent": "picker",
+      "icon": "/assets/capabilities/fan.svg",
+      "values": [
+        {
+          "id": "auto",
+          "title": {
+            "en": "Auto",
+            "ko": "자동"
+          }
+        },
+        {
+          "id": "low",
+          "title": {
+            "en": "Low",
+            "ko": "약"
+          }
+        },
+        {
+          "id": "mid",
+          "title": {
+            "en": "Medium",
+            "ko": "중"
+          }
+        },
+        {
+          "id": "high",
+          "title": {
+            "en": "High",
+            "ko": "강"
+          }
+        }
+      ]
+    },
+    "localthings_filter_usage": {
+      "type": "number",
+      "title": {
+        "en": "Filter usage",
+        "ko": "필터 사용량"
+      },
+      "getable": true,
+      "setable": false,
+      "units": {
+        "en": "%"
+      },
+      "min": 0,
+      "max": 100,
+      "decimals": 1,
+      "uiComponent": "sensor",
+      "icon": "/assets/capabilities/filter.svg"
+    }
+  }
 }

@@ -1,0 +1,53 @@
+{
+  "name": { "en": "Samsung Appliance", "ko": "삼성 가전" },
+  "class": "other",
+  "capabilities": [],
+  "platforms": ["local"],
+  "connectivity": ["lan"],
+  "images": {
+    "small": "/drivers/appliance/assets/images/small.png",
+    "large": "/drivers/appliance/assets/images/large.png",
+    "xlarge": "/drivers/appliance/assets/images/xlarge.png"
+  },
+  "pair": [
+    { "id": "configure" }
+  ],
+  "settings": [
+    {
+      "type": "group",
+      "label": { "en": "Connection", "ko": "연결" },
+      "children": [
+        {
+          "id": "host",
+          "type": "label",
+          "label": { "en": "IP address", "ko": "IP 주소" },
+          "value": ""
+        },
+        {
+          "id": "port",
+          "type": "label",
+          "label": { "en": "DTLS port", "ko": "DTLS 포트" },
+          "value": ""
+        },
+        {
+          "id": "model",
+          "type": "label",
+          "label": { "en": "Model", "ko": "모델" },
+          "value": ""
+        },
+        {
+          "id": "poll_interval",
+          "type": "number",
+          "label": { "en": "Poll interval (seconds)", "ko": "폴링 간격 (초)" },
+          "hint": {
+            "en": "How often the full device state is re-read. The appliance firmware limits request rate, so values below 10s are not recommended.",
+            "ko": "전체 상태를 다시 읽는 간격입니다. 가전 펌웨어에 요청 속도 제한이 있어 10초 미만은 권장하지 않습니다."
+          },
+          "value": 30,
+          "min": 10,
+          "max": 600
+        }
+      ]
+    }
+  ]
+}

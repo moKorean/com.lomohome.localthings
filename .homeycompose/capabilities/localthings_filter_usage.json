@@ -1,0 +1,12 @@
+{
+  "type": "number",
+  "title": { "en": "Filter usage", "ko": "필터 사용량" },
+  "getable": true,
+  "setable": false,
+  "units": { "en": "%" },
+  "min": 0,
+  "max": 100,
+  "decimals": 1,
+  "uiComponent": "sensor",
+  "icon": "/assets/capabilities/filter.svg"
+}
