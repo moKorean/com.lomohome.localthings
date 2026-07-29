@@ -115,14 +115,33 @@ Homey Pro는 linux-aarch64입니다. 세 패키지 모두 휠이 있습니다:
 
 `cryptography`는 자체 OpenSSL을 번들하므로 DTLS 지원과 `@SECLEVEL=0` 동작이 시스템 OpenSSL에 의존하지 않습니다.
 
+### 검증 완료: `pythonPackages`로 전체 의존성 체인이 들어옵니다
+
+`runtime: python` + `pythonPackages: ["smartthings-local>=0.1.1"]`만 선언한 최소 앱으로 `homey app build`를 돌려 확인했습니다. Homey CLI는 공식 빌더 도커 이미지(`ghcr.io/athombv/python-homey-app-builder-{arm64,amd64}`)를 받아 두 아키텍처 모두에서 의존성을 해석합니다.
+
+`python_packages/arm64/.venv/lib/python3.14/site-packages/`에 들어온 것:
+
+```
+smartthings_local/                                   0.1.1
+OpenSSL/  pyopenssl-26.3.0.dist-info/                순수 파이썬
+cryptography/hazmat/bindings/_rust.abi3.so           ELF aarch64  ← Rust 확장
+cbor2/_cbor2.cpython-314-aarch64-linux-gnu.so        ELF aarch64
+_cffi_backend.cpython-314-aarch64-linux-gnu.so       ELF aarch64
+```
+
+`file`로 확인한 결과 전부 `ELF 64-bit LSB shared object, ARM aarch64`입니다. 기기에서 컴파일이 일어나지 않고, 개발 머신에서 크로스 해석되어 앱과 함께 배포됩니다.
+
+pyOpenSSL 26.3.0이 `dtls_session.py`가 실제로 호출하는 API를 노출하는지도 확인했습니다: `DTLS_METHOD = 10`, `Context` 메서드 매핑에 `DTLS_METHOD: (_lib.DTLS_method, None)`, 그리고 `Connection.set_ciphertext_mtu()` 모두 존재합니다.
+
+venv 크기는 아키텍처당 약 18 MB (두 아키텍처 합 ~36 MB)로, 앱 배포 크기에 그만큼 더해집니다.
+
 ### 남은 검증 항목
 
-파이썬 경로로 갈 경우 확인이 필요한 것들. 모두 "안 되면 우회" 수준이고, Node 경로의 "핸드셰이크가 아예 성립하지 않을 수 있음"과는 성격이 다릅니다.
+실기기가 있어야 확인되는 것들만 남았습니다. 모두 "안 되면 우회" 수준이고, Node 경로의 "핸드셰이크가 아예 성립하지 않을 수 있음"과는 성격이 다릅니다.
 
 1. **Homey 펌웨어 버전.** `runtime: python`은 `compatibility >=13.0.0`을 요구합니다. 대상 Homey Pro가 v13 이상인지 확인
-2. **`pythonPackages`로 네이티브 휠이 실제로 들어가는지.** `homey-pythonscript`의 `pythonPackages`는 순수 파이썬(`restrictedpython`)뿐이라 이 경로가 네이티브 휠까지 처리한다는 직접 증거는 아닙니다. `pythonPackages: ["smartthings-local>=0.1.1"]`로 `homey app build`를 돌려 `python_packages/arm64/.venv/`에 `cryptography`의 `.so`가 들어오는지 확인하는 것이 가장 빠른 검증입니다
-3. **UDP 소켓과 스레드.** `DtlsCoapSession`은 리더 스레드가 UDP 소켓을 소유합니다. Homey 파이썬 런타임이 `socket` + `threading`을 허용하는지 확인. 앱 컨테이너가 LAN에 직접 붙는지도 함께 (Node 앱은 `dgram`이 되므로 가능성이 높음)
-4. **메모리.** 기기당 DTLS 세션 1개 + 상태 캐시. 파이썬 런타임 자체의 오버헤드도 포함해 실측
+2. **UDP 소켓과 스레드.** `DtlsCoapSession`은 리더 스레드가 UDP 소켓을 소유합니다. Homey 파이썬 런타임이 `socket` + `threading`을 허용하는지, 앱 컨테이너가 LAN에 직접 붙는지 확인 (Node 앱은 `dgram`이 되므로 가능성이 높음)
+3. **메모리.** 기기당 DTLS 세션 1개 + 상태 캐시. 파이썬 런타임 자체의 오버헤드도 포함해 실측
 
 ---
 
@@ -153,7 +172,7 @@ Homey Pro는 linux-aarch64입니다. 세 패키지 모두 휠이 있습니다:
 
 ## 5. 제안 마일스톤 (파이썬 경로)
 
-1. **스파이크 — `pythonPackages: ["smartthings-local>=0.1.1"]`로 `homey app build`.** `python_packages/arm64/.venv/`에 `cryptography` 네이티브 확장이 들어오는지 확인. (계속/중단 결정)
+1. ~~**스파이크 — `pythonPackages`로 의존성 체인 확인.**~~ **완료** (2절 참고). aarch64 네이티브 확장까지 정상 반입
 2. **스파이크 — 실기기 핸드셰이크.** 앱에서 `DtlsCoapSession`으로 `/device/0` 덤프 성공. 소켓·스레드 제약 확인. 여기까지 되면 최대 난관 통과
 3. `app.py` + 제네릭 드라이버 + 페어링 뷰 — UUID 조회, 리프 인증서 발급, 포트 스윕
 4. 레지스트리 이식 — 배치 파싱 + 종류 판정. 레퍼런스의 골든 파일 덤프를 테스트 픽스처로 재사용
