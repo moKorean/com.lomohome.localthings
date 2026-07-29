@@ -14,7 +14,7 @@ sys.path.insert(0, str(Path(__file__).parents[2]))
 
 from homey import driver
 
-from lib import cert, compat, discovery, probe, registry
+from lib import cert, compat, discovery, i18n, probe, registry
 from lib.const import (
     SETTING_LEAF_CERT,
     SETTING_LEAF_KEY,
@@ -24,6 +24,11 @@ from lib.const import (
     STORE_SERIAL,
 )
 from lib.resources import read_identity
+
+# _repair_target is synchronous and raises before the handler can await anything, so
+# this one message is resolved in English. It only appears if the SDK gives neither a
+# device on the session nor an id in the payload, which no observed version does.
+_REPAIR_NO_DEVICE = i18n.translate("error.repair_no_device")
 
 
 class Driver(driver.Driver):
@@ -60,7 +65,7 @@ class Driver(driver.Driver):
         """Lets the view send the user to app settings instead of failing at
         Connect when no certificate has been configured yet."""
         cert_pem, key_pem = await self._credentials()
-        language = await compat.language(self.homey)
+        language = await compat.ui_language(self.homey)
         # Logged because "the certificate is stored but pairing says otherwise"
         # is otherwise indistinguishable from "it was never stored".
         self.log(
@@ -130,15 +135,10 @@ class Driver(driver.Driver):
             # second sweep over the same subnet.
             return self._snapshot()
 
+        language = await self._language(data)
         cert_pem, key_pem = await self._credentials()
         if not cert_pem or not key_pem:
-            raise ValueError(
-                "No client certificate configured. Set one up in "
-                "Settings -> Apps -> LocalThings community first."
-            )
-        language = ((data or {}).get("language") or "").strip() or await compat.language(
-            self.homey
-        )
+            raise ValueError(i18n.translate("error.no_credentials", language))
         self._reset_discovery()
         # Held in an attribute: a task referenced only by the loop's transient set can
         # be garbage-collected, which would abandon a scan halfway with the view still
@@ -303,10 +303,11 @@ class Driver(driver.Driver):
                         return candidate
                 except Exception:
                     continue
-        raise ValueError("Could not tell which device is being repaired")
+        raise ValueError(_REPAIR_NO_DEVICE)
 
     async def _on_repair_state(self, data=None, **_) -> dict:
         device = self._repair_target(data)
+        await self._language(data)
         store = device.get_store() or {}
         cert_pem, key_pem = await self._credentials()
         certificate = {"configured": bool(cert_pem and key_pem)}
@@ -317,7 +318,7 @@ class Driver(driver.Driver):
             except cert.InvalidCredentials as exc:
                 certificate.update({"valid": False, "error": str(exc)})
         return {
-            "language": await compat.language(self.homey),
+            "language": await compat.ui_language(self.homey),
             "name": device.get_name(),
             "host": store.get(STORE_HOST),
             "port": store.get(STORE_PORT),
@@ -378,7 +379,8 @@ class Driver(driver.Driver):
         device = self._repair_target(data)
         host = ((data or {}).get("host") or "").strip()
         if not host:
-            raise ValueError("An IP address is required")
+            raise ValueError(i18n.translate(
+                "error.host_required", await compat.ui_language(self.homey)))
         cert_pem, key_pem = await self._credentials()
         if not cert_pem or not key_pem:
             return {"ok": False, "reason": "no_credentials"}
@@ -426,20 +428,16 @@ class Driver(driver.Driver):
             )
         except Exception as exc:
             self.log(f"storing pair env failed: {exc}")
+        await compat.remember_ui_language(self.homey, (data or {}).get("resolved"))
         self.log(f"pair env: {data}")
         return {"ok": True}
 
     async def _on_probe(self, data=None, **_) -> dict:
         data = data or {}
+        language = await self._language(data)
         host = (data.get("host") or "").strip()
         if not host:
-            raise ValueError("An IP address is required")
-
-        # Prefer the language the view reports. Both paths work, but the view's is
-        # the UI language directly, while the Python side resolves the *app's*
-        # i18n language — which only matches once locales/<lang>.json exists (see
-        # docs/PORTING.md).
-        language = (data.get("language") or "").strip() or await compat.language(self.homey)
+            raise ValueError(i18n.translate("error.host_required", language))
 
         cert_pem, key_pem = await self._credentials()
         if not cert_pem or not key_pem:

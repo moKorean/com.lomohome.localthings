@@ -14,6 +14,10 @@ SETTING_LEAF_KEY = "leaf_key_pem"
 # Last environment report from the pairing webview. Diagnostic only; lets the
 # view's own view of the SDK be inspected from an installed app.
 SETTING_PAIR_ENV = "pair_env"
+# UI language, as reported by a webview. Homey's server-side i18n resolves the *app's*
+# language rather than the user's, so this is the only way a message raised from Python
+# can be in the user's language.
+SETTING_UI_LANGUAGE = "ui_language"
 
 # Per-device store keys. Credentials are not duplicated here — the device reads
 # the app-level certificate at runtime, so rotating it fixes every device at once

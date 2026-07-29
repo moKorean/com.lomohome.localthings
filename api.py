@@ -12,11 +12,12 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-from lib import cert, compat
+from lib import cert, compat, i18n
 from lib.const import (
     SETTING_LEAF_CERT,
     SETTING_LEAF_KEY,
     SETTING_PAIR_ENV,
+    SETTING_UI_LANGUAGE,
 )
 
 
@@ -99,7 +100,8 @@ async def save_credentials(homey, **kwargs):
     cert_pem = str(body.get("cert_pem") or "").strip()
     key_pem = str(body.get("key_pem") or "").strip()
     if not cert_pem or not key_pem:
-        raise ValueError("Both the certificate and the private key are required.")
+        raise ValueError(i18n.translate(
+            "error.credentials_required", await compat.ui_language(homey)))
 
     info = await _run(cert.inspect_leaf, cert_pem, key_pem)
 
@@ -112,10 +114,8 @@ async def save_credentials(homey, **kwargs):
     stored_cert, stored_key = await _stored(homey)
     if not stored_cert or not stored_key:
         _log(homey, "settings POST /credentials: write did not persist")
-        raise RuntimeError(
-            "Homey did not persist the certificate. Please try again, or "
-            "restart the app if it keeps happening."
-        )
+        raise RuntimeError(i18n.translate(
+            "error.credentials_not_persisted", await compat.ui_language(homey)))
     _log(homey, f"Client certificate stored (uuid:{info['uuid']}, expires {info['expires']}, "
                 f"cert={len(stored_cert)}B key={len(stored_key)}B)")
     return {"ok": True, **info}
@@ -154,6 +154,9 @@ async def diagnostics(homey, **kwargs):
 
     cert_pem, key_pem = await _stored(homey)
     report["credentials"] = {"cert_bytes": len(cert_pem), "key_bytes": len(key_pem)}
+    report["ui_language"] = (
+        await compat.setting_get(homey, SETTING_UI_LANGUAGE) or "(not reported yet)"
+    )
     report["pair_env"] = (
         await compat.setting_get(homey, SETTING_PAIR_ENV) or "(not reported yet)"
     )
@@ -194,3 +197,14 @@ def _device_report(homey) -> list:
                 entry[label] = f"raised {type(exc).__name__}"
         report.append(entry)
     return report
+
+
+async def set_language(homey, **kwargs):
+    """Record the UI language the settings page resolved.
+
+    The page asks its own Homey object, which knows the user's language; the app's
+    Python i18n does not. Stored so messages raised from Python can use it.
+    """
+    body = _body(kwargs)
+    await compat.remember_ui_language(homey, body.get("language"))
+    return {"ok": True, "language": await compat.ui_language(homey)}

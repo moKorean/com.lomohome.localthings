@@ -59,3 +59,30 @@ async def language(homey, default: str = "en") -> str:
         if isinstance(value, str) and value:
             return value[:2].lower()
     return default
+
+
+async def ui_language(homey, default: str = "en") -> str:
+    """The language to write user-facing messages in.
+
+    Prefers what a webview reported, because Homey's Python i18n resolves the *app's*
+    language rather than the user's and returns 'en' regardless (docs/PORTING.md
+    section 8). Falls back to that accessor anyway, in case a future firmware fixes it.
+    """
+    from .const import SETTING_UI_LANGUAGE
+
+    reported = await setting_get(homey, SETTING_UI_LANGUAGE)
+    if reported:
+        return reported[:2].lower()
+    return await language(homey, default)
+
+
+async def remember_ui_language(homey, value: str) -> None:
+    """Store a language a webview resolved, if it looks like one."""
+    from .const import SETTING_UI_LANGUAGE
+
+    code = str(value or "")[:2].lower()
+    if not code.isalpha() or len(code) != 2:
+        return
+    if await setting_get(homey, SETTING_UI_LANGUAGE) == code:
+        return
+    await setting_set(homey, SETTING_UI_LANGUAGE, code)

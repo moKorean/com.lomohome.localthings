@@ -20,7 +20,7 @@ sys.path.insert(0, str(Path(__file__).parents[2]))
 
 from homey import device
 
-from lib import compat, discovery, probe, registry
+from lib import compat, discovery, i18n, probe, registry
 from lib.const import (
     OBSERVE_GRACE_S,
     OBSERVE_REFRESH_S,
@@ -51,6 +51,10 @@ class Device(device.Device):
         self._failures = 0
         self._registry = None
         self._resources: dict = {}
+        # Resolved once at start: messages are raised from the poll loop and from
+        # capability listeners, where awaiting a settings read on every failure would
+        # be wasteful and would run during the failure it is describing.
+        self._language = await compat.ui_language(self.homey)
         self._poll_task = None
         # Retained so the event loop keeps a strong reference: a task held only by
         # the loop's transient set can be garbage-collected mid-flight, which would
@@ -369,10 +373,7 @@ class Device(device.Device):
         if not await compat.setting_get(self.homey, SETTING_LEAF_CERT):
             # Distinct from a network failure, and fixable in one place, so say
             # where rather than reporting a bare connection error.
-            raise RuntimeError(
-                "No client certificate configured. Set one up in "
-                "Settings -> Apps -> LocalThings."
-            )
+            raise RuntimeError(i18n.translate("error.no_credentials", self._language))
         self._resources = await self._session.read_device0()
 
         # Confirm this is still the appliance we were paired with. Two devices
@@ -382,15 +383,14 @@ class Device(device.Device):
             seen = read_serial(self._resources, self._host, self._port)
             if seen != self._serial:
                 self._resources = {}
-                raise RuntimeError(
-                    f"{self._host} is a different appliance now "
-                    f"(expected {self._serial}, found {seen})"
-                )
+                raise RuntimeError(i18n.translate(
+                    "error.wrong_device", self._language,
+                    host=self._host, expected=self._serial, found=seen))
 
         if self._registry is None:
             self._registry = registry.resolve(self._resources)
             if self._registry is None:
-                raise RuntimeError("appliance type no longer recognised")
+                raise RuntimeError(i18n.translate("error.not_recognised", self._language))
             unbound = registry.unbound_hrefs(self._resources, self._registry)
             self.log(
                 f"registry {self._registry.name}, "
@@ -484,6 +484,19 @@ class Device(device.Device):
         if hasattr(result, "__await__"):
             await result
 
+    def _label(self, capability: str) -> str:
+        """A capability's own title where the device carries one, else its id.
+
+        A message naming 'localthings_ac_mode' is technically accurate and useless to
+        read; the sub-capability titles already exist for exactly this.
+        """
+        if self._registry is None:
+            return capability
+        spec = self._registry.spec_for(capability)
+        if spec and spec.titles:
+            return spec.titles.get(self._language) or spec.titles.get("en") or capability
+        return capability
+
     def is_pushing(self) -> bool:
         """Backs the 'state is arriving by push' flow condition."""
         return bool(self._observing)
@@ -499,14 +512,16 @@ class Device(device.Device):
     async def _write(self, capability: str, value) -> None:
         spec = self._registry.spec_for(capability) if self._registry else None
         if spec is None or not spec.writable:
-            raise RuntimeError(f"{capability} is not writable on this appliance")
+            raise RuntimeError(i18n.translate(
+                "error.not_writable", self._language, capability=self._label(capability)))
 
         rep = self._resources.get(spec.href) or {}
         payload = spec.write(value, rep)
         if payload is None:
             # The device didn't advertise this value; refuse rather than send
             # something it will silently drop.
-            raise RuntimeError(f"{value!r} is not supported by this appliance")
+            raise RuntimeError(i18n.translate(
+                "error.value_unsupported", self._language, value=value))
 
         # A write asking for the value the device already holds is refused
         # ("controlResponse result False"), which surfaced as a spurious error
@@ -527,7 +542,9 @@ class Device(device.Device):
         response = await self._session.write(path_segs, body)
         if not Session.write_accepted(response):
             self.log(f"write {capability} refused, device said: {response}")
-            raise RuntimeError(f"The appliance rejected {capability}={value!r}")
+            raise RuntimeError(i18n.translate(
+                "error.write_rejected", self._language,
+                capability=self._label(capability), value=value))
 
         # Optimistic apply, so the tile reflects the change before the next poll.
         # Merge the body actually sent and re-read it through the spec, so the tile

@@ -1,16 +1,14 @@
 {
-  "settings": {
-    "title": "LocalThings community"
-  },
-  "pair": {
-    "setup_required": "Set up required"
-  },
-  "device": {
-    "airconditioner": "Samsung Air Conditioner"
-  },
   "error": {
-    "no_credentials": "No client certificate configured. Set one up in Settings → Apps → LocalThings community.",
-    "not_supported": "This appliance type is not supported yet.",
-    "rejected": "The appliance rejected the change."
+    "no_credentials": "No client certificate is set up. Add one in Settings → Apps → LocalThings community.",
+    "credentials_required": "Both the certificate and the private key are required.",
+    "credentials_not_persisted": "Homey did not save the certificate. Try again, and restart the app if it keeps happening.",
+    "host_required": "Enter the appliance's IP address.",
+    "not_recognised": "This appliance is no longer recognised as a supported type.",
+    "wrong_device": "{host} is a different appliance now: expected serial {expected}, found {found}.",
+    "not_writable": "{capability} cannot be changed on this appliance.",
+    "value_unsupported": "This appliance does not support {value}.",
+    "write_rejected": "The appliance refused to set {capability} to {value}.",
+    "repair_no_device": "Could not tell which device is being repaired."
   }
 }

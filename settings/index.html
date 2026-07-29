@@ -449,7 +449,13 @@
       applyStrings();
       wire();
       try { H.ready(); } catch (e) { /* ignore */ }
-      resolveLanguage().then(applyStrings);
+      resolveLanguage().then(function () {
+        applyStrings();
+        // Messages raised from Python cannot work out the user's language on their
+        // own — Homey's Python i18n reports the app's — so tell the app what this
+        // page resolved.
+        api('POST', '/language', { language: LANG }).catch(function () { /* cosmetic */ });
+      });
       refresh();
     }
 

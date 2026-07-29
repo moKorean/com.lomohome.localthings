@@ -272,6 +272,12 @@ python3 -m venv .venv
 .venv/bin/ruff check .
 ```
 
+## 다국어
+
+한국어와 영어를 지원하고, **선언되지 않은 언어는 영어로 표시됩니다** — 앱 이름·설명·capability 63개·플로우 카드·설정 라벨·웹뷰 3개·기기 이름 전부. `tests/test_i18n.py`가 이를 강제합니다(한국어 문자열만 추가하고 영어를 빠뜨리는 실수는 작성자에게 보이지 않기 때문에).
+
+파이썬에서 발생하는 오류 메시지도 번역됩니다. Homey의 서버측 i18n은 앱 언어를 반환해 쓸 수 없으므로, 웹뷰가 알려준 UI 언어를 저장해 씁니다 — 자세한 내용은 [`docs/PORTING.md`](docs/PORTING.md) 11절.
+
 ## 라이선스
 
 GPL-3.0-or-later. 프로토콜 분석과 기기 레지스트리 설계는 [mbillow/localthings](https://github.com/mbillow/localthings)와 [QuiteYellow/SmartThings-Local](https://github.com/QuiteYellow/SmartThings-Local)의 작업에 기반합니다.

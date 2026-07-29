@@ -1,16 +1,14 @@
 {
-  "settings": {
-    "title": "로컬띵스 커뮤니티"
-  },
-  "pair": {
-    "setup_required": "설정이 필요합니다"
-  },
-  "device": {
-    "airconditioner": "삼성 에어컨"
-  },
   "error": {
-    "no_credentials": "클라이언트 인증서가 설정되지 않았습니다. 설정 → 앱 → 로컬띵스 커뮤니티에서 등록하세요.",
-    "not_supported": "아직 지원되지 않는 가전 종류입니다.",
-    "rejected": "가전이 변경을 거부했습니다."
+    "no_credentials": "클라이언트 인증서가 등록되지 않았습니다. 설정 → 앱 → 로컬띵스 커뮤니티에서 등록하세요.",
+    "credentials_required": "인증서와 개인키를 모두 붙여넣어야 합니다.",
+    "credentials_not_persisted": "Homey가 인증서를 저장하지 못했습니다. 다시 시도해 보시고, 계속 발생하면 앱을 다시 시작하세요.",
+    "host_required": "가전의 IP 주소를 입력하세요.",
+    "not_recognised": "지원되는 가전 종류로 인식되지 않습니다.",
+    "wrong_device": "{host}은 지금 다른 가전입니다. 기대한 시리얼은 {expected}인데 {found}이 응답했습니다.",
+    "not_writable": "이 가전에서는 {capability}를 바꿀 수 없습니다.",
+    "value_unsupported": "이 가전은 {value}를 지원하지 않습니다.",
+    "write_rejected": "가전이 {capability}를 {value}로 설정하는 것을 거부했습니다.",
+    "repair_no_device": "어느 기기를 복구하는지 판단할 수 없었습니다."
   }
 }
