@@ -54,7 +54,13 @@ homey app install
 
 ### 2단계 — 클라이언트 인증서 발급 (컴퓨터에서 1회)
 
-가전은 `AC14K_M` 중간 CA가 서명한 인증서를 신뢰합니다. [`QuiteYellow/SmartThings-Local`](https://github.com/QuiteYellow/SmartThings-Local)의 `setup_cert.py`가 발급을 자동화합니다. Python 3과 `openssl`이 필요합니다.
+가전은 `AC14K_M` 중간 CA가 서명한 인증서를 신뢰합니다.
+
+> **이 저장소는 필요한 CA 번들을 포함하지 않습니다.** 획득 방법의 예시 — `AC14K_M` 인증서와 키를 받아 서로 짝이 맞는지 확인하는 과정까지 — 는 `smartthings-local` 프로토콜 프로젝트의 [`setup_cert.py`](https://github.com/QuiteYellow/SmartThings-Local/blob/main/setup_cert.py)를 참고하세요.
+>
+> 원문: *"This repo doesn't include the needed CA bundle. For an example of how to obtain it, including fetching the AC14K_M cert and key and verifying they pair, see the `smartthings-local` protocol project's [`setup_cert.py`](https://github.com/QuiteYellow/SmartThings-Local/blob/main/setup_cert.py)."* — [mbillow/localthings](https://github.com/mbillow/localthings)
+
+[`QuiteYellow/SmartThings-Local`](https://github.com/QuiteYellow/SmartThings-Local)의 `setup_cert.py`가 발급 전 과정을 자동화합니다. Python 3과 `openssl`이 필요합니다.
 
 ```sh
 git clone https://github.com/QuiteYellow/SmartThings-Local.git
