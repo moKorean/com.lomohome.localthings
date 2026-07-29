@@ -1,26 +1,33 @@
 # LocalThings → Homey 포팅 노트
 
-레퍼런스: `../localthings-reference/` (mbillow/localthings, 포팅 시작 시점 `main` @ `119a4f4`, v0.16.0)
+레퍼런스:
 
-이 문서는 레퍼런스 구조를 실제로 읽고 정리한 설계 메모입니다. 구현이 진행되면 함께 갱신합니다.
+- `../localthings-reference/` — [mbillow/localthings](https://github.com/mbillow/localthings), `main` @ `119a4f4` (v0.16.0). 포팅 원본
+- `../homey-pythonscript-reference/` — [jaccoh/homey-pythonscript](https://github.com/jaccoh/homey-pythonscript), `main` @ `55f491f` (v0.4.0). Homey 파이썬 런타임 실증 사례
+
+이 문서는 두 레퍼런스를 실제로 읽고 정리한 설계 메모입니다. 구현이 진행되면 함께 갱신합니다.
 
 ---
 
 ## 1. 레퍼런스가 실제로 하는 일
 
-HA 통합은 `smartthings-local` 파이썬 라이브러리에 저수준 통신을 위임하고, 자신은 **기기 모델링**만 담당합니다. 이 분업이 포팅 난이도를 그대로 결정합니다.
+HA 통합은 `smartthings-local` 파이썬 라이브러리에 저수준 통신을 위임하고, 자신은 **기기 모델링**만 담당합니다. 이 분업이 포팅 전략을 그대로 결정합니다.
 
 ```
-HA 통합 (포팅 대상, 파이썬 → JS 재작성)
+HA 통합 (포팅 대상)
   config_flow.py      기기 추가 플로우: IP + CA PEM 입력, UUID 조회, 리프 인증서 발급, 포트 스윕
   coordinator.py      DTLS 세션 수명주기, /device/0 폴링, 상태 캐시, 쓰기 경로
   observe.py          CoAP OBSERVE 구독 (실패 시 폴링으로 강등, 600초마다 복구 재시도)
-  registry/           href → capability → 엔티티 매핑 (여기가 코드량의 대부분)
+  registry/           href → capability → 엔티티 매핑 (코드량의 대부분)
   {sensor,switch,...}.py   HA 플랫폼별 엔티티 생성
 
-smartthings-local (파이썬 라이브러리, Homey에서 대체 필요 ← 진짜 문제)
+smartthings-local 0.1.1 (PyPI, 순수 파이썬 py3-none-any)
   protocol/dtls_session.py   DtlsCoapSession: DTLS 핸드셰이크 + CoAP 요청/응답
+  protocol/coap.py           CoAP 인코딩/디코딩, Block2, OBSERVE 옵션
+  protocol/ocf_root_ca.pem   OCF 루트 CA
   ocf/state_cache.py         OCF 상태 캐시
+  ocf/{keepalive,observe_refresh,poll_scheduler}.py
+  의존성: cbor2>=5.6, pyopenssl>=23.0  ← 이게 전부입니다
 ```
 
 핵심 흐름:
@@ -33,48 +40,89 @@ smartthings-local (파이썬 라이브러리, Homey에서 대체 필요 ← 진�
 6. `registry/by_type/resolve(resources)` — 리소스 집합을 보고 가전 종류 판정, 해당 레지스트리 선택
 7. `registry/discovery.discover()` — 레지스트리에 등록된 href마다 `BoundEntity` 생성. 미등록 href는 커버리지 갭으로 로깅
 
-주목할 설계 결정 (Homey에서도 그대로 유효):
+### 전송 계층 실측값 (`smartthings_local/protocol/dtls_session.py` 주석 기준)
 
-- **모델별 기술자가 없습니다.** 기기가 광고하는 리소스 집합으로 종류를 판정하므로, 이미 지원되는 종류의 새 모델은 코드 추가 없이 붙습니다.
-- **CA는 1회 입력, 리프는 기기별 자동 발급.** 두 번째 기기부터는 IP만 받습니다.
-- **DTLS 소스 포트를 기기별로 고정** (`coordinator._local_source_port`, base `49700` + IP 마지막 옥텟). 재접속 시 5-tuple을 유지해 비정상 종료로 남은 유령 세션을 핸드셰이크 시점에 축출합니다(RFC 6347 §4.2.8). 안 하면 5~15분간 읽기가 멈춥니다. **포팅 시 반드시 이식할 항목입니다.**
-- **`serialNum` 플레이스홀더 방어.** `ARTIK051_DONGLE_REF` 계열은 모든 유닛이 `Nothing(SVC)`를 반환하므로, 이를 실제 시리얼로 쓰면 같은 집의 두 기기가 unique id를 공유해 충돌합니다. `_is_placeholder_serial()` 대응 필요.
+라이브러리를 그대로 쓰든 재구현하든, 이 값들은 협상 대상이 아닙니다.
+
+- **암호 스위트**: `ECDHE-ECDSA-AES128-GCM-SHA256`, `@SECLEVEL=0`과 함께 설정. SECLEVEL을 낮추지 않으면 최신 OpenSSL이 삼성 인증서 체인의 약한 파라미터를 거부합니다
+- **ciphertext MTU 1200 고정**. 안 하면 OpenSSL이 클라이언트 인증서를 두 datagram으로 쪼개고 TizenRT가 두 번째를 버립니다
+- **응답 상관은 `(token, mid)`로**. RT-OCF는 큰 응답에 ACK + separate-CON을 쓰므로 도착 순서로 짝지으면 one-shot과 OBSERVE 트래픽이 섞여 오배정됩니다
+- **Block2는 token-stable**. 블록마다 새 토큰을 쓰면 서버가 조용히 버립니다
+- **rate limit**: 세션당 기본 5 req/s (건조기 ~14, 오븐 ~8이 펌웨어 한계)
+- **close_notify 없이 끊으면** 기기에 유령 DTLS 연결이 남습니다
+
+### 이식할 때 놓치기 쉬운 디테일
+
+- **DTLS 소스 포트를 기기별로 고정** (`coordinator._local_source_port`, base `49700` + IP 마지막 옥텟). 재접속 시 5-tuple을 유지해 비정상 종료로 남은 유령 세션을 핸드셰이크 시점에 축출합니다(RFC 6347 §4.2.8). 안 하면 5~15분간 읽기가 멈춥니다
+- **`serialNum` 플레이스홀더 방어**. `ARTIK051_DONGLE_REF` 계열은 모든 유닛이 `Nothing(SVC)`를 반환하므로, 이를 실제 시리얼로 쓰면 같은 집의 두 기기가 unique id를 공유해 충돌합니다 (`_is_placeholder_serial()`)
+- **모델별 기술자가 없습니다.** 기기가 광고하는 리소스 집합으로 종류를 판정하므로, 이미 지원되는 종류의 새 모델은 코드 추가 없이 붙습니다. 이 성질을 유지해야 합니다
+- **CA는 1회 입력, 리프는 기기별 자동 발급.** 두 번째 기기부터는 IP만 받습니다
 
 ---
 
-## 2. 가장 큰 위험: Node.js에는 DTLS가 없습니다
+## 2. 런타임 선택: 파이썬 (권장) vs Node.js
 
-`node:tls`는 TCP 전용입니다. Homey 앱은 Node.js이고 Homey Pro에서는 네이티브 모듈 컴파일이 불가능하므로 **순수 JS DTLS 1.2 클라이언트**가 필요합니다.
+### Homey는 파이썬 앱을 지원합니다
 
-조사 결과:
+`homey-pythonscript`가 실증합니다:
 
-| 후보 | 판정 |
-|---|---|
-| `@nodertc/dtls` 0.6.0 | **유일한 현실적 후보.** 순수 JS, 네이티브 의존성 없음, MIT. `options.certificate` / `options.certificatePrivateKey`로 **클라이언트 인증서 인증 지원**(RSASSA-PKCS1-v1_5, ECDSA). 단 `stability-experimental`, 최종 배포 2019년, `engines: node>=8.3` |
-| `node-dtls-client` 2.0.3 | PSK 전용. 클라이언트 인증서 불가 → **사용 불가** |
-| `dtls` 0.0.1 | 사실상 빈 패키지 |
-| 네이티브 mbedTLS/OpenSSL 바인딩 | Homey Pro에서 컴파일 불가 → **사용 불가** |
-
-### 먼저 해야 할 스파이크 (여기서 프로젝트 성패가 갈립니다)
-
-**암호 스위트 교집합 확인.** `@nodertc/dtls`가 지원하는 스위트는 ECDHE-ECDSA/ECDHE-RSA/RSA의 **GCM과 ChaCha20-Poly1305**뿐입니다. 반면 CoAP를 쓰는 제약 기기들은 관례적으로 **CCM / CCM_8**(RFC 7251, 예: `TLS_ECDHE_ECDSA_WITH_AES_128_CCM_8`)을 제공합니다. 삼성 가전이 CCM만 제공한다면 `@nodertc/dtls`로는 핸드셰이크가 성립하지 않고, CCM 모드를 직접 구현해 포크하는 작업이 추가됩니다.
-
-확인 방법 — 실기기에 `openssl s_client`로 DTLS 핸드셰이크를 걸어 ServerHello가 고르는 스위트를 봅니다:
-
-```sh
-openssl s_client -dtls1_2 -connect "$APPLIANCE_IP:49154" \
-  -cert leaf.pem -key leaf.key -state -debug 2>&1 | grep -i cipher
+```json
+{
+  "runtime": "python",
+  "pythonVersion": "3.14",
+  "compatibility": ">=13.0.0",
+  "pythonPackages": ["restrictedpython>=7.0.0"]
+}
 ```
 
-또는 `smartthings-local`의 `dtls_session.py`가 어떤 스위트를 설정하는지 확인합니다(현재 저장소에 벤더링되어 있지 않아 PyPI에서 별도로 받아야 합니다).
+`app.py`에 `homey.app.App`을 상속한 클래스를 두고 `homey_export = MyApp`으로 내보냅니다. 공식 `homey` 파이썬 모듈이 있고 플로우 카드 등록·autocomplete·`self.homey.flow` 등 JS SDK와 대응되는 API를 제공합니다. `api.py`로 settings 페이지용 API도 노출됩니다.
 
-**이 결과가 나오기 전에는 레지스트리 포팅에 시간을 쓰지 않는 것이 좋습니다.** 레지스트리는 코드량이 크지만 기계적인 작업이고, 전송 계층이 막히면 전부 무의미해집니다.
+`pythonPackages`는 **Homey CLI가 빌드 시점에 `uv`로 아키텍처별 venv로 해석**해 앱과 함께 배포합니다:
 
-### 나머지 자체 구현 항목
+```
+python_packages/.python-version          # 3.14
+python_packages/amd64/.venv/             # cpython-3.14.2-linux-x86_64-gnu
+python_packages/arm64/.venv/             # cpython-3.14.6-linux-aarch64-gnu
+```
 
-- **CoAP.** `coap` npm 패키지는 자기가 소유한 UDP 소켓을 전제하므로, DTLS 스트림 위에 얹을 수 없습니다. 메시지 인코딩/디코딩, **Block2 blockwise 재조립**(`/device/0` 응답이 커서 필수), **OBSERVE** 구독을 DTLS 소켓 위에 직접 구현해야 합니다.
-- **인증서 발급.** Node `crypto`는 키 생성은 되지만 X.509 서명은 불가합니다. `node-forge`(순수 JS)로 대체합니다.
-- **CBOR.** `cbor-x` 또는 `cbor`. 순수 JS 경로가 있는지 확인 필요(`cbor-x`는 선택적 네이티브 가속을 씁니다 — 반드시 JS 폴백으로 동작시켜야 합니다).
+두 venv 모두 저장소에 커밋되어 있습니다. 즉 네이티브 휠도 타겟 아키텍처용으로 개발 머신에서 미리 받아 넣는 구조이므로, 기기에서 컴파일이 일어나지 않습니다.
+
+### 이게 결정적인 이유
+
+원래 계획은 DTLS·CoAP 스택을 순수 JS로 재구현하는 것이었고, 그게 이 프로젝트의 유일한 실패 가능 지점이었습니다.
+
+| | Node.js 경로 | 파이썬 경로 |
+|---|---|---|
+| DTLS | `node:tls`는 TCP 전용. `@nodertc/dtls`(experimental, 2019년 최종 배포)가 유일 후보 | pyOpenSSL `SSL.Context(SSL.DTLS_METHOD)` — 실제 OpenSSL |
+| CoAP + Block2 + OBSERVE | 전부 자체 구현 (`coap` npm은 자기 소켓을 전제해서 DTLS 위에 못 얹음) | `smartthings-local`에 포함 |
+| 인증서 발급 | `node-forge` 필요 (Node `crypto`는 X.509 서명 불가) | pyOpenSSL로 레퍼런스 코드 그대로 |
+| `@SECLEVEL=0` | 순수 JS 구현에 해당 개념이 없음. 삼성 체인을 받아줄지 불명 | `set_cipher_list` 한 줄 |
+| 레지스트리 포팅 | 파이썬 → JS 재작성 | 거의 그대로 복사 |
+| 테스트 | 픽스처 재작성 | 레퍼런스의 골든 파일 덤프 그대로 재사용 |
+
+파이썬 경로는 원래 마일스톤 1~3(스파이크·인증서·전송 계층)을 통째로 삭제합니다. 남는 건 HA 고유 글루를 Homey API로 바꾸는 작업뿐입니다.
+
+### 의존성 체인 확인 결과
+
+Homey Pro는 linux-aarch64입니다. 세 패키지 모두 휠이 있습니다:
+
+| 패키지 | 최신 | aarch64 휠 |
+|---|---|---|
+| `smartthings-local` 0.1.1 | `py3-none-any` (순수 파이썬) | 불필요 |
+| `pyopenssl` 26.3.0 | `py3-none-any` | 불필요 |
+| `cryptography` 49.0.0 | `cp311-abi3-manylinux_2_28_aarch64.whl` | ✓ abi3이므로 3.14에서도 동작 |
+| `cbor2` 6.1.3 | `manylinux_2_28_aarch64.whl` | ✓ (순수 파이썬 폴백도 있음) |
+
+`cryptography`는 자체 OpenSSL을 번들하므로 DTLS 지원과 `@SECLEVEL=0` 동작이 시스템 OpenSSL에 의존하지 않습니다.
+
+### 남은 검증 항목
+
+파이썬 경로로 갈 경우 확인이 필요한 것들. 모두 "안 되면 우회" 수준이고, Node 경로의 "핸드셰이크가 아예 성립하지 않을 수 있음"과는 성격이 다릅니다.
+
+1. **Homey 펌웨어 버전.** `runtime: python`은 `compatibility >=13.0.0`을 요구합니다. 대상 Homey Pro가 v13 이상인지 확인
+2. **`pythonPackages`로 네이티브 휠이 실제로 들어가는지.** `homey-pythonscript`의 `pythonPackages`는 순수 파이썬(`restrictedpython`)뿐이라 이 경로가 네이티브 휠까지 처리한다는 직접 증거는 아닙니다. `pythonPackages: ["smartthings-local>=0.1.1"]`로 `homey app build`를 돌려 `python_packages/arm64/.venv/`에 `cryptography`의 `.so`가 들어오는지 확인하는 것이 가장 빠른 검증입니다
+3. **UDP 소켓과 스레드.** `DtlsCoapSession`은 리더 스레드가 UDP 소켓을 소유합니다. Homey 파이썬 런타임이 `socket` + `threading`을 허용하는지 확인. 앱 컨테이너가 LAN에 직접 붙는지도 함께 (Node 앱은 `dgram`이 되므로 가능성이 높음)
+4. **메모리.** 기기당 DTLS 세션 1개 + 상태 캐시. 파이썬 런타임 자체의 오버헤드도 포함해 실측
 
 ---
 
@@ -82,13 +130,14 @@ openssl s_client -dtls1_2 -connect "$APPLIANCE_IP:49154" \
 
 | HA | Homey |
 |---|---|
-| `config_flow.py` | 드라이버 `pair/` 커스텀 HTML 뷰 (IP + CA PEM 2개 필드). `../com.lomohome.video_door_bell_lock/drivers/smartdoor/pair/configure.html` 패턴 참고 |
+| `config_flow.py` | 드라이버 `pair/` 커스텀 HTML 뷰 (IP + CA PEM 2개 필드) + 드라이버 페어링 핸들러. `../com.lomohome.video_door_bell_lock/drivers/smartdoor/pair/configure.html` 패턴 참고 |
 | options flow (`CONF_BYPASS_REMOTE_CONTROL`) | `driver.compose.json`의 `settings` |
-| `DataUpdateCoordinator` | `device.js`의 폴링 루프 + `ObserveManager` 대응 로직 |
+| `DataUpdateCoordinator` | 디바이스 클래스의 폴링 루프 + `ObserveManager` 대응 로직 |
 | 기기 1대 = HA device + N entities | 기기 1대 = Homey device 1개 + N capabilities |
 | 플랫폼 `sensor`/`binary_sensor`/`switch`/`number`/`select`/`button`/`time`/`climate`/`fan` | Homey capability 타입 `sensor`/`boolean`/`number`/`enum`. 표준 capability로 안 되는 것은 `.homeycompose/capabilities/*.json`에 커스텀 정의 |
-| `registry/by_type/*.py` | `lib/registry/by-type/*.js` — 구조를 1:1로 옮깁니다 |
+| `registry/by_type/*.py` | 구조를 1:1로 유지 (파이썬 런타임이면 거의 그대로) |
 | `entity.py`의 `unique_id` | capability id + 기기 시리얼 |
+| `diagnostics.py` | settings 페이지의 진단 덤프 (`api.py` 패턴) |
 
 **드라이버 구성 방향:** 가전 종류마다 드라이버를 따로 만들지 말고, **단일 제네릭 드라이버 + 런타임 capability 동기화**를 권합니다. 레퍼런스가 종류를 런타임에 판정하는 구조이므로 페어링 시점에는 어떤 드라이버인지 알 수 없고, 이 저장소의 `video_door_bell_lock`이 이미 `applyConfig()`로 런타임 capability 추가/제거 패턴을 검증해 두었습니다. 다만 Homey 앱스토어 노출 측면에서는 종류별 드라이버가 유리하므로, 프로토콜이 붙은 뒤 재검토합니다.
 
@@ -96,19 +145,18 @@ openssl s_client -dtls1_2 -connect "$APPLIANCE_IP:49154" \
 
 ## 4. 그 외 고려사항
 
-- **CA 자격증명 보관.** `homey.settings`에 앱 단위로 저장(기기 간 재사용). 리프 인증서/키는 기기 store에. `.gitignore`에 `*.pem`/`*.key`를 이미 넣어두었습니다.
-- **앱스토어 심사.** 사용자에게 CA **개인키**를 붙여넣게 하는 앱은 공식 스토어 승인이 어려울 수 있습니다. 커뮤니티 스토어 또는 자체 설치 배포를 전제하는 편이 안전합니다.
-- **메모리.** Homey 앱은 메모리 제약이 있습니다. 기기당 DTLS 세션 1개 + 상태 캐시이므로, 가전 여러 대를 붙였을 때의 사용량을 실측해야 합니다.
-- **CA 번들은 저장소에 포함하지 않습니다.** 레퍼런스도 마찬가지이며, 획득 방법만 `SmartThings-Local`의 `setup_cert.py`로 안내합니다.
+- **CA 자격증명 보관.** `homey.settings`에 앱 단위로 저장(기기 간 재사용). 리프 인증서/키는 기기 store에. `.gitignore`에 `*.pem`/`*.key`를 이미 넣어두었습니다
+- **앱스토어 심사.** 사용자에게 CA **개인키**를 붙여넣게 하는 앱은 공식 스토어 승인이 어려울 수 있습니다. 커뮤니티 스토어 또는 자체 설치 배포를 전제하는 편이 안전합니다
+- **CA 번들은 저장소에 포함하지 않습니다.** 레퍼런스도 마찬가지이며, 획득 방법만 `SmartThings-Local`의 `setup_cert.py`로 안내합니다
 
 ---
 
-## 5. 제안 마일스톤
+## 5. 제안 마일스톤 (파이썬 경로)
 
-1. **스파이크 — 암호 스위트 교집합 확인.** 실기기 대상. 실패 시 CCM 구현 범위 산정. (여기서 계속/중단 결정)
-2. `lib/cert.js` — `node-forge`로 UUID 기반 리프 인증서 발급, CA 서명. 오프라인 검증 가능
-3. `lib/dtls-coap.js` — DTLS 세션 + CoAP GET/POST, Block2 재조립, 기기별 고정 소스 포트. `/device/0` 덤프까지 성공하면 최대 난관 통과
-4. `lib/registry/` — 배치 파싱 + 종류 판정. 레퍼런스의 골든 파일 덤프를 그대로 테스트 픽스처로 재사용
-5. 드라이버 + 페어링 뷰 — 가전 1종(예: 세탁기)으로 엔드투엔드 완성
+1. **스파이크 — `pythonPackages: ["smartthings-local>=0.1.1"]`로 `homey app build`.** `python_packages/arm64/.venv/`에 `cryptography` 네이티브 확장이 들어오는지 확인. (계속/중단 결정)
+2. **스파이크 — 실기기 핸드셰이크.** 앱에서 `DtlsCoapSession`으로 `/device/0` 덤프 성공. 소켓·스레드 제약 확인. 여기까지 되면 최대 난관 통과
+3. `app.py` + 제네릭 드라이버 + 페어링 뷰 — UUID 조회, 리프 인증서 발급, 포트 스윕
+4. 레지스트리 이식 — 배치 파싱 + 종류 판정. 레퍼런스의 골든 파일 덤프를 테스트 픽스처로 재사용
+5. 가전 1종(예: 세탁기) 엔드투엔드 완성
 6. OBSERVE 구독 및 폴링 강등/복구
 7. 나머지 가전 종류 레지스트리 확장 (기계적 작업)
