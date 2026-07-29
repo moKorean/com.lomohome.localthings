@@ -30,6 +30,7 @@ class Driver(driver.Driver):
     async def on_init(self) -> None:
         self.log("LocalThings appliance driver init")
         self._log_sdk_surface()
+        await self._log_language_probe()
 
     def _log_sdk_surface(self) -> None:
         """One-time dump of what this SDK build actually exposes.
@@ -50,6 +51,32 @@ class Driver(driver.Driver):
                 self.log(f"sdk homey.{attr}: {members}")
         except Exception as exc:
             self.log(f"sdk surface dump failed: {exc}")
+
+    async def _log_language_probe(self) -> None:
+        """Log what each language accessor actually returns.
+
+        get_language exists on this build, yet compat.language() still fell back
+        to English — so the accessor is returning something unexpected rather than
+        being absent, and only the raw value shows which.
+        """
+        import inspect as _inspect
+
+        for label, get in (
+            ("i18n.get_language", lambda: self.homey.i18n.get_language()),
+            ("i18n.get_strings", lambda: self.homey.i18n.get_strings()),
+            ("manifest.name", lambda: self.homey.manifest.get("name")),
+        ):
+            try:
+                raw = get()
+                awaited = None
+                if _inspect.isawaitable(raw):
+                    awaited = await raw
+                self.log(
+                    f"lang probe {label}: raw={type(raw).__name__} {raw!r:.120} "
+                    f"awaited={type(awaited).__name__} {awaited!r:.120}"
+                )
+            except Exception as exc:
+                self.log(f"lang probe {label}: raised {type(exc).__name__}: {exc}")
 
     # --- pairing ----------------------------------------------------------
 

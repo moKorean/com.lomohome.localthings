@@ -105,7 +105,7 @@ def test_write_payloads_send_only_the_changed_field(resources):
     path, body = spec.write(24.0, resources[spec.href])
     assert path == ["temperatures", "vs", "0"]
     assert body["x.com.samsung.da.items"] == [
-        {"x.com.samsung.da.id": "0", "x.com.samsung.da.desired": "24"}
+        {"x.com.samsung.da.id": "0", "x.com.samsung.da.desired": "24.0"}
     ]
 
     spec = reg.spec_for("localthings_ac_mode")
@@ -135,3 +135,35 @@ def test_unbound_hrefs_are_reported(resources):
     gaps = registry.unbound_hrefs(resources, reg)
     assert "/uvled/vs/0" in gaps
     assert "/power/vs/0" not in gaps
+
+
+def _desired(spec, rep, value):
+    return spec.write(value, rep)[1]["x.com.samsung.da.items"][0][
+        "x.com.samsung.da.desired"
+    ]
+
+
+def test_setpoint_keeps_half_degrees_and_snaps_to_the_increment(resources):
+    """The device advertises increment 0.5 and was verified to accept "28.5".
+    Rounding to whole degrees both lost half steps and turned a real change into a
+    no-op write, which the device refuses."""
+    reg = registry.resolve(resources)
+    spec = reg.spec_for("target_temperature")
+    rep = resources[spec.href]
+    assert rep["x.com.samsung.da.items"][0]["x.com.samsung.da.increment"] == "0.5"
+
+    assert _desired(spec, rep, 28.5) == "28.5"
+    assert _desired(spec, rep, 27.5) == "27.5"
+    assert _desired(spec, rep, 27) == "27.0"
+    # Off-step requests snap to the nearest supported step rather than being sent
+    # as-is or truncated downward.
+    assert _desired(spec, rep, 28.3) == "28.5"
+    assert _desired(spec, rep, 28.7) == "28.5"
+
+
+def test_setpoint_falls_back_to_half_steps_without_an_increment(resources):
+    """A board that reports no increment must not silently become integer-only."""
+    reg = registry.resolve(resources)
+    spec = reg.spec_for("target_temperature")
+    rep = {"x.com.samsung.da.items": [{"x.com.samsung.da.id": "0"}]}
+    assert _desired(spec, rep, 28.5) == "28.5"

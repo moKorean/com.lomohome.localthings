@@ -149,16 +149,37 @@ class Device(device.Device):
             # something it will silently drop.
             raise RuntimeError(f"{value!r} is not supported by this appliance")
 
+        # A write asking for the value the device already holds is refused
+        # ("controlResponse result False"), which surfaced as a spurious error
+        # whenever the requested value happened to match. Nothing needs sending.
+        try:
+            current = spec.read(rep, self._resources) if rep else None
+        except Exception:
+            current = None
+        if current is not None and current == value:
+            await self.set_capability_value(capability, value)
+            return
+
         path_segs, body = payload
         self.log(f"write {capability}={value!r} -> /{'/'.join(path_segs)} {body}")
         response = await self._session.write(path_segs, body)
         if not Session.write_accepted(response):
+            self.log(f"write {capability} refused, device said: {response}")
             raise RuntimeError(f"The appliance rejected {capability}={value!r}")
 
-        # Optimistic apply, so the tile reflects the change before the next
-        # poll. The device confirmed the write, so this is not a guess.
-        self._resources.setdefault(spec.href, {}).update(body)
-        await self.set_capability_value(capability, value)
+        # Optimistic apply, so the tile reflects the change before the next poll.
+        # Merge the body actually sent and re-read it through the spec, so the tile
+        # shows what the device received rather than what was requested — the two
+        # differ whenever the value had to be snapped to the increment.
+        merged = self._resources.setdefault(spec.href, {})
+        merged.update(body)
+        try:
+            applied = spec.read(merged, self._resources)
+        except Exception:
+            applied = None
+        await self.set_capability_value(
+            capability, value if applied is None else applied
+        )
 
 
 homey_export = Device

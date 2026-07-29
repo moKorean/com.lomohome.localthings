@@ -85,7 +85,23 @@ def _read_target_temp(rep, _resources):
     return as_float(first_item(rep).get("x.com.samsung.da.desired"))
 
 
-def _write_target_temp(value, _rep):
+def _format_setpoint(value, item) -> str:
+    """Setpoint string, snapped to the increment the device reports.
+
+    Sent with one decimal rather than as a whole number: this board advertises
+    increment 0.5 and was verified to accept "28.5" (controlResponse result True,
+    and it then reports 28.5). Rounding to an integer here — as the reference does
+    for this vendor channel — both loses half degrees and turns a genuine change
+    into a no-op write, which the device refuses.
+    """
+    number = float(value)
+    step = as_float(item.get("x.com.samsung.da.increment")) or 0.5
+    if step > 0:
+        number = round(number / step) * step
+    return f"{number:.1f}"
+
+
+def _write_target_temp(value, rep):
     # The vendor items[] array; only entry id '0' has ever been observed on an
     # AC. Sends just id + desired, leaving current/minimum/maximum/unit to the
     # device.
@@ -95,7 +111,7 @@ def _write_target_temp(value, _rep):
             "x.com.samsung.da.items": [
                 {
                     "x.com.samsung.da.id": "0",
-                    "x.com.samsung.da.desired": str(int(round(float(value)))),
+                    "x.com.samsung.da.desired": _format_setpoint(value, first_item(rep)),
                 }
             ]
         },
