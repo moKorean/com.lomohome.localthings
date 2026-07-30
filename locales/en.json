@@ -1,6 +1,6 @@
 {
   "error": {
-    "no_credentials": "No client certificate is set up. Add one in Settings → Apps → LocalThings Community.",
+    "no_credentials": "No client certificate is set up. Add one in Settings → Apps → SmartThings Local.",
     "credentials_required": "Both the certificate and the private key are required.",
     "credentials_not_persisted": "Homey did not save the certificate. Try again, and restart the app if it keeps happening.",
     "host_required": "Enter the appliance's IP address.",

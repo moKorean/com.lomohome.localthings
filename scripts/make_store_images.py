@@ -7,11 +7,16 @@ rather than composed three times — that is what makes them identical instead o
 merely similar. Driver images are a different shape and rule; see
 make_driver_images.py.
 
-The card shows the appliance group, not the app's mark. Guideline 1.4 rejects an
-app image that is "a single flat shape or icon on a plain, monochrome or
-transparent background" and says to avoid "logos, clipart, or icon-type images" —
-which the earlier icon-on-gradient version was exactly. The group is shared with
-the driver images so the two cannot drift apart.
+The card shows the appliance group and nothing else. Guideline 1.4 rejects an app
+image that is "a single flat shape or icon on a plain, monochrome or transparent
+background" and says to avoid "logos, clipart, or icon-type images", which the
+original icon-on-gradient version was exactly.
+
+**No text.** An earlier version set the app name and a tagline into the artwork, and
+review rejected it: rendered text makes the image read as a marketing card rather
+than as a representative picture of what the app does. The name is already shown
+beside the image by the store. The group is shared with the driver images so the two
+cannot drift apart.
 """
 
 import subprocess
@@ -27,35 +32,25 @@ OUT.mkdir(parents=True, exist_ok=True)
 
 BLUE = "#1428A0"
 DEEP = "#0B1668"
-WORDMARK = "LocalThings Community"
-TAGLINE = "Samsung appliances, no cloud"
 
 SIZES = {"small": (250, 175), "large": (500, 350), "xlarge": (1000, 700)}
 
-# Proportions of the frame height, so the composition survives any render size.
-GROUP_HEIGHT = 0.545   # appliance group
-TITLE_SIZE = 0.105
-TAGLINE_SIZE = 0.058
-GROUP_TOP = 0.121
-TITLE_GAP = 0.92       # multiples of the title size below the group's baseline
-TAGLINE_GAP = 1.5      # multiples of the tagline size below the title baseline
+# Proportions of the frame height, so the composition survives any render size. With
+# the text gone the group is the whole subject, so it takes most of the frame instead
+# of sharing it — a small illustration floating in a large gradient reads as a logo,
+# which is the other thing 1.4 rejects.
+GROUP_HEIGHT = 0.74
+GROUP_TOP = 0.13
 
 
 def card(width: int, height: int) -> str:
     group_height = height * GROUP_HEIGHT
     scale = group_height / INK_HEIGHT
     top = height * GROUP_TOP
-    # Place the group's *ink* rather than its 1000x1000 canvas: the canvas has
-    # uneven margins, so centring it would leave the group visibly off-centre.
+    # Place the group's *ink* rather than its 1000x1000 canvas: the canvas has uneven
+    # margins, so centring it would leave the group visibly off-centre.
     x = width / 2 - (INK_LEFT + INK_WIDTH / 2) * scale
     y = top - INK_TOP * scale
-
-    title = height * TITLE_SIZE
-    tagline = height * TAGLINE_SIZE
-    # Baselines sit just under the group, so the text reads as part of the image
-    # rather than as a separate block at the bottom of the frame.
-    title_y = top + group_height + title * TITLE_GAP
-    tagline_y = title_y + tagline * TAGLINE_GAP
 
     return f"""<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}"
      viewBox="0 0 {width} {height}">
@@ -66,12 +61,6 @@ def card(width: int, height: int) -> str:
     </linearGradient>{DEFS}  </defs>
   <rect width="{width}" height="{height}" fill="url(#bg)"/>
   <g transform="translate({x:.2f} {y:.2f}) scale({scale:.5f})">{GROUP}  </g>
-  <text x="{width / 2}" y="{title_y:.1f}" text-anchor="middle"
-        font-family="Helvetica Neue, Helvetica, Arial, sans-serif"
-        font-size="{title:.1f}" font-weight="600" fill="#FFFFFF">{WORDMARK}</text>
-  <text x="{width / 2}" y="{tagline_y:.1f}" text-anchor="middle"
-        font-family="Helvetica Neue, Helvetica, Arial, sans-serif"
-        font-size="{tagline:.1f}" fill="#FFFFFF" opacity="0.78">{TAGLINE}</text>
 </svg>
 """
 

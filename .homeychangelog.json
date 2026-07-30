@@ -18,5 +18,9 @@
   "0.4.3": {
     "en": "Flow triggers now follow Homey's own naming, so they fire through Homey rather than through this app — fewer moving parts, and an alarm now has both a raised and a cleared trigger, a cycle both a started and a finished one. Existing Flows using a trigger from this app need their trigger card picked again; conditions and actions are unaffected. Two cards that shared a Korean name are told apart, and a new appliance is named for what it is rather than for its address.",
     "ko": "플로우 트리거가 Homey의 이름 규약을 따르게 되어, 앱이 아니라 Homey가 직접 실행합니다. 그 과정에서 알람은 발생과 해제, 동작은 시작과 종료가 모두 카드로 생겼습니다. 이 앱의 트리거를 쓰던 기존 플로우는 트리거 카드를 다시 선택해 주셔야 합니다(조건과 동작은 그대로입니다). 한국어 이름이 겹쳤던 카드 두 장을 구분했고, 새로 추가하는 가전의 이름에 IP 주소가 붙지 않습니다."
+  },
+  "0.5.0": {
+    "en": "The app is now called SmartThings Local, and its store image no longer carries text — both at the App Store review team's request. Nothing about how it works has changed, and your appliances and Flows are untouched.",
+    "ko": "앱 이름이 '스마트싱스 로컬'로 바뀌고, 스토어 이미지에서 글자를 뺐습니다. 둘 다 앱스토어 심사 요청 사항입니다. 동작은 달라지지 않았고, 등록된 가전과 플로우도 그대로입니다."
   }
 }

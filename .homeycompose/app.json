@@ -1,6 +1,6 @@
 {
   "id": "com.lomohome.localthings",
-  "version": "0.4.3",
+  "version": "0.5.0",
   "compatibility": ">=13.0.0",
   "sdk": 3,
   "runtime": "python",
@@ -13,8 +13,8 @@
   ],
   "brandColor": "#1428A0",
   "name": {
-    "en": "LocalThings Community",
-    "ko": "로컬띵스 커뮤니티"
+    "en": "SmartThings Local",
+    "ko": "스마트싱스 로컬"
   },
   "description": {
     "en": "Control Samsung appliances locally, with no cloud in between",
