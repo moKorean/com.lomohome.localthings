@@ -1,0 +1,21 @@
+{
+  "title": {
+    "en": "Dust bag needs attention cleared",
+    "ko": "먼지봉투 점검 필요 해제"
+  },
+  "titleFormatted": {
+    "en": "Dust bag needs attention cleared",
+    "ko": "먼지봉투 점검 필요 해제"
+  },
+  "hint": {
+    "en": "Fires on a change, not on every reading that repeats the same value.",
+    "ko": "값이 바뀔 때만 실행됩니다. 같은 값을 다시 읽을 때는 실행되지 않습니다."
+  },
+  "args": [
+    {
+      "name": "device",
+      "type": "device",
+      "filter": "driver_id=appliance&capabilities=localthings_alarm_dustbag"
+    }
+  ]
+}

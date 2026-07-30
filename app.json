@@ -1,7 +1,7 @@
 {
   "_comment": "This file is generated. Please edit .homeycompose/app.json instead.",
   "id": "com.lomohome.localthings",
-  "version": "0.4.2",
+  "version": "0.4.3",
   "compatibility": ">=13.0.0",
   "sdk": 3,
   "runtime": "python",
@@ -121,70 +121,6 @@
     "triggers": [
       {
         "title": {
-          "en": "Dust bag needs attention changed",
-          "ko": "먼지봉투 점검 필요 변경됨"
-        },
-        "titleFormatted": {
-          "en": "Dust bag needs attention changed",
-          "ko": "먼지봉투 점검 필요 변경됨"
-        },
-        "hint": {
-          "en": "Fires on a change, not on every reading that repeats the same value. The new value is available as a token.",
-          "ko": "값이 바뀔 때만 실행됩니다. 같은 값을 다시 읽을 때는 실행되지 않습니다. 새 값은 토큰으로 쓸 수 있습니다."
-        },
-        "args": [
-          {
-            "name": "device",
-            "type": "device",
-            "filter": "driver_id=appliance&capabilities=localthings_alarm_dustbag"
-          }
-        ],
-        "tokens": [
-          {
-            "name": "value",
-            "type": "string",
-            "title": {
-              "en": "Dust bag needs attention",
-              "ko": "먼지봉투 점검 필요"
-            }
-          }
-        ],
-        "id": "alarm_dustbag_changed"
-      },
-      {
-        "title": {
-          "en": "Hot surface changed",
-          "ko": "잔열 경고 변경됨"
-        },
-        "titleFormatted": {
-          "en": "Hot surface changed",
-          "ko": "잔열 경고 변경됨"
-        },
-        "hint": {
-          "en": "Fires on a change, not on every reading that repeats the same value. The new value is available as a token.",
-          "ko": "값이 바뀔 때만 실행됩니다. 같은 값을 다시 읽을 때는 실행되지 않습니다. 새 값은 토큰으로 쓸 수 있습니다."
-        },
-        "args": [
-          {
-            "name": "device",
-            "type": "device",
-            "filter": "driver_id=appliance&capabilities=localthings_alarm_hot_surface"
-          }
-        ],
-        "tokens": [
-          {
-            "name": "value",
-            "type": "string",
-            "title": {
-              "en": "Hot surface",
-              "ko": "잔열 경고"
-            }
-          }
-        ],
-        "id": "alarm_hot_surface_changed"
-      },
-      {
-        "title": {
           "en": "An alarm was raised",
           "ko": "알람이 발생했을 때"
         },
@@ -200,75 +136,86 @@
           {
             "name": "device",
             "type": "device",
-            "filter": "driver_id=appliance"
+            "filter": "driver_id=appliance&capabilities=localthings_alarm_code"
           }
         ],
         "tokens": [
           {
-            "name": "code",
+            "name": "localthings_alarm_code",
             "type": "string",
             "title": {
               "en": "Alarm code",
               "ko": "알람 코드"
-            },
-            "example": "FilterAlarm"
-          }
-        ],
-        "id": "alarm_raised"
-      },
-      {
-        "title": {
-          "en": "A burner is on changed",
-          "ko": "버너 사용 중 변경됨"
-        },
-        "titleFormatted": {
-          "en": "A burner is on changed",
-          "ko": "버너 사용 중 변경됨"
-        },
-        "hint": {
-          "en": "Fires on a change, not on every reading that repeats the same value. The new value is available as a token.",
-          "ko": "값이 바뀔 때만 실행됩니다. 같은 값을 다시 읽을 때는 실행되지 않습니다. 새 값은 토큰으로 쓸 수 있습니다."
-        },
-        "args": [
-          {
-            "name": "device",
-            "type": "device",
-            "filter": "driver_id=appliance&capabilities=localthings_burner_any_active"
-          }
-        ],
-        "tokens": [
-          {
-            "name": "value",
-            "type": "string",
-            "title": {
-              "en": "A burner is on",
-              "ko": "버너 사용 중"
             }
           }
         ],
-        "id": "burner_any_active_changed"
+        "id": "localthings_alarm_code_changed"
       },
       {
         "title": {
-          "en": "A cycle finished",
-          "ko": "동작이 끝났을 때"
+          "en": "Dust bag needs attention cleared",
+          "ko": "먼지봉투 점검 필요 해제"
         },
         "titleFormatted": {
-          "en": "A cycle finished",
-          "ko": "동작이 끝났을 때"
+          "en": "Dust bag needs attention cleared",
+          "ko": "먼지봉투 점검 필요 해제"
         },
         "hint": {
-          "en": "For appliances that run cycles — washer, dryer, dishwasher, air dresser. Fires on the transition to finished, not repeatedly while idle.",
-          "ko": "세탁기·건조기·식기세척기·에어드레서처럼 코스를 돌리는 가전용입니다. 완료로 바뀌는 순간에만 실행되며, 대기 중에 반복 실행되지 않습니다."
+          "en": "Fires on a change, not on every reading that repeats the same value.",
+          "ko": "값이 바뀔 때만 실행됩니다. 같은 값을 다시 읽을 때는 실행되지 않습니다."
         },
         "args": [
           {
             "name": "device",
             "type": "device",
-            "filter": "driver_id=appliance"
+            "filter": "driver_id=appliance&capabilities=localthings_alarm_dustbag"
           }
         ],
-        "id": "cycle_finished"
+        "id": "localthings_alarm_dustbag_false"
+      },
+      {
+        "title": {
+          "en": "Dust bag needs attention was raised",
+          "ko": "먼지봉투 점검 필요 발생"
+        },
+        "titleFormatted": {
+          "en": "Dust bag needs attention was raised",
+          "ko": "먼지봉투 점검 필요 발생"
+        },
+        "hint": {
+          "en": "Fires on a change, not on every reading that repeats the same value.",
+          "ko": "값이 바뀔 때만 실행됩니다. 같은 값을 다시 읽을 때는 실행되지 않습니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_alarm_dustbag"
+          }
+        ],
+        "id": "localthings_alarm_dustbag_true"
+      },
+      {
+        "title": {
+          "en": "The filter is back to normal",
+          "ko": "필터가 정상으로 돌아왔을 때"
+        },
+        "titleFormatted": {
+          "en": "The filter is back to normal",
+          "ko": "필터가 정상으로 돌아왔을 때"
+        },
+        "hint": {
+          "en": "Fires when the appliance stops asking for the filter — after it has been washed or replaced. The counterpart to the card that fires when it starts asking.",
+          "ko": "가전이 필터 점검을 더 이상 요청하지 않게 될 때 실행됩니다. 세척이나 교체 후입니다. 점검을 요청할 때 실행되는 카드와 짝입니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_alarm_filter"
+          }
+        ],
+        "id": "localthings_alarm_filter_false"
       },
       {
         "title": {
@@ -287,42 +234,142 @@
           {
             "name": "device",
             "type": "device",
-            "filter": "driver_id=appliance"
+            "filter": "driver_id=appliance&capabilities=localthings_alarm_filter"
           }
         ],
-        "id": "filter_needs_attention"
+        "id": "localthings_alarm_filter_true"
       },
       {
         "title": {
-          "en": "Firmware update available changed",
-          "ko": "펌웨어 업데이트 있음 변경됨"
+          "en": "Hot surface cleared",
+          "ko": "잔열 경고 해제"
         },
         "titleFormatted": {
-          "en": "Firmware update available changed",
-          "ko": "펌웨어 업데이트 있음 변경됨"
+          "en": "Hot surface cleared",
+          "ko": "잔열 경고 해제"
         },
         "hint": {
-          "en": "Fires on a change, not on every reading that repeats the same value. The new value is available as a token.",
-          "ko": "값이 바뀔 때만 실행됩니다. 같은 값을 다시 읽을 때는 실행되지 않습니다. 새 값은 토큰으로 쓸 수 있습니다."
+          "en": "Fires on a change, not on every reading that repeats the same value.",
+          "ko": "값이 바뀔 때만 실행됩니다. 같은 값을 다시 읽을 때는 실행되지 않습니다."
         },
         "args": [
           {
             "name": "device",
             "type": "device",
-            "filter": "driver_id=appliance&capabilities=localthings_firmware_update"
+            "filter": "driver_id=appliance&capabilities=localthings_alarm_hot_surface"
           }
         ],
-        "tokens": [
+        "id": "localthings_alarm_hot_surface_false"
+      },
+      {
+        "title": {
+          "en": "Hot surface was raised",
+          "ko": "잔열 경고 발생"
+        },
+        "titleFormatted": {
+          "en": "Hot surface was raised",
+          "ko": "잔열 경고 발생"
+        },
+        "hint": {
+          "en": "Fires on a change, not on every reading that repeats the same value.",
+          "ko": "값이 바뀔 때만 실행됩니다. 같은 값을 다시 읽을 때는 실행되지 않습니다."
+        },
+        "args": [
           {
-            "name": "value",
-            "type": "string",
-            "title": {
-              "en": "Firmware update available",
-              "ko": "펌웨어 업데이트 있음"
-            }
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_alarm_hot_surface"
           }
         ],
-        "id": "firmware_update_changed"
+        "id": "localthings_alarm_hot_surface_true"
+      },
+      {
+        "title": {
+          "en": "A burner is on turned off",
+          "ko": "버너 사용 중 꺼짐"
+        },
+        "titleFormatted": {
+          "en": "A burner is on turned off",
+          "ko": "버너 사용 중 꺼짐"
+        },
+        "hint": {
+          "en": "Fires on a change, not on every reading that repeats the same value.",
+          "ko": "값이 바뀔 때만 실행됩니다. 같은 값을 다시 읽을 때는 실행되지 않습니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_burner_any_active"
+          }
+        ],
+        "id": "localthings_burner_any_active_false"
+      },
+      {
+        "title": {
+          "en": "A burner is on turned on",
+          "ko": "버너 사용 중 켜짐"
+        },
+        "titleFormatted": {
+          "en": "A burner is on turned on",
+          "ko": "버너 사용 중 켜짐"
+        },
+        "hint": {
+          "en": "Fires on a change, not on every reading that repeats the same value.",
+          "ko": "값이 바뀔 때만 실행됩니다. 같은 값을 다시 읽을 때는 실행되지 않습니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_burner_any_active"
+          }
+        ],
+        "id": "localthings_burner_any_active_true"
+      },
+      {
+        "title": {
+          "en": "A cycle finished",
+          "ko": "동작이 끝났을 때"
+        },
+        "titleFormatted": {
+          "en": "A cycle finished",
+          "ko": "동작이 끝났을 때"
+        },
+        "hint": {
+          "en": "For appliances that run cycles — washer, dryer, dishwasher, air dresser. Fires on the transition to finished, not repeatedly while idle.",
+          "ko": "세탁기·건조기·식기세척기·에어드레서처럼 코스를 돌리는 가전용입니다. 완료로 바뀌는 순간에만 실행되며, 대기 중에 반복 실행되지 않습니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_cycle_active"
+          }
+        ],
+        "id": "localthings_cycle_active_false"
+      },
+      {
+        "title": {
+          "en": "A cycle started",
+          "ko": "동작이 시작됐을 때"
+        },
+        "titleFormatted": {
+          "en": "A cycle started",
+          "ko": "동작이 시작됐을 때"
+        },
+        "hint": {
+          "en": "Fires on the transition into running, so an appliance already running does not keep announcing it.",
+          "ko": "동작 중으로 바뀌는 순간에 실행됩니다. 이미 돌고 있는 가전이 계속 알리지는 않습니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_cycle_active"
+          }
+        ],
+        "id": "localthings_cycle_active_true"
       },
       {
         "title": {
@@ -344,7 +391,7 @@
             "filter": "driver_id=appliance&capabilities=localthings_display_light"
           }
         ],
-        "id": "light_turned_off"
+        "id": "localthings_display_light_false"
       },
       {
         "title": {
@@ -366,20 +413,64 @@
             "filter": "driver_id=appliance&capabilities=localthings_display_light"
           }
         ],
-        "id": "light_turned_on"
+        "id": "localthings_display_light_true"
+      },
+      {
+        "title": {
+          "en": "Firmware update available turned off",
+          "ko": "펌웨어 업데이트 있음 꺼짐"
+        },
+        "titleFormatted": {
+          "en": "Firmware update available turned off",
+          "ko": "펌웨어 업데이트 있음 꺼짐"
+        },
+        "hint": {
+          "en": "Fires on a change, not on every reading that repeats the same value.",
+          "ko": "값이 바뀔 때만 실행됩니다. 같은 값을 다시 읽을 때는 실행되지 않습니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_firmware_update"
+          }
+        ],
+        "id": "localthings_firmware_update_false"
+      },
+      {
+        "title": {
+          "en": "Firmware update available turned on",
+          "ko": "펌웨어 업데이트 있음 켜짐"
+        },
+        "titleFormatted": {
+          "en": "Firmware update available turned on",
+          "ko": "펌웨어 업데이트 있음 켜짐"
+        },
+        "hint": {
+          "en": "Fires on a change, not on every reading that repeats the same value.",
+          "ko": "값이 바뀔 때만 실행됩니다. 같은 값을 다시 읽을 때는 실행되지 않습니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_firmware_update"
+          }
+        ],
+        "id": "localthings_firmware_update_true"
       },
       {
         "title": {
           "en": "Machine state changed",
-          "ko": "동작 상태 변경됨"
+          "ko": "사이클 상태 변경됨"
         },
         "titleFormatted": {
           "en": "Machine state changed",
-          "ko": "동작 상태 변경됨"
+          "ko": "사이클 상태 변경됨"
         },
         "hint": {
-          "en": "Fires on a change, not on every reading that repeats the same value. The new value is available as a token.",
-          "ko": "값이 바뀔 때만 실행됩니다. 같은 값을 다시 읽을 때는 실행되지 않습니다. 새 값은 토큰으로 쓸 수 있습니다."
+          "en": "Fires on a change, not on every reading that repeats the same value.",
+          "ko": "값이 바뀔 때만 실행됩니다. 같은 값을 다시 읽을 때는 실행되지 않습니다."
         },
         "args": [
           {
@@ -390,28 +481,28 @@
         ],
         "tokens": [
           {
-            "name": "value",
+            "name": "localthings_machine_state",
             "type": "string",
             "title": {
               "en": "Machine state",
-              "ko": "동작 상태"
+              "ko": "사이클 상태"
             }
           }
         ],
-        "id": "machine_state_changed"
+        "id": "localthings_machine_state_changed"
       },
       {
         "title": {
           "en": "Status changed",
-          "ko": "동작 상태 변경됨"
+          "ko": "작동 상태 변경됨"
         },
         "titleFormatted": {
           "en": "Status changed",
-          "ko": "동작 상태 변경됨"
+          "ko": "작동 상태 변경됨"
         },
         "hint": {
-          "en": "Fires on a change, not on every reading that repeats the same value. The new value is available as a token.",
-          "ko": "값이 바뀔 때만 실행됩니다. 같은 값을 다시 읽을 때는 실행되지 않습니다. 새 값은 토큰으로 쓸 수 있습니다."
+          "en": "Fires on a change, not on every reading that repeats the same value.",
+          "ko": "값이 바뀔 때만 실행됩니다. 같은 값을 다시 읽을 때는 실행되지 않습니다."
         },
         "args": [
           {
@@ -422,28 +513,28 @@
         ],
         "tokens": [
           {
-            "name": "value",
+            "name": "localthings_operation_state",
             "type": "string",
             "title": {
               "en": "Status",
-              "ko": "동작 상태"
+              "ko": "작동 상태"
             }
           }
         ],
-        "id": "operation_state_changed"
+        "id": "localthings_operation_state_changed"
       },
       {
         "title": {
-          "en": "Probe connected changed",
-          "ko": "프로브 연결 변경됨"
+          "en": "Probe connected turned off",
+          "ko": "프로브 연결 꺼짐"
         },
         "titleFormatted": {
-          "en": "Probe connected changed",
-          "ko": "프로브 연결 변경됨"
+          "en": "Probe connected turned off",
+          "ko": "프로브 연결 꺼짐"
         },
         "hint": {
-          "en": "Fires on a change, not on every reading that repeats the same value. The new value is available as a token.",
-          "ko": "값이 바뀔 때만 실행됩니다. 같은 값을 다시 읽을 때는 실행되지 않습니다. 새 값은 토큰으로 쓸 수 있습니다."
+          "en": "Fires on a change, not on every reading that repeats the same value.",
+          "ko": "값이 바뀔 때만 실행됩니다. 같은 값을 다시 읽을 때는 실행되지 않습니다."
         },
         "args": [
           {
@@ -452,17 +543,29 @@
             "filter": "driver_id=appliance&capabilities=localthings_probe_connected"
           }
         ],
-        "tokens": [
+        "id": "localthings_probe_connected_false"
+      },
+      {
+        "title": {
+          "en": "Probe connected turned on",
+          "ko": "프로브 연결 켜짐"
+        },
+        "titleFormatted": {
+          "en": "Probe connected turned on",
+          "ko": "프로브 연결 켜짐"
+        },
+        "hint": {
+          "en": "Fires on a change, not on every reading that repeats the same value.",
+          "ko": "값이 바뀔 때만 실행됩니다. 같은 값을 다시 읽을 때는 실행되지 않습니다."
+        },
+        "args": [
           {
-            "name": "value",
-            "type": "string",
-            "title": {
-              "en": "Probe connected",
-              "ko": "프로브 연결"
-            }
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_probe_connected"
           }
         ],
-        "id": "probe_connected_changed"
+        "id": "localthings_probe_connected_true"
       },
       {
         "title": {
@@ -474,8 +577,8 @@
           "ko": "진행률 변경됨"
         },
         "hint": {
-          "en": "Fires on a change, not on every reading that repeats the same value. The new value is available as a token.",
-          "ko": "값이 바뀔 때만 실행됩니다. 같은 값을 다시 읽을 때는 실행되지 않습니다. 새 값은 토큰으로 쓸 수 있습니다."
+          "en": "Fires on a change, not on every reading that repeats the same value.",
+          "ko": "값이 바뀔 때만 실행됩니다. 같은 값을 다시 읽을 때는 실행되지 않습니다."
         },
         "args": [
           {
@@ -486,7 +589,7 @@
         ],
         "tokens": [
           {
-            "name": "value",
+            "name": "localthings_progress",
             "type": "string",
             "title": {
               "en": "Progress",
@@ -494,7 +597,7 @@
             }
           }
         ],
-        "id": "progress_changed"
+        "id": "localthings_progress_changed"
       },
       {
         "title": {
@@ -506,8 +609,8 @@
           "ko": "남은 시간 변경됨"
         },
         "hint": {
-          "en": "Fires on a change, not on every reading that repeats the same value. The new value is available as a token.",
-          "ko": "값이 바뀔 때만 실행됩니다. 같은 값을 다시 읽을 때는 실행되지 않습니다. 새 값은 토큰으로 쓸 수 있습니다."
+          "en": "Fires on a change, not on every reading that repeats the same value.",
+          "ko": "값이 바뀔 때만 실행됩니다. 같은 값을 다시 읽을 때는 실행되지 않습니다."
         },
         "args": [
           {
@@ -518,7 +621,7 @@
         ],
         "tokens": [
           {
-            "name": "value",
+            "name": "localthings_remaining_minutes",
             "type": "string",
             "title": {
               "en": "Time remaining",
@@ -526,20 +629,20 @@
             }
           }
         ],
-        "id": "remaining_minutes_changed"
+        "id": "localthings_remaining_minutes_changed"
       },
       {
         "title": {
-          "en": "Safety auto-shutoff changed",
-          "ko": "안전 자동 차단 변경됨"
+          "en": "Safety auto-shutoff turned off",
+          "ko": "안전 자동 차단 꺼짐"
         },
         "titleFormatted": {
-          "en": "Safety auto-shutoff changed",
-          "ko": "안전 자동 차단 변경됨"
+          "en": "Safety auto-shutoff turned off",
+          "ko": "안전 자동 차단 꺼짐"
         },
         "hint": {
-          "en": "Fires on a change, not on every reading that repeats the same value. The new value is available as a token.",
-          "ko": "값이 바뀔 때만 실행됩니다. 같은 값을 다시 읽을 때는 실행되지 않습니다. 새 값은 토큰으로 쓸 수 있습니다."
+          "en": "Fires on a change, not on every reading that repeats the same value.",
+          "ko": "값이 바뀔 때만 실행됩니다. 같은 값을 다시 읽을 때는 실행되지 않습니다."
         },
         "args": [
           {
@@ -548,17 +651,29 @@
             "filter": "driver_id=appliance&capabilities=localthings_safety_shutoff"
           }
         ],
-        "tokens": [
+        "id": "localthings_safety_shutoff_false"
+      },
+      {
+        "title": {
+          "en": "Safety auto-shutoff turned on",
+          "ko": "안전 자동 차단 켜짐"
+        },
+        "titleFormatted": {
+          "en": "Safety auto-shutoff turned on",
+          "ko": "안전 자동 차단 켜짐"
+        },
+        "hint": {
+          "en": "Fires on a change, not on every reading that repeats the same value.",
+          "ko": "값이 바뀔 때만 실행됩니다. 같은 값을 다시 읽을 때는 실행되지 않습니다."
+        },
+        "args": [
           {
-            "name": "value",
-            "type": "string",
-            "title": {
-              "en": "Safety auto-shutoff",
-              "ko": "안전 자동 차단"
-            }
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_safety_shutoff"
           }
         ],
-        "id": "safety_shutoff_changed"
+        "id": "localthings_safety_shutoff_true"
       },
       {
         "title": {
@@ -570,8 +685,8 @@
           "ko": "자가 진단 변경됨"
         },
         "hint": {
-          "en": "Fires on a change, not on every reading that repeats the same value. The new value is available as a token.",
-          "ko": "값이 바뀔 때만 실행됩니다. 같은 값을 다시 읽을 때는 실행되지 않습니다. 새 값은 토큰으로 쓸 수 있습니다."
+          "en": "Fires on a change, not on every reading that repeats the same value.",
+          "ko": "값이 바뀔 때만 실행됩니다. 같은 값을 다시 읽을 때는 실행되지 않습니다."
         },
         "args": [
           {
@@ -582,7 +697,7 @@
         ],
         "tokens": [
           {
-            "name": "value",
+            "name": "localthings_selfcheck",
             "type": "string",
             "title": {
               "en": "Self check",
@@ -590,7 +705,7 @@
             }
           }
         ],
-        "id": "selfcheck_changed"
+        "id": "localthings_selfcheck_changed"
       }
     ],
     "conditions": [
@@ -1694,11 +1809,11 @@
       {
         "title": {
           "en": "Machine state !{{is|is not}} [[value]]",
-          "ko": "동작 상태 [[value]] !{{임|아님}}"
+          "ko": "사이클 상태 [[value]] !{{임|아님}}"
         },
         "titleFormatted": {
           "en": "Machine state !{{is|is not}} [[value]]",
-          "ko": "동작 상태 [[value]] !{{임|아님}}"
+          "ko": "사이클 상태 [[value]] !{{임|아님}}"
         },
         "hint": {
           "en": "Checks the value as the appliance last reported it.",
@@ -1764,11 +1879,11 @@
       {
         "title": {
           "en": "Status !{{is|is not}} [[value]]",
-          "ko": "동작 상태 [[value]] !{{임|아님}}"
+          "ko": "작동 상태 [[value]] !{{임|아님}}"
         },
         "titleFormatted": {
           "en": "Status !{{is|is not}} [[value]]",
-          "ko": "동작 상태 [[value]] !{{임|아님}}"
+          "ko": "작동 상태 [[value]] !{{임|아님}}"
         },
         "hint": {
           "en": "Checks the value as the appliance last reported it.",
@@ -4514,7 +4629,7 @@
       "type": "string",
       "title": {
         "en": "Machine state",
-        "ko": "동작 상태"
+        "ko": "사이클 상태"
       },
       "getable": true,
       "setable": false,
@@ -4547,7 +4662,7 @@
       "type": "string",
       "title": {
         "en": "Status",
-        "ko": "동작 상태"
+        "ko": "작동 상태"
       },
       "getable": true,
       "setable": false,

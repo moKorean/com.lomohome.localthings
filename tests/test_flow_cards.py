@@ -179,10 +179,52 @@ def test_actions_write_through_the_capability_listener():
     assert "set_capability_value" not in code
 
 
-def test_triggers_only_fire_for_cards_that_exist():
-    """Resolving a card that was never declared raises. Attempting it for every
-    capability would log a failure on every change of the other sixty."""
+def test_homey_fires_plain_capabilities_and_the_app_only_covers_sub_capabilities():
+    """Homey runs a trigger named for a custom capability when its value changes, so
+    the cards use those ids and plain capabilities need no dispatch at all.
+
+    Sub-capabilities are the gap: Homey would look for
+    `localthings_alarm_hot_surface.2_true`, which cannot exist, so a cooktop's
+    per-burner alarm would never fire. Only those are dispatched here — firing plain
+    ones too would trigger every Flow twice."""
     source = DEVICE.read_text()
-    dispatch = source[source.index("_changed\""):]
-    assert "_trigger_cards()" in source
-    assert "if card_id in self._trigger_cards()" in source, dispatch[:200]
+    body = source[source.index("async def _maybe_trigger"):]
+    body = body[:body.index("def _trigger_cards")]
+    assert 'if "." not in capability:' in body, (
+        "plain capabilities are not excluded, so they would fire twice"
+    )
+    # Still guarded: resolving a card that was never declared raises.
+    assert "if card_id not in self._trigger_cards():" in body
+
+
+def test_the_trigger_cards_use_homeys_naming_convention():
+    """`<capability>_true` / `<capability>_false` for a boolean, `<capability>_changed`
+    otherwise. A card named anything else is simply never fired by Homey."""
+    capabilities = {p.stem for p in CAPS.glob("*.json")}
+    for name in cards("triggers"):
+        assert name.startswith("localthings_"), f"triggers/{name} is off-convention"
+        for suffix in ("_true", "_false", "_changed"):
+            if name.endswith(suffix):
+                capability = name[: -len(suffix)]
+                assert capability in capabilities, (
+                    f"triggers/{name} names no capability"
+                )
+                break
+        else:
+            raise AssertionError(f"triggers/{name} has no convention suffix")
+
+
+def test_boolean_capabilities_get_both_directions():
+    """One "changed" card would make a Flow that wants the light coming on add a
+    condition to discard the other half of the transitions."""
+    booleans = {
+        p.stem for p in CAPS.glob("*.json")
+        if json.loads(p.read_text()).get("type") == "boolean"
+    }
+    triggers = set(cards("triggers"))
+    for name in triggers:
+        if not name.endswith("_true"):
+            continue
+        capability = name[: -len("_true")]
+        assert capability in booleans, f"{name} is not a boolean capability"
+        assert f"{capability}_false" in triggers, f"{capability} has no _false card"

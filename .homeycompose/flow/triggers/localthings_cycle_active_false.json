@@ -1,11 +1,21 @@
 {
-  "title": { "en": "A cycle finished", "ko": "동작이 끝났을 때" },
-  "titleFormatted": { "en": "A cycle finished", "ko": "동작이 끝났을 때" },
+  "title": {
+    "en": "A cycle finished",
+    "ko": "동작이 끝났을 때"
+  },
+  "titleFormatted": {
+    "en": "A cycle finished",
+    "ko": "동작이 끝났을 때"
+  },
   "hint": {
     "en": "For appliances that run cycles — washer, dryer, dishwasher, air dresser. Fires on the transition to finished, not repeatedly while idle.",
     "ko": "세탁기·건조기·식기세척기·에어드레서처럼 코스를 돌리는 가전용입니다. 완료로 바뀌는 순간에만 실행되며, 대기 중에 반복 실행되지 않습니다."
   },
   "args": [
-    { "name": "device", "type": "device", "filter": "driver_id=appliance" }
+    {
+      "name": "device",
+      "type": "device",
+      "filter": "driver_id=appliance&capabilities=localthings_cycle_active"
+    }
   ]
 }

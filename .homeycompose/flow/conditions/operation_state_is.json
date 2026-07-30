@@ -1,11 +1,11 @@
 {
   "title": {
     "en": "Status !{{is|is not}} [[value]]",
-    "ko": "동작 상태 [[value]] !{{임|아님}}"
+    "ko": "작동 상태 [[value]] !{{임|아님}}"
   },
   "titleFormatted": {
     "en": "Status !{{is|is not}} [[value]]",
-    "ko": "동작 상태 [[value]] !{{임|아님}}"
+    "ko": "작동 상태 [[value]] !{{임|아님}}"
   },
   "hint": {
     "en": "Checks the value as the appliance last reported it.",

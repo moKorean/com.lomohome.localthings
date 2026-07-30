@@ -382,7 +382,13 @@
   function addDiscovered(entry, button) {
     button.disabled = true;
     searchMessage('ok', t('creating'), true);
-    H.createDevice(entry.device)
+    // The name is settled here rather than when the appliance was found: discovery
+    // builds every payload while scanning, before anything exists, so four air
+    // conditioners in one sweep would all carry the same name. Asking now means the
+    // number reflects what is actually on the Homey — and if the driver cannot
+    // answer, the payload's own name is used rather than blocking the add.
+    resolveName(entry.device)
+      .then(function (device) { return H.createDevice(device); })
       .then(function () {
         if (entry.serial) addedSerials[entry.serial] = true;
         return H.done();
@@ -617,6 +623,15 @@
   function hostWasPrefixed() {
     var typed = normalizeTyped(document.getElementById('host').value);
     return !!SUBNET && !!typed && typed.indexOf('.') === -1;
+  }
+
+  function resolveName(device) {
+    return H.emit('resolve_name', { name: device.name })
+      .then(function (result) {
+        if (result && result.name) device.name = result.name;
+        return device;
+      })
+      .catch(function () { return device; });
   }
 
   function connect() {

@@ -1,0 +1,31 @@
+{
+  "title": {
+    "en": "An alarm was raised",
+    "ko": "알람이 발생했을 때"
+  },
+  "titleFormatted": {
+    "en": "An alarm was raised",
+    "ko": "알람이 발생했을 때"
+  },
+  "hint": {
+    "en": "Fires when the appliance reports a fault or maintenance code, and again when it clears. The code is the appliance's own, not a translation.",
+    "ko": "가전이 고장·점검 코드를 보고하거나 해제할 때 실행됩니다. 코드는 가전이 사용하는 원래 값입니다."
+  },
+  "args": [
+    {
+      "name": "device",
+      "type": "device",
+      "filter": "driver_id=appliance&capabilities=localthings_alarm_code"
+    }
+  ],
+  "tokens": [
+    {
+      "name": "localthings_alarm_code",
+      "type": "string",
+      "title": {
+        "en": "Alarm code",
+        "ko": "알람 코드"
+      }
+    }
+  ]
+}

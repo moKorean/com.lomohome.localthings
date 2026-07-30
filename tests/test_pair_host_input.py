@@ -202,3 +202,59 @@ def test_the_locale_files_are_untouched_by_this(view):
         flat = json.dumps(locale)
         assert "hostNoteOctet" not in flat
         assert "badHost" not in flat
+
+
+# --- duplicate device names -----------------------------------------------
+
+
+def test_the_driver_can_see_existing_names_and_disambiguates():
+    """Homey does not dedupe duplicate device names, and a device cannot rename
+    itself — there is no set_name in the SDK — so the driver has to do it."""
+    source = DRIVER.read_text()
+    assert "_taken_names" in source
+    assert "_unique_name" in source
+    assert "get_name()" in source, "existing names are never read"
+
+
+def test_only_a_collision_gets_a_suffix():
+    """Someone with one air conditioner should not have to look at a number."""
+    source = DRIVER.read_text()
+    body = source[source.index("def _unique_name"):]
+    body = body[:body.index("async def _on_resolve_name")]
+    assert "if base not in taken:" in body
+    assert "return base" in body
+
+
+def test_the_suffix_search_is_bounded():
+    """An unbounded loop here would hang pairing rather than fail it."""
+    source = DRIVER.read_text()
+    body = source[source.index("def _unique_name"):]
+    body = body[:body.index("async def _on_resolve_name")]
+    assert "range(2," in body
+
+
+def test_the_name_is_resolved_when_the_device_is_created_not_when_found():
+    """Discovery builds every payload while scanning, before anything exists, so
+    four identical appliances in one sweep would all carry the same name."""
+    driver = DRIVER.read_text()
+    assert 'set_handler("resolve_name"' in driver
+
+    view = VIEW.read_text()
+    add = view[view.index("function addDiscovered"):]
+    # To the end of the function, not a fixed slice — a comment long enough to push
+    # the call past an arbitrary cutoff would make this pass or fail by accident.
+    add = add[:add.index("\n  }")]
+    assert "resolveName(" in add
+    assert "createDevice(entry.device)" not in add, (
+        "the discovery path still creates with the scan-time payload"
+    )
+
+
+def test_a_failed_name_lookup_does_not_block_the_add():
+    """The payload already carries a usable name; a round trip that fails must not
+    cost the user the device."""
+    view = VIEW.read_text()
+    body = view[view.index("function resolveName"):]
+    body = body[:body.index("function connect()")]
+    assert ".catch(" in body
+    assert "return device" in body

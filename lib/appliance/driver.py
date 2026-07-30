@@ -164,6 +164,7 @@ class ApplianceDriver(driver.Driver):
         session.set_handler("discover_start", self._on_discover_start)
         session.set_handler("discover_status", self._on_discover_status)
         session.set_handler("probe", self._on_probe)
+        session.set_handler("resolve_name", self._on_resolve_name)
 
     async def _language(self, data=None) -> str:
         """The UI language, preferring what the view just reported.
@@ -212,6 +213,58 @@ class ApplianceDriver(driver.Driver):
             "language": language,
             "subnet": subnet,
         }
+
+    def _taken_names(self) -> set:
+        """Names already in use by this driver's devices.
+
+        Homey does not disambiguate duplicate names and a device cannot rename itself
+        — there is no set_name — so this is where it has to happen.
+        """
+        names = set()
+        try:
+            devices = self.get_devices()
+        except Exception:
+            return names
+        for device in devices:
+            try:
+                name = device.get_name()
+            except Exception:
+                continue
+            if name:
+                names.add(str(name))
+        return names
+
+    def _unique_name(self, base: str) -> str:
+        """`base`, or `base 2`, `base 3`, ... if that name is taken.
+
+        Only a collision gets a suffix: someone with one air conditioner should not
+        have to look at a number. Four of them, added in a row, need telling apart
+        long enough to be renamed, and a count does that without embedding an address
+        that stops being true the moment DHCP moves the appliance.
+        """
+        taken = self._taken_names()
+        if base not in taken:
+            return base
+        # Bounded: a house with 99 of one appliance type is not the case to optimise
+        # for, and an unbounded loop here would hang pairing rather than fail it.
+        for index in range(2, 100):
+            candidate = f"{base} {index}"
+            if candidate not in taken:
+                return candidate
+        return base
+
+    async def _on_resolve_name(self, data=None, **_) -> dict:
+        """A unique name, resolved now rather than when the appliance was found.
+
+        Discovery builds each device payload while scanning, before anything has been
+        created, so every air conditioner in one sweep would carry the same name. The
+        view asks for the name immediately before creating the device, when what
+        already exists is known.
+        """
+        base = str((data or {}).get("name") or "").strip()
+        if not base:
+            return {"name": ""}
+        return {"name": self._unique_name(base)}
 
     def _paired_identity(self) -> tuple[set, set]:
         """(hosts, serials) already paired.
@@ -387,7 +440,12 @@ class ApplianceDriver(driver.Driver):
         identity = read_identity(resources)
         model = identity["model"].split("|")[0] or identity["description"]
         return {
-            "name": f"{reg.title(language)} ({host})",
+            # The appliance type alone. The address used to be appended to keep four
+            # air conditioners apart in the list, but it is the wrong thing to carry
+            # in a name the user then lives with — it is already on the device's
+            # advanced settings, kept current when DHCP moves the appliance, and a
+            # name containing a stale address is worse than no address at all.
+            "name": self._unique_name(reg.title(language)),
             "data": {"id": result["serial"]},
             "store": {
                 STORE_HOST: host,

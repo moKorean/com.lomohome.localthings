@@ -1,0 +1,21 @@
+{
+  "title": {
+    "en": "A cycle started",
+    "ko": "동작이 시작됐을 때"
+  },
+  "titleFormatted": {
+    "en": "A cycle started",
+    "ko": "동작이 시작됐을 때"
+  },
+  "hint": {
+    "en": "Fires on the transition into running, so an appliance already running does not keep announcing it.",
+    "ko": "동작 중으로 바뀌는 순간에 실행됩니다. 이미 돌고 있는 가전이 계속 알리지는 않습니다."
+  },
+  "args": [
+    {
+      "name": "device",
+      "type": "device",
+      "filter": "driver_id=appliance&capabilities=localthings_cycle_active"
+    }
+  ]
+}

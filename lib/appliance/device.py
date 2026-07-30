@@ -570,44 +570,41 @@ class ApplianceDevice(device.Device):
             await self._maybe_trigger(spec.capability, value)
 
     async def _maybe_trigger(self, capability: str, value) -> None:
-        """Fire the flow triggers this capability drives, on change only.
+        """Fire a trigger for a *sub*-capability. Homey handles the rest itself.
 
-        Anchored on the previous value rather than the capability's current one: a
-        capability that is set to the same value still returns it, so comparing
-        against Homey's copy would fire nothing, while firing unconditionally would
-        fire on every poll.
+        Homey runs a Flow trigger named for the capability whenever
+        set_capability_value changes a custom one — `<capability>_true` /
+        `<capability>_false` for a boolean, `<capability>_changed` otherwise — so
+        plain capabilities need no code here at all, and the cards are named to match.
+
+        Sub-capabilities are the exception. Homey would look for a card called
+        `localthings_alarm_hot_surface.2_true`, which cannot exist, so a cooktop's
+        per-burner residual-heat alarm and a purifier's per-filter alarm would never
+        trigger anything. Those fire the base capability's card from here.
+
+        Change-gated on the previous value: this runs on every poll, and the
+        capability's current value is already the new one by the time it is called, so
+        comparing against Homey's copy would fire nothing.
         """
+        if "." not in capability:
+            return                      # Homey's convention covers it
+
         previous = self._previous.get(capability, "__unset__")
         self._previous[capability] = value
         if previous == "__unset__" or previous == value:
             return
 
         base = capability.split(".")[0]
+        card_id = f"{base}_true" if value else f"{base}_false"
+        if not isinstance(value, bool):
+            card_id = f"{base}_changed"
+        if card_id not in self._trigger_cards():
+            return
         try:
-            if base == "localthings_alarm_code":
-                await self._trigger("alarm_raised", {"code": str(value)})
-            elif base == "localthings_alarm_filter" and value:
-                await self._trigger("filter_needs_attention", {})
-            elif base == "localthings_display_light":
-                # Two cards rather than one "changed" card: a Flow that wants the
-                # light coming on should not need a condition to filter out the
-                # other half of the transitions.
-                await self._trigger(
-                    "light_turned_on" if value else "light_turned_off", {})
-            elif base == "localthings_cycle_active" and previous and not value:
-                # The transition out of running is the interesting one; a device
-                # sitting idle must not keep announcing that it finished.
-                await self._trigger("cycle_finished", {})
-            elif base.startswith("localthings_"):
-                # The generated "<x> changed" triggers, fired by convention. Only a
-                # curated set of capabilities has one — checked rather than attempted,
-                # because resolving a card that does not exist raises, and that would
-                # log a failure on every change of every other capability.
-                card_id = f"{base[len('localthings_'):]}_changed"
-                if card_id in self._trigger_cards():
-                    await self._trigger(card_id, {"value": str(value)})
+            tokens = {} if isinstance(value, bool) else {base: str(value)}
+            await self._trigger(card_id, tokens)
         except Exception as exc:
-            self.log(f"trigger for {capability} failed: {exc}")
+            self.log(f"trigger {card_id} for {capability} failed: {exc}")
 
     def _trigger_cards(self) -> set:
         """Device trigger card ids this app declares, read once from the manifest."""

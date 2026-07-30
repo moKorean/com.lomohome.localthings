@@ -189,24 +189,60 @@ def condition_card(capability: str, definition: dict) -> dict | None:
     }
 
 
-def trigger_card(capability: str, definition: dict) -> dict:
+# Homey fires a Flow trigger by itself when set_capability_value changes a custom
+# capability, provided the card is named for it: `<capability>_changed` for a number,
+# enum or string, and `<capability>_true` / `<capability>_false` for a boolean. Using
+# those ids means no dispatch code at all for plain capabilities.
+#
+# Safe against firing on every poll because Device._apply only calls the setter when
+# the value actually differs, so the convention cannot see a repeat.
+def trigger_cards(capability: str, definition: dict) -> dict:
+    """{card id: card} — two for a boolean, one for everything else."""
     en, ko = titles(definition)
+    kind = definition.get("type")
+
+    if kind == "boolean":
+        # An alarm is raised and cleared, not switched on and off. Keyed on the
+        # capability's own name rather than a list, so a new alarm gets it for free.
+        alarm = capability.startswith("localthings_alarm_")
+        on = {"en": f"{en} was raised", "ko": f"{ko} 발생"} if alarm \
+            else {"en": f"{en} turned on", "ko": f"{ko} 켜짐"}
+        off = {"en": f"{en} cleared", "ko": f"{ko} 해제"} if alarm \
+            else {"en": f"{en} turned off", "ko": f"{ko} 꺼짐"}
+        return {
+            f"{capability}_true": _trigger(capability, definition, on),
+            f"{capability}_false": _trigger(capability, definition, off),
+        }
     return {
-        "title": {"en": f"{en} changed", "ko": f"{ko} 변경됨"},
-        "titleFormatted": {"en": f"{en} changed", "ko": f"{ko} 변경됨"},
+        f"{capability}_changed": _trigger(
+            capability, definition,
+            {"en": f"{en} changed", "ko": f"{ko} 변경됨"},
+            token=True,
+        ),
+    }
+
+
+def _trigger(capability: str, definition: dict, title: dict, token: bool = False) -> dict:
+    card = {
+        "title": title,
+        "titleFormatted": title,
         "hint": {
             "en": "Fires on a change, not on every reading that repeats the same "
-                  "value. The new value is available as a token.",
+                  "value.",
             "ko": "값이 바뀔 때만 실행됩니다. 같은 값을 다시 읽을 때는 실행되지 "
-                  "않습니다. 새 값은 토큰으로 쓸 수 있습니다.",
+                  "않습니다.",
         },
         "args": [device_arg(capability)],
-        "tokens": [{
-            "name": "value",
+    }
+    if token:
+        en, ko = titles(definition)
+        # Named for the capability, which is what Homey fills in automatically.
+        card["tokens"] = [{
+            "name": capability,
             "type": "string",
             "title": {"en": en or "Value", "ko": ko or "값"},
-        }],
-    }
+        }]
+    return card
 
 
 def build() -> dict[str, dict]:
@@ -229,7 +265,8 @@ def build() -> dict[str, dict]:
             cards[f"conditions/{stem}_is.json"] = card
 
         if capability in EVENT_LIKE and capability not in TRIGGERED_ELSEWHERE:
-            cards[f"triggers/{stem}_changed.json"] = trigger_card(capability, definition)
+            for card_id, card in trigger_cards(capability, definition).items():
+                cards[f"triggers/{card_id}.json"] = card
     return cards
 
 

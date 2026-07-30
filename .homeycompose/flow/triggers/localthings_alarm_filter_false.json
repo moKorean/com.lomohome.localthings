@@ -1,0 +1,21 @@
+{
+  "title": {
+    "en": "The filter is back to normal",
+    "ko": "필터가 정상으로 돌아왔을 때"
+  },
+  "titleFormatted": {
+    "en": "The filter is back to normal",
+    "ko": "필터가 정상으로 돌아왔을 때"
+  },
+  "hint": {
+    "en": "Fires when the appliance stops asking for the filter — after it has been washed or replaced. The counterpart to the card that fires when it starts asking.",
+    "ko": "가전이 필터 점검을 더 이상 요청하지 않게 될 때 실행됩니다. 세척이나 교체 후입니다. 점검을 요청할 때 실행되는 카드와 짝입니다."
+  },
+  "args": [
+    {
+      "name": "device",
+      "type": "device",
+      "filter": "driver_id=appliance&capabilities=localthings_alarm_filter"
+    }
+  ]
+}

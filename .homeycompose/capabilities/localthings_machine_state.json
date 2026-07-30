@@ -2,7 +2,7 @@
   "type": "string",
   "title": {
     "en": "Machine state",
-    "ko": "동작 상태"
+    "ko": "사이클 상태"
   },
   "getable": true,
   "setable": false,
