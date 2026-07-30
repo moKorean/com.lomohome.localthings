@@ -1,51 +1,78 @@
-# SmartThings Local (스마트싱스 로컬)
+# SmartThings Local
 
-*[English](README.en.md)*
+**English** · **[한국어 README](README.ko.md)**
 
-SmartThings 클라우드 없이, 최신 삼성 가전을 집 안 네트워크에서 직접 제어하는 Homey 앱입니다.
+A Homey app that controls newer Samsung appliances directly on your own network, with
+no SmartThings cloud in between.
 
-Home Assistant 통합 [mbillow/localthings](https://github.com/mbillow/localthings)를 Homey로 포팅하는 프로젝트입니다. 가전과 DTLS-over-CoAP 세션을 직접 맺어 상태를 읽고 명령을 보내므로, 클라우드 왕복이 없습니다.
+It is a port of the Home Assistant integration
+[mbillow/localthings](https://github.com/mbillow/localthings) to Homey. The app opens a
+DTLS-over-CoAP session straight to the appliance to read state and send commands, so
+there is no cloud round-trip.
 
-> **상태: 심사 제출 (v0.5.0).** 에어컨 4대, 인덕션 1대, 주방 후드 1대, 냉장고 3대가 검색·페어링·제어까지 실기기에서 동작하고, 상태는 CoAP OBSERVE로 푸시받습니다(폴링은 5분 주기 안전 스윕). 커스텀 capability 70개 전부가 플로우에서 쓰입니다. 나머지 12종은 라우팅과 capability 매핑까지 이식했지만 실기기 검증은 못 했습니다. 설계와 실측 자료는 [`docs/PORTING.md`](docs/PORTING.md), 남은 미매핑 리소스와 결정 기록은 [`docs/BACKLOG.md`](docs/BACKLOG.md)를 참고하세요.
+> **Status: in the [Homey App Store](https://homey.app/a/com.lomohome.localthings/)
+> (v0.5.0).** Four air conditioners, an induction
+> cooktop, a range hood and three refrigerators are discovered, paired and controlled on
+> real hardware, with state arriving by CoAP OBSERVE (polling continues as a five-minute
+> safety sweep). All 70 custom capabilities are usable in Flows. The remaining twelve
+> appliance types are routed and mapped but not verified against hardware. Design notes
+> and measurements are in [`docs/PORTING.md`](docs/PORTING.md); unmapped resources and
+> recorded decisions are in [`docs/BACKLOG.md`](docs/BACKLOG.md).
 
-## 동작 방식
+## How it works
 
-| 계층 | 내용 |
+| Layer | Detail |
 |---|---|
-| 전송 | UDP `49152-49160` 중 하나에서 DTLS 1.2, 클라이언트 인증서 인증 |
-| 암호 스위트 | `ECDHE-ECDSA-AES128-GCM-SHA256` (`@SECLEVEL=0` 필요), ciphertext MTU 1200 고정 |
-| 인증 | 삼성 펌웨어 신뢰 저장소에 있는 `AC14K_M` 중간 CA가 서명한 리프 인증서 |
-| 프로토콜 | CoAP (token-stable Block2 전송, OBSERVE 구독) |
-| 페이로드 | CBOR로 인코딩된 OCF 리소스 표현 |
-| 모델링 | `/device/0` 배치 응답을 href별 리소스로 파싱 → 가전 종류별 레지스트리가 href를 Homey capability로 매핑 |
+| Transport | DTLS 1.2 on one of UDP `49152-49160`, authenticated with a client certificate |
+| Cipher | `ECDHE-ECDSA-AES128-GCM-SHA256` (requires `@SECLEVEL=0`), ciphertext MTU pinned to 1200 |
+| Authentication | A leaf certificate signed by `AC14K_M`, an intermediate CA in Samsung's firmware trust store |
+| Protocol | CoAP, with token-stable Block2 transfers and OBSERVE subscriptions |
+| Payload | OCF resource representations encoded as CBOR |
+| Modelling | The `/device/0` batch response is parsed into per-href resources, and a per-appliance-type registry maps hrefs onto Homey capabilities |
 
-## 대상 기기
+## Which appliances
 
-Tizen RT 3.x / DAWIT 3.0+ 펌웨어를 쓰는 삼성 가전(대략 2022년 이후).
+Samsung appliances running Tizen RT 3.x / DAWIT 3.0+ firmware — roughly 2022 and later.
 
-**앱이 지원한다고 밝히는 기기는 에어컨, 인덕션, 주방 후드, 냉장고입니다** — 실기기로 검증한 네 종입니다. 코드는 레퍼런스가 다루는 16종 전부를 라우팅하지만(아래 [지원 현황](#지원-현황)), 나머지 12종은 검증하지 못했으므로 앱 설명·태그에서 의도적으로 빼 두었습니다. 실제로는 동작할 수 있으니 시도해 보시고 결과를 알려주시면 반영하겠습니다.
+**The app claims support for air conditioners, induction cooktops, range hoods and
+refrigerators** — the four types verified on real hardware. The code routes all sixteen
+types the reference covers (see [Support status](#support-status)), but the other twelve
+are deliberately left out of the app description and tags because they could not be
+tested. They may well work; please try one and report what you find.
 
-미지원 기기를 IP로 추가하려 하면 앱이 그 기기의 `/device/0` 덤프로 **지원요청 리포트**를 만들어 줍니다. 시리얼·MAC·Wi-Fi 이름 같은 개별 식별자는 가려지고, 종류를 매핑하는 데 필요한 리소스 경로와 필드명은 남습니다.
+If you add an unsupported appliance by IP, the app builds a **support report** from that
+appliance's own `/device/0` dump. Per-unit identifiers — serial number, MAC addresses,
+your Wi-Fi network name — are redacted; the resource paths and field names needed to map
+the type are kept.
 
-`8888/tcp`만 열려 있는 구형 펌웨어(2018~2022년경, 토큰 기반 HTTPS)는 대상이 아닙니다.
+Older firmware that only exposes `8888/tcp` (roughly 2018–2022, token-based HTTPS) is
+out of scope.
 
-호환 여부 확인:
+To check an appliance:
 
 ```sh
 nmap -Pn -sU -p 49152-49160 "$APPLIANCE_IP"
 ```
 
-앱의 **기기 추가 → 검색**이 같은 일을 네트워크 전체에 대해 해줍니다. 응답한 기기만 종류를 확인하므로 IP를 몰라도 됩니다.
+The app's **Add device → Search** does the same thing across your whole network, and
+identifies what answers, so you do not need to know any addresses.
 
-> 앱스토어 소개문은 [`README.txt`](README.txt)(영어)와 [`README.ko.txt`](README.ko.txt)(한국어)에 있습니다. 심사 제출 시 이 두 파일이 앱 설명으로 쓰입니다.
+> The store descriptions live in [`README.txt`](README.txt) (English) and
+> [`README.ko.txt`](README.ko.txt) (Korean). Those two files are the app description at
+> review time.
 
-## 앱 설치 방법
+## Installing
 
-인증서를 한 번 만들어 앱 설정에 넣는 것이 전부입니다. 가전마다 반복할 필요는 없습니다.
+Issuing one certificate and pasting it into the app's settings is the whole setup. You
+do not repeat it per appliance.
 
-### 1단계 — 앱 설치
+### 1 — Install the app
 
-Homey 앱스토어에는 아직 없습니다. 저장소를 클론해 직접 설치합니다. [Homey CLI](https://apps.developer.homey.app/the-basics/getting-started)와 Docker가 필요합니다.
+**➡️ [Install from the Homey App Store](https://homey.app/a/com.lomohome.localthings/)**
+
+That is all most people need. To run it from source instead — to develop, or to try a
+change that has not been released — you need the
+[Homey CLI](https://apps.developer.homey.app/the-basics/getting-started) and Docker.
 
 ```sh
 npm install -g homey
@@ -56,17 +83,24 @@ cd com.lomohome.localthings
 homey app install
 ```
 
-`homey app install`이 `pythonPackages`를 아키텍처별 venv로 해석하느라 첫 실행은 몇 분 걸립니다.
+The first run takes a few minutes while `homey app install` resolves `pythonPackages`
+into per-architecture virtualenvs.
 
-> `homey app run`(개발 모드)은 영구 설치본을 **대체하고, 실행이 끝나면 앱을 제거**합니다. 개발 중이 아니라면 `homey app install`을 쓰세요.
+> `homey app run` (development mode) **replaces** a permanent installation and
+> **removes the app when the run ends**. Unless you are developing, use
+> `homey app install`.
 
-### 2단계 — 클라이언트 인증서 발급 (컴퓨터에서 1회)
+### 2 — Issue a client certificate (once, on your computer)
 
-가전은 `AC14K_M` 중간 CA가 서명한 인증서를 신뢰합니다. 컴퓨터에서 스크립트 하나를 돌려 파일 두 개를 만드는 작업이고, **집 전체에 한 번만** 하면 됩니다.
+Appliances trust certificates signed by the `AC14K_M` intermediate CA. You run one
+script on your computer to produce two files, **once for the whole house.**
 
-> **➡️ 전체 안내는 [`docs/CA-SETUP.md`](docs/CA-SETUP.md)에 있습니다.** macOS·Windows·Linux 각각의 준비물 확인부터 실행 명령, 결과 확인, 문제 해결까지 명령줄을 처음 쓰는 사람도 따라올 수 있게 적어 두었습니다.
+> **➡️ The full walkthrough is in [`docs/CA-SETUP.en.md`](docs/CA-SETUP.en.md).** It
+> covers prerequisites and commands for macOS, Windows and Linux separately, how to tell
+> it worked, and what to do when it does not — written for someone who has never used a
+> command line.
 
-요약하면 이렇습니다:
+In short:
 
 ```sh
 git clone https://github.com/QuiteYellow/SmartThings-Local.git
@@ -75,253 +109,329 @@ python3 -m venv .venv && .venv/bin/pip install pyOpenSSL
 OUT_DIR=./certs TARGET_IP=192.168.1.90 .venv/bin/python setup_cert.py --test
 ```
 
-`--test`가 `GET /oic/sec/acl -> 2.05`를 출력하면 가전이 인증서를 수락한 것입니다.
+If `--test` prints `GET /oic/sec/acl -> 2.05`, the appliance accepted the certificate.
 
-**인증서 하나가 집 안 모든 삼성 가전에 통용됩니다.** 인증서에 들어가는 식별자가 가전이 아니라 삼성 게이트웨이에서 오는 값이기 때문에, 기기별이 아니라 설치별로 하나만 있으면 됩니다.
+**One certificate covers every Samsung appliance in the house.** The identifier inside
+it comes from Samsung's gateway rather than from any appliance, so you need one per
+installation, not one per device.
 
-### 3단계 — 앱 설정에 붙여넣기
+### 3 — Paste it into the app's settings
 
-Homey에서 **설정 → 앱 → 스마트싱스 로컬**를 엽니다. `certs/`에 생성된 파일 중 **두 개**를 붙여넣습니다:
+Open **Settings → Apps → SmartThings Local** on your Homey and paste **two** of the
+files written to `certs/`:
 
-| 파일 | 입력란 |
+| File | Field |
 |---|---|
-| `client_fullchain.pem` | 인증서 체인 |
-| `client.key` | 개인키 |
+| `client_fullchain.pem` | Certificate chain |
+| `client.key` | Private key |
 
-`client.pem`은 안 됩니다 — 리프 하나뿐이라 가전이 검증할 체인이 없습니다. 앱이 이 경우를 감지해 알려줍니다.
+`client.pem` will not work — it is the leaf alone, with no chain for the appliance to
+validate against. The app detects this and tells you.
 
-저장하면 상태가 **준비 완료**로 바뀌고 식별자·만료일·체인 길이가 표시됩니다. 앱은 **CA 개인키를 받지 않습니다** — 이미 발급된 인증서만 저장하므로, 서명에 쓰인 CA 키는 컴퓨터에 남습니다.
+Once saved, the status changes to **ready** and shows the identifier, expiry date and
+chain length. The app **never receives a CA private key** — it stores only an
+already-issued certificate, so the CA key used to sign it stays on your computer.
 
-### 4단계 — 가전 추가
+### 4 — Add appliances
 
-**기기 → 기기 추가 → 스마트싱스 로컬 → 검색**
+**Devices → Add device → SmartThings Local → Search**
 
-로컬 네트워크를 훑어 응답하는 가전을 찾고 종류까지 확인합니다. 1~2분 걸리며, 발견되는 대로 목록에 나타납니다. IP를 알고 있다면 직접 입력할 수도 있습니다.
+The app sweeps your local network, finds appliances that answer and identifies each
+one. It takes a minute or two, and results appear as they are found. If you know an
+address you can type it instead — the field prefills your subnet, so only the last
+number needs typing.
 
-### 문제가 생기면
+### If something goes wrong
 
-기기의 **⋯ 메뉴 → 유지보수 → 복구**에서 연결을 확인하고, 주소가 바뀐 가전을 시리얼로 다시 찾거나 주소를 직접 지정할 수 있습니다.
+A device's **⋯ menu → Maintenance → Repair** checks the connection, finds an appliance
+that changed address by serial number, or lets you set an address by hand.
 
-설치된 앱의 상태는 개발 모드 없이 확인할 수 있습니다:
+You can inspect an installed app without development mode:
 
 ```sh
 homey api raw --path /api/app/com.lomohome.localthings/diagnostics
 ```
 
-## 플로우 자동화
+## Flow automation
 
-Homey는 **시스템 capability에만** 플로우 카드를 만들어 줍니다. 이 앱이 직접 정의한 70개는
-카드가 없었고, 그래서 후드 조명을 플로우로 켜거나 필터 사용률로 알림을 보낼 수 없었습니다.
+Homey creates Flow cards for **its own built-in capabilities only**. The 70 this app
+defines had none, so you could not switch a hood's light from a Flow or raise a
+notification from filter wear.
 
-이제 **123장**입니다 — 동작 28, 조건 71, 트리거 24.
+There are now **123 cards** — 28 actions, 71 conditions, 24 triggers.
 
-| 종류 | 범위 |
+| Kind | Scope |
 |---|---|
-| 동작 | 쓰기 가능한 capability **전부**. 자동화를 막고 있던 실제 공백입니다 |
-| 조건 | capability **전부**. 플로우에서 값을 읽을 수 있어야 센서가 의미를 갖습니다 |
-| 트리거 | **사건인 것만** — 잔열 경고, 안전 차단, 프로브 연결, 진행률 등. "차일드락 변경됨"은 플로우가 기다리는 사건이 아닙니다 |
+| Action | **Every** setable capability. This was the gap that actually blocked automation |
+| Condition | **Every** capability. Being able to read a value in a Flow is what makes a sensor worth having |
+| Trigger | **Only what is an event** — residual heat, safety shutoff, probe connected, progress. "Child lock changed" is not something a Flow waits for |
 
-이 수가 한 번에 쏟아지지는 않습니다. 모든 기기 인자에 `capabilities=` 필터가 걸려 있어서
-**그 capability를 가진 가전에만 카드가 보입니다** — 후드 사용자는 21장을 봅니다.
+That total never lands on one user at once. Every card's device argument carries a
+`capabilities=` filter, so **a card is only offered for appliances that have that
+capability** — a hood owner sees 21.
 
-### 트리거는 Homey가 직접 실행합니다
+### Homey fires the triggers itself
 
-Homey에는 커스텀 capability용 규약이 있습니다. `set_capability_value`로 값이 바뀔 때
-`<capability>_true`/`<capability>_false`(boolean) 또는 `<capability>_changed`(그 외) 이름의
-카드를 **Homey가 스스로 실행**합니다. 카드 이름을 그 규약에 맞췄으므로 앱에는 발화 코드가
-거의 없습니다.
+Homey has a convention for custom capabilities: when `set_capability_value` changes one,
+Homey runs a Flow trigger card named `<capability>_true` / `<capability>_false` for a
+boolean, or `<capability>_changed` for anything else. The cards use those ids, so the
+app has almost no firing code.
 
-매 폴링마다 실행되지 않는 이유는 [`Device._apply`](lib/appliance/device.py)가 **값이 실제로
-달라질 때만** setter를 호출하기 때문입니다. Homey가 내부적으로 변경을 판단하든 안 하든 결과는
-같습니다.
+It does not fire on every poll because
+[`Device._apply`](lib/appliance/device.py) only calls the setter **when the value
+actually differs.** Whether or not Homey gates on change internally, the result is the
+same.
 
-**예외는 서브 capability입니다.** Homey는 `localthings_alarm_hot_surface.2_true`라는 카드를
-찾으므로 존재할 수 없고, 그러면 인덕션의 구별 잔열 경고나 공기청정기의 HEPA·정수 필터 경보가
-아무 트리거도 실행하지 못합니다. **그것만** 앱이 기본 capability의 카드로 발화합니다 — 일반
-capability까지 발화하면 모든 플로우가 두 번 실행됩니다.
+**Sub-capabilities are the exception.** Homey would look for a card called
+`localthings_alarm_hot_surface.2_true`, which cannot exist, so a cooktop's per-burner
+residual-heat alarm and a purifier's per-filter alarms would never trigger anything.
+**Only those** are dispatched by the app, against the base capability's card — firing
+plain capabilities too would trigger every Flow twice.
 
-### 생성과 검증
+### Generated and checked
 
-카드는 [`scripts/make_flow_cards.py`](scripts/make_flow_cards.py)가 capability 정의에서
-생성하고, `--check` 모드를 테스트가 실행합니다. capability를 추가하고 카드를 만들지 않으면
-테스트가 실패합니다. **조건·동작 리스너도 같은 매니페스트에서 생성됩니다** — 카드마다 손으로
-쓰면 거의 같은 함수가 백 개 생기고, 카드와 어긋난 첫 번째 것이 그 가전을 가진 사람에게만
-실패합니다.
+The cards are generated from the capability definitions by
+[`scripts/make_flow_cards.py`](scripts/make_flow_cards.py), and a test runs its
+`--check` mode: add a capability without its cards and the test fails. **The condition
+and action listeners are generated from the same manifest** — writing one per card would
+be a hundred near-identical functions, and the first to drift from its card would fail
+only for whoever owned that appliance.
 
-동작 카드는 `set_capability_value`가 아니라 `trigger_capability_listener`를 씁니다. 전자는
-Homey의 값만 바꾸고 가전에는 아무것도 보내지 않으며, 거부됐을 때 예외도 나지 않습니다 — 그러면
-플로우가 이루지 못한 성공을 보고합니다.
+Action cards go through `trigger_capability_listener`, not `set_capability_value`. The
+latter moves Homey's copy without touching the appliance and does not raise when the
+appliance refuses — which would have a Flow report a success it never got.
 
-## IP가 바뀌어도 동작합니다
+## It survives an IP change
 
-정체성은 IP가 아니라 **시리얼**(기기의 data id)입니다. 주소가 바뀌면:
+Identity is the **serial number** (the device's data id), not the address. When an
+address changes:
 
-- 폴링이 연속 3회 실패하면 앱이 서브넷을 스윕해 **시리얼이 일치하는 기기**를 찾아 스스로 갱신합니다. 재페어링이 필요 없습니다
-- 폴링마다 시리얼을 대조하므로, **같은 모델 두 대가 IP를 교환해도 서로를 조작하지 않습니다** — 잘못된 가전에 붙는 대신 실패로 처리합니다
-- 고급 설정의 IP·포트·연결 상태가 항상 실제 값으로 갱신됩니다
+- After three consecutive failed polls the app sweeps the subnet, finds the appliance
+  **whose serial matches** and updates itself. No re-pairing.
+- The serial is checked on every poll, so **two identical units that swap addresses
+  cannot end up driving each other** — the app fails rather than binding to the wrong
+  appliance.
+- The IP, port and connection status in the device's advanced settings always reflect
+  reality.
 
-재배치에는 1~2분이 걸리고 그동안 기기는 사용 불가 상태입니다. 공유기에서 **고정 IP를 예약**해두면 이 경로를 타지 않습니다.
+Relocation takes a minute or two, during which the device is unavailable. Reserving a
+**static lease** on your router avoids the path entirely.
 
-## 요구 사항
+## Requirements
 
-- **Homey Pro, 펌웨어 v13.0.0 이상.** 이 앱은 Homey의 파이썬 런타임(`"runtime": "python"`, Python 3.14)으로 동작하므로 v13 미만에서는 설치되지 않습니다.
-- LAN UDP가 필요하므로 `local` 플랫폼 전용입니다. Homey Cloud에서는 동작할 수 없습니다.
-- **클라이언트 인증서** (저장소에 포함되어 있지 않습니다). `AC14K_M`이 서명한 인증서를 컴퓨터에서 1회 발급해 **설정 → 앱 → 스마트싱스 로컬**에 붙여넣습니다. UUID가 가전이 아니라 삼성 게이트웨이에서 오는 값이라 **인증서 하나로 집 안 모든 삼성 가전에 통용**되며, 이후 가전 추가는 IP만 입력합니다. 절차는 [`docs/CA-SETUP.md`](docs/CA-SETUP.md).
+- **Homey Pro on firmware v13.0.0 or newer.** The app runs on Homey's Python runtime
+  (`"runtime": "python"`, Python 3.14), so it will not install below v13.
+- `local` platform only, because it needs LAN UDP. It cannot work on Homey Cloud.
+- **A client certificate** (not included in this repository). Issue one signed by
+  `AC14K_M` on your computer, once, and paste it into **Settings → Apps → SmartThings
+  Local**. Because the UUID comes from Samsung's gateway rather than from any appliance,
+  **one certificate covers every Samsung appliance in the house**, and adding an
+  appliance afterwards needs only its IP address. See
+  [`docs/CA-SETUP.en.md`](docs/CA-SETUP.en.md).
 
-  앱은 **CA 개인키를 받지 않습니다** — 이미 발급된 인증서만 저장합니다.
+  The app **never receives a CA private key** — it stores only an already-issued
+  certificate.
 
-## 구조
+## Layout
 
 ```
-app.py                        진입점 (homey.app.App 상속, homey_export로 내보냄)
-api.py                        설정 페이지 API (인증서 검증·저장·상태)
-settings/index.html           앱 설정 화면 — 인증서 등록과 발급 안내 (en/ko)
+app.py                        Entry point (subclasses homey.app.App, exported as homey_export)
+api.py                        Settings-page API (validate, store and describe the certificate)
+settings/index.html           App settings — certificate entry and issuing instructions (en/ko)
 lib/
-  const.py                    실측 프로토콜 상수 (포트 범위, 타임아웃, 소스 포트 base)
-  cert.py                     인증서 검증·설명, 게이트웨이 UUID 대조 (순수 cryptography)
-  probe.py                    UDP 라이브니스 스윕 + 페어링 프로브
-  discovery.py                서브넷 스윕 (응답 기반, 오탐 없음)
-  compat.py                   SDK 계약 어댑터 (settings·i18n 동기/비동기 양쪽)
-  session.py                  DtlsCoapSession의 asyncio 래퍼
-  resources.py                /device/0 배치 파싱, 시리얼 처리
-  registry/                   보드 토큰 라우팅 + 가전별 capability 맵
-  support.py                  미지원 기기 리포트 (개별 식별자 리댁션)
-  selfcheck.py                런타임 자체 점검 (기동 시 1회)
-  appliance/                  드라이버·기기 구현. 종류별 드라이버가 상속할 수 있게 분리
-    driver.py                 검색·페어링, 플로우 카드 리스너
-    device.py                 세션 유지, 폴링 루프, 쓰기, capability 재조정
+  const.py                    Measured protocol constants (port ranges, timeouts, source-port bases)
+  cert.py                     Certificate validation and description, gateway UUID check (pure cryptography)
+  probe.py                    UDP liveness sweep and the pairing probe
+  discovery.py                Subnet sweep, response-based, no false positives
+  compat.py                   SDK contract adapters (settings and i18n, sync and async)
+  session.py                  asyncio wrapper around DtlsCoapSession
+  resources.py                /device/0 batch parsing, serial handling
+  registry/                   Board-token routing and per-appliance capability maps
+  support.py                  Unsupported-appliance report, with per-unit identifiers redacted
+  selfcheck.py                Runtime self-check, once at startup
+  appliance/                  Driver and device implementation, separated so a per-type driver could subclass it
+    driver.py                 Discovery, pairing, Flow card listeners
+    device.py                 Session upkeep, poll loop, writes, capability reconciliation
 drivers/appliance/
-  driver.py                   lib/appliance/driver.py를 상속하는 15줄 shim
-  device.py                   lib/appliance/device.py를 상속하는 15줄 shim
-  pair/configure.html         페어링 화면 (en/ko). IP 직접 입력은 서브넷을 미리 채웁니다
-  repair/reconnect.html       복구 화면 — 연결 확인, 시리얼로 재탐색, 주소 직접 지정
-locales/{en,ko}.json          앱 i18n (없으면 i18n.get_language가 en으로 떨어짐)
+  driver.py                   15-line shim subclassing lib/appliance/driver.py
+  device.py                   15-line shim subclassing lib/appliance/device.py
+  pair/configure.html         Pairing view (en/ko). Manual IP entry prefills the subnet
+  repair/reconnect.html       Repair view — check the connection, find by serial, set an address
+locales/{en,ko}.json          App i18n (without it, i18n.get_language falls back to en)
 scripts/
-  make_flow_cards.py          커스텀 capability에서 플로우 카드 생성 (--check로 검증)
-  make_store_images.py        스토어 이미지, make_driver_images.py 드라이버 이미지
-  check_reference_coverage.py 레퍼런스 대비 미이식 리소스 점검
+  make_flow_cards.py          Generates Flow cards from the capability definitions (--check verifies)
+  make_store_images.py        Store images; make_driver_images.py does the driver images
+  check_reference_coverage.py Reports what the reference routes and this app does not
 tests/
-  fixtures/                   실기기 /device/0 덤프 (식별자 난독화)
-  test_registry.py            레지스트리 회귀 테스트
-  test_range_hood.py          실기기 덤프로 후드 매핑 고정
-  test_refrigerator.py        냉장고 3대(변온 냉장/냉동, 일반) 대조 검증
-  test_flow_cards.py          생성된 카드와 capability 정의의 일치 검증
-  test_support_report.py      미지원 기기 리포트의 리댁션 검증
-python_packages/              Homey CLI가 생성하는 아키텍처별 venv (커밋하지 않음)
+  fixtures/                   Real /device/0 dumps, with identifiers obfuscated
+  test_registry.py            Registry regression tests
+  test_range_hood.py          Pins the hood mapping against a real dump
+  test_refrigerator.py        Three refrigerators compared (convertible cooling/freezing, fridge-only)
+  test_flow_cards.py          Checks the generated cards against the capability definitions
+  test_support_report.py      Checks the redaction in the unsupported-appliance report
+python_packages/              Per-architecture venvs built by the Homey CLI (not committed)
 ```
 
-전송 계층은 직접 구현하지 않고 [`smartthings-local`](https://pypi.org/project/smartthings-local/)에 위임합니다. `app.json`의 `pythonPackages`에 선언되어 있고, Homey CLI가 빌드 시 `uv`로 아키텍처별 venv에 설치합니다.
+The transport layer is not reimplemented here; it is delegated to
+[`smartthings-local`](https://pypi.org/project/smartthings-local/), declared in
+`app.json`'s `pythonPackages` and installed by the Homey CLI into per-architecture
+virtualenvs with `uv` at build time.
 
-**드라이버는 가전 종류별로 나누지 않고 하나입니다.** 레퍼런스가 리소스 표면을 보고 종류를 런타임에 판정하므로 페어링 시점에는 드라이버를 고를 근거가 없습니다. 대신 기기 생성 시 `Registry.capabilities()`가 계산한 capability만 부여하므로, 각 유닛은 실제로 보고한 기능만 갖습니다.
+**There is one driver, not one per appliance type.** The type is determined at runtime
+from the resource surface, so at pairing time there is nothing to base a driver choice
+on. Instead each device is created with only the capabilities `Registry.capabilities()`
+computed for it, so a unit gets exactly what it reported.
 
-### 지원 현황
+### Support status
 
-레퍼런스가 지원하는 **16종 전부**를 라우팅합니다. 다만 검증 수준이 다릅니다. 미검증 항목은 레퍼런스에서 이식했을 뿐 실제 기기로 확인하지 못한 것이고, 후드가 보여준 것처럼 **필드명을 추측하면 대체로 틀립니다** — 페어링은 되지만 아무 값도 읽히지 않습니다.
+All **sixteen** types the reference supports are routed, but they are verified to
+different degrees. An unverified entry was ported from the reference's field definitions
+and never seen on the appliance itself — and as the range hood demonstrated,
+**guessing field names is usually wrong**: it pairs, shows capabilities, and reads
+nothing.
 
-| 가전 | 상태 |
+| Appliance | Status |
 |---|---|
-| **에어컨** (`RAC/PRAC/KRAC/CAC/WAC/FAC/CAWW/ARA`) | **실기기 검증.** 전원·희망온도·현재온도·모드·풍량·쾌적모드·풍향·공기청정·자동건조·표시등·엣지라이팅·UV살균·부재절전·습도·전력·먼지·필터·사운드 (36개) |
-| **인덕션** (`COOKTOP`) | **실기기 검증.** 구별 화력·상태·잔열, 차일드락(쓰기), 스마트제어, 안전차단, 전력, BT 온도 프로브 (19개) |
-| **주방후드** (`AHD`) | **실기기 검증** (AHD-WW-TP1-22). 전원, 풍량 5단(쓰기), 조명 켜기/끄기와 밝기 2단(쓰기), 자동환기 상태, 필터 사용률·교체경보, 공기질·먼지 PM10/2.5/1.0, 누적전력 (14개) |
-| **냉장고** (`REF`) | **실기기 검증** (TP2X_REF_21K 키친핏 3대 — 변온고 냉장/냉동, 일반). 칸별 현재온도와 목표온도(쓰기), 변온실 모드, 급속냉장(쓰기), 문열림, 누적전력 2종, 순간전력, 자체점검, 펌웨어 (9개) |
-| 세탁기 (`WW/WD/WF/WV/WA*`) | 미검증. 동작상태·진행률·남은시간, 세탁온도·탈수·헹굼, 누적수량 |
-| 건조기 (`DV*`) | 미검증. 동작상태·진행률·남은시간, 건조강도, 주름방지 |
-| 식기세척기 (`ADW`, `DW*`) | 미검증. 동작상태·진행률, 살균, 가열건조, 누적수량, 사운드 |
-| 공기청정기 (`AIR/TVTL/VTWW/AVT`) | 미검증. 풍량·표시등·펫필터·HEPA필터·공기질·PM10/2.5/1.0 |
-| 제습기 (`DHM`) | 미검증. 습도·목표습도(쓰기)·필터 |
-| 오븐·레인지·전자레인지 (`OVEN/RANGE/MICROWAVE`) | 미검증. 동작상태·모드·내부온도·설정온도·문열림 — **가열 제어 없음** |
-| 가스쿡탑 (`CT`) | 미검증. 전원 상태·버너 사용 여부 — **읽기 전용** |
-| 정수기 (`WATERPURIFIER`) | 미검증. 동작상태·차일드락·정수필터·누적수량 |
-| 청정스테이션 (`VSKR`) | 미검증. 동작상태·먼지봉투 사용량/경고 |
-| 에어드레서 (`DF`) | 미검증. 동작상태·진행률·살균 |
+| **Air conditioner** (`RAC/PRAC/KRAC/CAC/WAC/FAC/CAWW/ARA`) | **Verified on hardware.** Power, target and current temperature, mode, fan, comfort modes, airflow, air purify, auto clean, panel and edge lighting, UV, absence power saving, humidity, power, dust, filter, sound (36) |
+| **Induction cooktop** (`COOKTOP`) | **Verified on hardware.** Per-burner level, state and residual heat, child lock (writable), smart control, safety shutoff, power, Bluetooth probe (19) |
+| **Range hood** (`AHD`) | **Verified on hardware** (AHD-WW-TP1-22). Power, 5-step fan (writable), light on/off and 2-step brightness (writable), auto-ventilation state, filter usage and replacement alarm, air quality and PM10/2.5/1.0, cumulative energy (14) |
+| **Refrigerator** (`REF`) | **Verified on hardware** (three TP2X_REF_21K Kitchen Fit units — convertible cooling, convertible freezing, fridge-only). Per-compartment current and target temperature (writable), convertible-compartment mode, rapid cool (writable), door, two cumulative energy counters, instantaneous power, self check, firmware (9) |
+| Washer (`WW/WD/WF/WV/WA*`) | Unverified. Machine state, progress, remaining time, wash temperature, spin, rinse, cumulative water |
+| Dryer (`DV*`) | Unverified. Machine state, progress, remaining time, dry level, wrinkle prevention |
+| Dishwasher (`ADW`, `DW*`) | Unverified. Machine state, progress, sanitize, heated dry, cumulative water, sound |
+| Air purifier (`AIR/TVTL/VTWW/AVT`) | Unverified. Fan, panel light, pet filter, HEPA filter, air quality, PM10/2.5/1.0 |
+| Dehumidifier (`DHM`) | Unverified. Humidity, target humidity (writable), filter |
+| Oven, range, microwave (`OVEN/RANGE/MICROWAVE`) | Unverified. Operation state, mode, cavity and target temperature, door — **no heat control** |
+| Gas cooktop (`CT`) | Unverified. Power state, whether a burner is in use — **read-only** |
+| Water purifier (`WATERPURIFIER`) | Unverified. Operation state, child lock, water filter, cumulative water |
+| Clean station (`VSKR`) | Unverified. Operation state, dust bag usage and warning |
+| AirDresser (`DF`) | Unverified. Operation state, progress, sanitize |
 
-**"미검증"의 의미**: 필드명·리소스 경로·쓰기 가능 여부는 레퍼런스 정의에서 그대로 옮겼고, 라우팅과 매니페스트 정합성은 테스트로 확인했지만 **해당 가전 실물로 확인한 적이 없습니다.** 레퍼런스 주석이 모호했던 부분에서 값이 잘못 읽힐 수 있습니다. 공유 코어(전원·차일드락·알람·전력·동작상태)는 검증된 두 종에서 이미 동작하는 같은 코드입니다.
+**What "unverified" means**: the field names, resource paths and writability were taken
+from the reference's definitions, and routing and manifest consistency are covered by
+tests — but **the type has never been seen on the actual appliance.** Where the
+reference's comments left a shape ambiguous, a value may read wrongly. The shared core
+(power, child lock, alarms, energy, operation state) is the same code already working on
+the verified types.
 
-**가열 제어는 어느 타입에도 노출하지 않습니다.** 레퍼런스가 쿡탑에 대해 명시한 원칙(자동화가 원격으로 가열을 시작해선 안 됨)을 오븐·레인지·전자레인지·쿡탑 전체에 적용했고, 테스트로 강제합니다.
+**No appliance type exposes heat control.** The reference states the principle for
+cooktops — an automation must never start heating remotely — and this port applies it to
+ovens, ranges, microwaves and cooktops alike, enforced by a test.
 
-`CAC`(국내 천장형/상업용)는 레퍼런스 라우팅 표에 없어서 이 포트에서 추가했습니다.
+`CAC` (Korean ceiling/commercial units) was missing from the reference's routing table
+and added here.
 
+### Staying in sync with the reference
 
-### 레퍼런스와 동기화
-
-레퍼런스에 지원 기기가 추가됐는지 확인하는 스크립트가 있습니다. 릴리스 노트가 아니라 **라우팅 표를 직접 비교**하므로 조용히 추가된 토큰도 잡힙니다.
+A script checks whether the reference has gained appliance support. It compares the
+**routing tables directly** rather than release notes, so a token added quietly is still
+caught.
 
 ```sh
 cd ../localthings-reference && git pull && cd -
 python3 scripts/check_reference_coverage.py
 ```
 
-미이식 종류, 우리가 라우팅하지 않는 보드 토큰, 서로 다르게 라우팅하는 토큰, 그리고 **우리에만 있어 업스트림에 기여할 만한 토큰**을 보고합니다.
+It reports types not yet ported, board tokens the reference routes and this app does
+not, tokens the two route differently, and **tokens only this app has**, which are
+candidates to contribute upstream.
 
-## 참조 프로젝트
+## Reference projects
 
-세 프로젝트를 같은 상위 폴더에 클론해 두고 상시 레퍼런스로 사용합니다. 이 저장소에 포함되지는 않습니다.
+Three projects are cloned alongside this one and used as continuous references. None of
+them is vendored into this repository.
 
 ### 1. `../localthings-reference/` — [mbillow/localthings](https://github.com/mbillow/localthings)
 
-**포팅 원본.** 최신 삼성 가전을 로컬 제어하는 Home Assistant 커스텀 통합(MIT). 기기 종류 판정, href → 엔티티 레지스트리, 상태 폴링/OBSERVE 관리, 인증서 발급 플로우 등 **기기 모델링 로직 전체**가 여기 있습니다. 우리가 옮겨야 할 대상이 바로 이 부분입니다.
+**The port's origin.** A Home Assistant custom integration for local control of newer
+Samsung appliances (MIT). Appliance-type detection, the href → entity registry, state
+polling and OBSERVE management, the certificate-issuing flow — **the whole
+device-modelling layer** is here. This is the part being ported.
 
-저수준 통신은 자체 구현하지 않고 [QuiteYellow/SmartThings-Local](https://github.com/QuiteYellow/SmartThings-Local)의 [`smartthings-local`](https://pypi.org/project/smartthings-local/) 라이브러리(순수 파이썬, 의존성은 `cbor2`·`pyopenssl`뿐)에 위임합니다. DTLS는 pyOpenSSL의 `SSL.DTLS_METHOD`로 처리합니다.
+It does not implement the low-level transport itself either; it delegates to the
+[`smartthings-local`](https://pypi.org/project/smartthings-local/) library from
+[QuiteYellow/SmartThings-Local](https://github.com/QuiteYellow/SmartThings-Local) — pure
+Python, with only `cbor2` and `pyopenssl` as dependencies. DTLS goes through pyOpenSSL's
+`SSL.DTLS_METHOD`.
 
-특히 참고할 파일:
+Files worth reading:
 
-| 파일 | 내용 |
+| File | Contents |
 |---|---|
-| `config_flow.py` | 기기 추가: UUID 조회 → 인증서 발급 → 포트 스윕 → `/device/0` 확인 |
-| `coordinator.py` | DTLS 세션 수명주기, 폴링, 쓰기 경로, 기기별 고정 소스 포트 |
-| `observe.py` | OBSERVE 구독, 실패 시 폴링 강등 및 복구 재시도 |
-| `registry/` | href → capability → 엔티티 매핑 (코드량의 대부분) |
+| `config_flow.py` | Adding a device: UUID lookup → certificate issue → port sweep → `/device/0` check |
+| `coordinator.py` | DTLS session lifecycle, polling, the write path, per-device fixed source port |
+| `observe.py` | OBSERVE subscriptions, demotion to polling on failure, retry |
+| `registry/` | href → capability → entity mapping (most of the code) |
 
 ```sh
-cd ../localthings-reference && git pull   # 레퍼런스 최신화
+cd ../localthings-reference && git pull   # refresh the reference
 ```
 
 ### 2. `../smartthings-local-reference/` — [QuiteYellow/SmartThings-Local](https://github.com/QuiteYellow/SmartThings-Local)
 
-**전송 계층의 소스.** `app.json`의 `pythonPackages`로 설치하는 [`smartthings-local`](https://pypi.org/project/smartthings-local/) 패키지의 원본 저장소입니다. 패키지만 써도 동작하지만, 프로토콜 디버깅 때 소스를 보려면 필요합니다.
+**Source of the transport layer.** The upstream repository for the
+[`smartthings-local`](https://pypi.org/project/smartthings-local/) package installed via
+`app.json`'s `pythonPackages`. The package alone is enough to run, but the source is
+needed when debugging the protocol.
 
-- `smartthings_local/protocol/dtls_session.py` — DTLS 핸드셰이크 + CoAP 세션. 협상 불가능한 wire 상수들의 근거 주석이 여기 있습니다
-- `smartthings_local/protocol/coap.py` — CoAP 인코딩/디코딩, Block2, OBSERVE
-- **`setup_cert.py`** — 클라이언트 인증서 발급 스크립트. 사용자가 1회 실행합니다. 절차는 [`docs/CA-SETUP.md`](docs/CA-SETUP.md) 참고
-- `mqtt_demo/` — 라이브러리 사용 예시(브리지 구현). 세션 수명주기 참고용
+- `smartthings_local/protocol/dtls_session.py` — DTLS handshake and CoAP session. The
+  comments here are the evidence for the non-negotiable wire constants
+- `smartthings_local/protocol/coap.py` — CoAP encoding and decoding, Block2, OBSERVE
+- **`setup_cert.py`** — the certificate-issuing script users run once; see
+  [`docs/CA-SETUP.en.md`](docs/CA-SETUP.en.md)
+- `mqtt_demo/` — an example bridge built on the library, useful for session lifecycle
 
 ### 3. `../homey-pythonscript-reference/` — [jaccoh/homey-pythonscript](https://github.com/jaccoh/homey-pythonscript)
 
-**Homey에서 파이썬을 쓰는 방법의 실증 사례.** Advanced Flow에서 파이썬 코드를 실행하게 해주는 Homey 앱입니다. 이 프로젝트가 알려주는 핵심 사실:
+**Proof that Python works on Homey.** A Homey app that runs Python from Advanced Flow.
+What it establishes:
 
-- Homey Apps SDK v3는 **네이티브 파이썬 런타임을 지원**합니다. `app.json`에 `"runtime": "python"`, `"pythonVersion": "3.14"`, `"pythonPackages": [...]`를 선언하고 `app.py`에 `homey.app.App`을 상속한 클래스를 두면 됩니다 (`compatibility: ">=13.0.0"` 필요).
-- `pythonPackages`는 Homey CLI가 빌드 시점에 `uv`로 **아키텍처별 venv**(`python_packages/{amd64,arm64}/.venv/`)로 해석해 앱과 함께 배포합니다. 즉 네이티브 휠도 타겟 아키텍처(Homey Pro는 linux-aarch64)용으로 미리 받아 넣습니다.
-- 런타임에 `/userdata/venvs/`에 venv를 만들고 `pip install`까지 할 수 있습니다 (`pythonscript/venv_manager.py`).
+- Homey Apps SDK v3 **supports a native Python runtime.** Declare `"runtime": "python"`,
+  `"pythonVersion": "3.14"` and `"pythonPackages": [...]` in `app.json`, and export a
+  subclass of `homey.app.App` from `app.py` (needs `compatibility: ">=13.0.0"`).
+- `pythonPackages` is resolved by the Homey CLI at build time with `uv` into
+  **per-architecture virtualenvs** (`python_packages/{amd64,arm64}/.venv/`) shipped with
+  the app — so native wheels are fetched for the target architecture, which is
+  linux-aarch64 on Homey Pro.
+- A venv can even be created and populated at runtime under `/userdata/venvs/`
+  (`pythonscript/venv_manager.py`).
 
-**우리 프로젝트에 중요한 이유:** Node.js에는 DTLS가 없어서 원래는 DTLS·CoAP 스택을 순수 JS로 재구현해야 했습니다. 파이썬 런타임을 쓰면 `smartthings-local`을 `pythonPackages`에 선언하는 것만으로 전송 계층이 끝나고, 레퍼런스 통합의 파이썬 코드도 거의 그대로 옮길 수 있습니다. 자세한 비교는 [`docs/PORTING.md`](docs/PORTING.md) 2절에 있습니다.
+**Why that matters here:** Node.js has no DTLS, so the alternative was reimplementing a
+DTLS and CoAP stack in pure JavaScript. With the Python runtime, declaring
+`smartthings-local` in `pythonPackages` is the entire transport layer, and the reference
+integration's Python can be carried across nearly as-is. The full comparison is in
+[`docs/PORTING.md`](docs/PORTING.md), section 2.
 
-특히 참고할 파일: `app.json`(런타임 선언 방식), `app.py`(진입점과 플로우 카드 등록), `pythonscript/venv_manager.py`(런타임 venv 관리), `api.py`(settings 페이지용 API).
+Files worth reading: `app.json` (how the runtime is declared), `app.py` (entry point and
+Flow card registration), `pythonscript/venv_manager.py` (runtime venv management),
+`api.py` (the settings-page API).
+
+## Development
 
 ```sh
-cd ../homey-pythonscript-reference && git pull
-```
-
-## 개발
-
-```sh
-homey app build                    # pythonPackages를 아키텍처별 venv로 해석 (Docker 필요)
+homey app build                    # resolve pythonPackages into per-arch venvs (needs Docker)
 homey app validate --level publish
-homey app install                  # 영구 설치
+homey app install                  # permanent install
 ```
 
-> `homey app run`(dev 모드)은 영구 설치본을 대체하고 **실행이 끝나면 앱을 제거**합니다. 개발 후에는 `homey app install`을 다시 하세요.
+> `homey app run` (dev mode) replaces a permanent installation and **removes the app
+> when the run ends.** Run `homey app install` again afterwards.
 
-설치된 앱 상태는 dev 모드 없이 확인할 수 있습니다:
+An installed app can be inspected without dev mode:
 
 ```sh
 homey api raw --path /api/app/com.lomohome.localthings/diagnostics
 ```
 
-해석된 언어, 로케일, 자격증명 크기, 기기별 푸시 상태(구독 수·알림 수·observing)를 반환합니다.
+It returns the resolved language, locales, credential sizes, and per-device push state
+(subscription count, notifications seen, whether it is observing).
 
-`homey app build`는 공식 빌더 이미지(`ghcr.io/athombv/python-homey-app-builder-{arm64,amd64}`)를 받아 `python_packages/{amd64,arm64}/.venv/`를 만듭니다. 이 venv들은 `app.json`에서 재생성 가능하므로 커밋하지 않습니다(약 36 MB의 바이너리). 클론 직후에는 `homey app build`를 한 번 돌리면 됩니다.
+`homey app build` pulls the official builder images
+(`ghcr.io/athombv/python-homey-app-builder-{arm64,amd64}`) and produces
+`python_packages/{amd64,arm64}/.venv/`. Those are not committed — about 36 MB of
+binaries, reproducible from `app.json`. After a fresh clone, run `homey app build` once.
 
-로컬 테스트·린트용 가상환경:
+For local tests and linting:
 
 ```sh
 python3 -m venv .venv
@@ -330,19 +440,33 @@ python3 -m venv .venv
 .venv/bin/ruff check .
 ```
 
-## 다국어
+## Languages
 
-한국어와 영어를 지원하고, **선언되지 않은 언어는 영어로 표시됩니다** — 앱 이름·설명·capability 70개·플로우 카드 123장·설정 라벨·웹뷰 3개·기기 이름 전부. `tests/test_i18n.py`가 이를 강제합니다(한국어 문자열만 추가하고 영어를 빠뜨리는 실수는 작성자에게 보이지 않기 때문에).
+Korean and English are supported, and **any language not declared falls back to
+English** — app name, description, 70 capabilities, 123 Flow cards, settings labels,
+three webviews and device names alike. `tests/test_i18n.py` enforces it, because adding
+a Korean string and forgetting the English one is invisible to whoever wrote it.
 
-파이썬에서 발생하는 오류 메시지도 번역됩니다. Homey의 서버측 i18n은 앱 언어를 반환해 쓸 수 없으므로, 웹뷰가 알려준 UI 언어를 저장해 씁니다 — 자세한 내용은 [`docs/PORTING.md`](docs/PORTING.md) 11절.
+Error messages raised from Python are translated too. Homey's server-side i18n resolves
+the *app's* language rather than the user's, so the app stores the UI language a webview
+reported and uses that — see [`docs/PORTING.md`](docs/PORTING.md), section 11.
 
-## 라이선스
+## Licence
 
 GPL-3.0-or-later.
 
-프로토콜 분석과 기기 레지스트리 설계는 [mbillow/localthings](https://github.com/mbillow/localthings)(MIT, © Marc Billow)와 [QuiteYellow/SmartThings-Local](https://github.com/QuiteYellow/SmartThings-Local)의 작업에 기반하고, DTLS-CoAP 전송은 `smartthings-local`(MIT, © Jack Nagy)을 수정 없이 씁니다. MIT는 재사용을 허용하되 저작권·허가 표기를 함께 배포할 것을 요구하므로, 두 라이선스 전문을 [`NOTICE`](NOTICE)에 그대로 담고 어느 부분이 무엇에서 파생되었는지 적어 두었습니다. 앱 매니페스트의 `copyright`와 `contributors`에도 같은 내용을 표기했습니다(App Store 가이드라인 2.1).
+The protocol analysis and device registry design build on
+[mbillow/localthings](https://github.com/mbillow/localthings) (MIT, © Marc Billow) and
+[QuiteYellow/SmartThings-Local](https://github.com/QuiteYellow/SmartThings-Local), and
+the DTLS-CoAP transport is `smartthings-local` (MIT, © Jack Nagy) used unmodified. MIT
+permits reuse but requires the copyright and permission notices to travel with the code,
+so both licences are reproduced in full in [`NOTICE`](NOTICE), which also records which
+part of this app derives from which project. The same credit is in the app manifest's
+`copyright` and `contributors` (App Store guideline 2.1).
 
-`assets/capabilities/mdi-*.svg`는 [Material Design Icons](https://pictogrammers.com/library/mdi/)에서 수정 없이 가져왔습니다 (Pictogrammers Free License / Apache-2.0). 새 capability 아이콘도 이 아이콘셋에서 가져옵니다:
+`assets/capabilities/mdi-*.svg` are taken unmodified from
+[Material Design Icons](https://pictogrammers.com/library/mdi/) (Pictogrammers Free
+License / Apache-2.0). New capability icons come from the same set:
 
 ```sh
 curl -O https://raw.githubusercontent.com/Templarian/MaterialDesign/master/svg/<name>.svg

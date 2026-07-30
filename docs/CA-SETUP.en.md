@@ -1,6 +1,6 @@
 # Preparing the client certificate
 
-*[한국어](CA-SETUP.md)*
+**English** · **[한국어](CA-SETUP.md)**
 
 This is a **one-time** setup before you can use the app. You run one script on your
 computer, it produces two files, and you paste their contents into the app's settings.
@@ -348,10 +348,3 @@ What the script does:
 Environment variables you can set: `OUT_DIR` (default `./certs/`), `TARGET_IP`,
 `TARGET_PORT` (default `49154`), and `UUID` to supply the identifier yourself instead of
 looking it up.
-
-## A note on distribution
-
-For the official Homey App Store, **a UI that asks the user to paste a private key is a
-review risk.** The leaf-only model helps, since the app never handles a CA private key,
-but asking Athom before submitting is the safer course. The reference integration
-shipping through HACS rather than Home Assistant core is a constraint of the same kind.
