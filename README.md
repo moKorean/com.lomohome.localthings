@@ -4,7 +4,7 @@
 
 Home Assistant 통합 [mbillow/localthings](https://github.com/mbillow/localthings)를 Homey로 포팅하는 프로젝트입니다. 가전과 DTLS-over-CoAP 세션을 직접 맺어 상태를 읽고 명령을 보내므로, 클라우드 왕복이 없습니다.
 
-> **상태: 심사 제출 (v0.4.1).** 에어컨 4대, 인덕션 1대, 주방 후드 1대, 냉장고 3대가 검색·페어링·제어까지 실기기에서 동작하고, 상태는 CoAP OBSERVE로 푸시받습니다(폴링은 5분 주기 안전 스윕). 나머지 12종은 라우팅과 capability 매핑까지 이식했지만 실기기 검증은 못 했습니다. 설계와 실측 자료는 [`docs/PORTING.md`](docs/PORTING.md), 남은 미매핑 리소스는 [`docs/BACKLOG.md`](docs/BACKLOG.md)를 참고하세요.
+> **상태: 심사 제출 (v0.4.2).** 에어컨 4대, 인덕션 1대, 주방 후드 1대, 냉장고 3대가 검색·페어링·제어까지 실기기에서 동작하고, 상태는 CoAP OBSERVE로 푸시받습니다(폴링은 5분 주기 안전 스윕). 커스텀 capability 70개 전부가 플로우에서 쓰입니다. 나머지 12종은 라우팅과 capability 매핑까지 이식했지만 실기기 검증은 못 했습니다. 설계와 실측 자료는 [`docs/PORTING.md`](docs/PORTING.md), 남은 미매핑 리소스와 결정 기록은 [`docs/BACKLOG.md`](docs/BACKLOG.md)를 참고하세요.
 
 ## 동작 방식
 
@@ -111,6 +111,33 @@ Homey에서 **설정 → 앱 → 로컬띵스 커뮤니티**를 엽니다. `cert
 homey api raw --path /api/app/com.lomohome.localthings/diagnostics
 ```
 
+## 플로우 자동화
+
+Homey는 **시스템 capability에만** 플로우 카드를 자동 생성합니다. 이 앱이 직접 정의한 70개는
+카드가 없었고, 그래서 후드 조명을 플로우로 켜거나 필터 사용률로 알림을 보낼 수 없었습니다.
+
+이제 카드가 **115장**입니다. 그중 107장(동작 27, 조건 69, 트리거 11)은 생성된 것이고, 조명 카드
+4장은 문구를 다듬어 직접 작성했으며, 알람·동작완료·필터·푸시여부 4장은 이전부터 있던 것입니다.
+
+| 종류 | 범위 |
+|---|---|
+| 동작 | 쓰기 가능한 capability **전부**. 자동화를 막고 있던 실제 공백입니다 |
+| 조건 | capability **전부**. 플로우에서 값을 읽을 수 있어야 센서가 의미를 갖습니다 |
+| 트리거 | **사건인 것만** — 뜨거운 화구, 안전 차단, 프로브 연결, 진행률 등. "차일드락 변경됨"은 플로우가 기다리는 사건이 아닙니다 |
+
+이 수가 한 번에 쏟아지지는 않습니다. 모든 기기 인자에 `capabilities=` 필터가 걸려 있어서
+**그 capability를 가진 가전에만 카드가 보입니다** — 후드 사용자는 21장을 봅니다.
+
+카드는 [`scripts/make_flow_cards.py`](scripts/make_flow_cards.py)가 capability 정의에서
+생성하고, `--check` 모드를 테스트가 실행합니다. capability를 추가하고 카드를 만들지 않으면
+테스트가 실패합니다. **리스너도 같은 매니페스트에서 생성됩니다** — 카드마다 리스너를 손으로
+쓰면 거의 같은 함수가 백 개 생기고, 카드와 어긋난 첫 번째 것이 그 가전을 가진 사람에게만
+실패합니다.
+
+동작 카드는 `set_capability_value`가 아니라 `trigger_capability_listener`를 씁니다. 전자는
+Homey의 값만 바꾸고 가전에는 아무것도 보내지 않으며, 거부됐을 때 예외도 나지 않습니다 — 그러면
+플로우가 이루지 못한 성공을 보고합니다.
+
 ## IP가 바뀌어도 동작합니다
 
 정체성은 IP가 아니라 **시리얼**(기기의 data id)입니다. 주소가 바뀌면:
@@ -144,18 +171,27 @@ lib/
   session.py                  DtlsCoapSession의 asyncio 래퍼
   resources.py                /device/0 배치 파싱, 시리얼 처리
   registry/                   보드 토큰 라우팅 + 가전별 capability 맵
+  support.py                  미지원 기기 리포트 (개별 식별자 리댁션)
   selfcheck.py                런타임 자체 점검 (기동 시 1회)
+  appliance/                  드라이버·기기 구현. 종류별 드라이버가 상속할 수 있게 분리
+    driver.py                 검색·페어링, 플로우 카드 리스너
+    device.py                 세션 유지, 폴링 루프, 쓰기, capability 재조정
 drivers/appliance/
-  driver.py                   검색·페어링 (인증서는 앱 설정에서)
-  device.py                   세션 유지, 폴링 루프, 쓰기
-  pair/configure.html         페어링 화면 (en/ko). 인증서 미설정 시 설정 위치를 안내
+  driver.py                   lib/appliance/driver.py를 상속하는 15줄 shim
+  device.py                   lib/appliance/device.py를 상속하는 15줄 shim
+  pair/configure.html         페어링 화면 (en/ko). IP 직접 입력은 서브넷을 미리 채웁니다
   repair/reconnect.html       복구 화면 — 연결 확인, 시리얼로 재탐색, 주소 직접 지정
 locales/{en,ko}.json          앱 i18n (없으면 i18n.get_language가 en으로 떨어짐)
+scripts/
+  make_flow_cards.py          커스텀 capability에서 플로우 카드 생성 (--check로 검증)
+  make_store_images.py        스토어 이미지, make_driver_images.py 드라이버 이미지
+  check_reference_coverage.py 레퍼런스 대비 미이식 리소스 점검
 tests/
-  fixtures/                   실기기 /device/0 덤프 (민감정보 리댁션)
+  fixtures/                   실기기 /device/0 덤프 (식별자 난독화)
   test_registry.py            레지스트리 회귀 테스트
   test_range_hood.py          실기기 덤프로 후드 매핑 고정
   test_refrigerator.py        냉장고 3대(변온 냉장/냉동, 일반) 대조 검증
+  test_flow_cards.py          생성된 카드와 capability 정의의 일치 검증
   test_support_report.py      미지원 기기 리포트의 리댁션 검증
 python_packages/              Homey CLI가 생성하는 아키텍처별 venv (커밋하지 않음)
 ```
@@ -283,7 +319,7 @@ python3 -m venv .venv
 
 ## 다국어
 
-한국어와 영어를 지원하고, **선언되지 않은 언어는 영어로 표시됩니다** — 앱 이름·설명·capability 63개·플로우 카드·설정 라벨·웹뷰 3개·기기 이름 전부. `tests/test_i18n.py`가 이를 강제합니다(한국어 문자열만 추가하고 영어를 빠뜨리는 실수는 작성자에게 보이지 않기 때문에).
+한국어와 영어를 지원하고, **선언되지 않은 언어는 영어로 표시됩니다** — 앱 이름·설명·capability 70개·플로우 카드 115장·설정 라벨·웹뷰 3개·기기 이름 전부. `tests/test_i18n.py`가 이를 강제합니다(한국어 문자열만 추가하고 영어를 빠뜨리는 실수는 작성자에게 보이지 않기 때문에).
 
 파이썬에서 발생하는 오류 메시지도 번역됩니다. Homey의 서버측 i18n은 앱 언어를 반환해 쓸 수 없으므로, 웹뷰가 알려준 UI 언어를 저장해 씁니다 — 자세한 내용은 [`docs/PORTING.md`](docs/PORTING.md) 11절.
 
