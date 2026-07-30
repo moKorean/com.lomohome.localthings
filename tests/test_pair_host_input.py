@@ -20,7 +20,7 @@ import pytest
 
 APP_ROOT = Path(__file__).parent.parent
 VIEW = APP_ROOT / "drivers/appliance/pair/configure.html"
-DRIVER = APP_ROOT / "drivers/appliance/driver.py"
+DRIVER = APP_ROOT / "lib/appliance/driver.py"
 
 
 @pytest.fixture(scope="module")

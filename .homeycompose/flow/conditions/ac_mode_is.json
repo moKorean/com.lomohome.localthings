@@ -1,0 +1,76 @@
+{
+  "title": {
+    "en": "Mode !{{is|is not}} [[value]]",
+    "ko": "운전 모드 [[value]] !{{임|아님}}"
+  },
+  "titleFormatted": {
+    "en": "Mode !{{is|is not}} [[value]]",
+    "ko": "운전 모드 [[value]] !{{임|아님}}"
+  },
+  "hint": {
+    "en": "Checks the value as the appliance last reported it.",
+    "ko": "가전이 마지막으로 보고한 값을 확인합니다."
+  },
+  "args": [
+    {
+      "name": "device",
+      "type": "device",
+      "filter": "driver_id=appliance&capabilities=localthings_ac_mode"
+    },
+    {
+      "name": "value",
+      "type": "dropdown",
+      "values": [
+        {
+          "id": "AIComfort",
+          "title": {
+            "en": "AI Comfort",
+            "ko": "AI 쾌적"
+          }
+        },
+        {
+          "id": "Auto",
+          "title": {
+            "en": "Auto",
+            "ko": "자동"
+          }
+        },
+        {
+          "id": "Cool",
+          "title": {
+            "en": "Cool",
+            "ko": "냉방"
+          }
+        },
+        {
+          "id": "Dry",
+          "title": {
+            "en": "Dry",
+            "ko": "제습"
+          }
+        },
+        {
+          "id": "Fan",
+          "title": {
+            "en": "Fan",
+            "ko": "송풍"
+          }
+        },
+        {
+          "id": "Heat",
+          "title": {
+            "en": "Heat",
+            "ko": "난방"
+          }
+        },
+        {
+          "id": "Wind",
+          "title": {
+            "en": "Wind",
+            "ko": "바람"
+          }
+        }
+      ]
+    }
+  ]
+}

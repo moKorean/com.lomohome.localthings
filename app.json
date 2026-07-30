@@ -121,6 +121,70 @@
     "triggers": [
       {
         "title": {
+          "en": "Dust bag needs attention changed",
+          "ko": "먼지봉투 점검 필요 변경됨"
+        },
+        "titleFormatted": {
+          "en": "Dust bag needs attention changed",
+          "ko": "먼지봉투 점검 필요 변경됨"
+        },
+        "hint": {
+          "en": "Fires on a change, not on every reading that repeats the same value. The new value is available as a token.",
+          "ko": "값이 바뀔 때만 실행됩니다. 같은 값을 다시 읽을 때는 실행되지 않습니다. 새 값은 토큰으로 쓸 수 있습니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_alarm_dustbag"
+          }
+        ],
+        "tokens": [
+          {
+            "name": "value",
+            "type": "string",
+            "title": {
+              "en": "Dust bag needs attention",
+              "ko": "먼지봉투 점검 필요"
+            }
+          }
+        ],
+        "id": "alarm_dustbag_changed"
+      },
+      {
+        "title": {
+          "en": "Hot surface changed",
+          "ko": "잔열 경고 변경됨"
+        },
+        "titleFormatted": {
+          "en": "Hot surface changed",
+          "ko": "잔열 경고 변경됨"
+        },
+        "hint": {
+          "en": "Fires on a change, not on every reading that repeats the same value. The new value is available as a token.",
+          "ko": "값이 바뀔 때만 실행됩니다. 같은 값을 다시 읽을 때는 실행되지 않습니다. 새 값은 토큰으로 쓸 수 있습니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_alarm_hot_surface"
+          }
+        ],
+        "tokens": [
+          {
+            "name": "value",
+            "type": "string",
+            "title": {
+              "en": "Hot surface",
+              "ko": "잔열 경고"
+            }
+          }
+        ],
+        "id": "alarm_hot_surface_changed"
+      },
+      {
+        "title": {
           "en": "An alarm was raised",
           "ko": "알람이 발생했을 때"
         },
@@ -151,6 +215,38 @@
           }
         ],
         "id": "alarm_raised"
+      },
+      {
+        "title": {
+          "en": "A burner is on changed",
+          "ko": "버너 사용 중 변경됨"
+        },
+        "titleFormatted": {
+          "en": "A burner is on changed",
+          "ko": "버너 사용 중 변경됨"
+        },
+        "hint": {
+          "en": "Fires on a change, not on every reading that repeats the same value. The new value is available as a token.",
+          "ko": "값이 바뀔 때만 실행됩니다. 같은 값을 다시 읽을 때는 실행되지 않습니다. 새 값은 토큰으로 쓸 수 있습니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_burner_any_active"
+          }
+        ],
+        "tokens": [
+          {
+            "name": "value",
+            "type": "string",
+            "title": {
+              "en": "A burner is on",
+              "ko": "버너 사용 중"
+            }
+          }
+        ],
+        "id": "burner_any_active_changed"
       },
       {
         "title": {
@@ -195,11 +291,1290 @@
           }
         ],
         "id": "filter_needs_attention"
+      },
+      {
+        "title": {
+          "en": "Firmware update available changed",
+          "ko": "펌웨어 업데이트 있음 변경됨"
+        },
+        "titleFormatted": {
+          "en": "Firmware update available changed",
+          "ko": "펌웨어 업데이트 있음 변경됨"
+        },
+        "hint": {
+          "en": "Fires on a change, not on every reading that repeats the same value. The new value is available as a token.",
+          "ko": "값이 바뀔 때만 실행됩니다. 같은 값을 다시 읽을 때는 실행되지 않습니다. 새 값은 토큰으로 쓸 수 있습니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_firmware_update"
+          }
+        ],
+        "tokens": [
+          {
+            "name": "value",
+            "type": "string",
+            "title": {
+              "en": "Firmware update available",
+              "ko": "펌웨어 업데이트 있음"
+            }
+          }
+        ],
+        "id": "firmware_update_changed"
+      },
+      {
+        "title": {
+          "en": "The light turned off",
+          "ko": "조명이 꺼졌을 때"
+        },
+        "titleFormatted": {
+          "en": "The light turned off",
+          "ko": "조명이 꺼졌을 때"
+        },
+        "hint": {
+          "en": "Fires on the transition to off, not on every reading that happens to be off.",
+          "ko": "꺼짐으로 바뀌는 순간에 실행됩니다. 꺼진 상태를 읽을 때마다 실행되지는 않습니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_display_light"
+          }
+        ],
+        "id": "light_turned_off"
+      },
+      {
+        "title": {
+          "en": "The light turned on",
+          "ko": "조명이 켜졌을 때"
+        },
+        "titleFormatted": {
+          "en": "The light turned on",
+          "ko": "조명이 켜졌을 때"
+        },
+        "hint": {
+          "en": "Fires on the transition to on, not on every reading that happens to be on.",
+          "ko": "켜짐으로 바뀌는 순간에 실행됩니다. 켜진 상태를 읽을 때마다 실행되지는 않습니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_display_light"
+          }
+        ],
+        "id": "light_turned_on"
+      },
+      {
+        "title": {
+          "en": "Machine state changed",
+          "ko": "동작 상태 변경됨"
+        },
+        "titleFormatted": {
+          "en": "Machine state changed",
+          "ko": "동작 상태 변경됨"
+        },
+        "hint": {
+          "en": "Fires on a change, not on every reading that repeats the same value. The new value is available as a token.",
+          "ko": "값이 바뀔 때만 실행됩니다. 같은 값을 다시 읽을 때는 실행되지 않습니다. 새 값은 토큰으로 쓸 수 있습니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_machine_state"
+          }
+        ],
+        "tokens": [
+          {
+            "name": "value",
+            "type": "string",
+            "title": {
+              "en": "Machine state",
+              "ko": "동작 상태"
+            }
+          }
+        ],
+        "id": "machine_state_changed"
+      },
+      {
+        "title": {
+          "en": "Status changed",
+          "ko": "동작 상태 변경됨"
+        },
+        "titleFormatted": {
+          "en": "Status changed",
+          "ko": "동작 상태 변경됨"
+        },
+        "hint": {
+          "en": "Fires on a change, not on every reading that repeats the same value. The new value is available as a token.",
+          "ko": "값이 바뀔 때만 실행됩니다. 같은 값을 다시 읽을 때는 실행되지 않습니다. 새 값은 토큰으로 쓸 수 있습니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_operation_state"
+          }
+        ],
+        "tokens": [
+          {
+            "name": "value",
+            "type": "string",
+            "title": {
+              "en": "Status",
+              "ko": "동작 상태"
+            }
+          }
+        ],
+        "id": "operation_state_changed"
+      },
+      {
+        "title": {
+          "en": "Probe connected changed",
+          "ko": "프로브 연결 변경됨"
+        },
+        "titleFormatted": {
+          "en": "Probe connected changed",
+          "ko": "프로브 연결 변경됨"
+        },
+        "hint": {
+          "en": "Fires on a change, not on every reading that repeats the same value. The new value is available as a token.",
+          "ko": "값이 바뀔 때만 실행됩니다. 같은 값을 다시 읽을 때는 실행되지 않습니다. 새 값은 토큰으로 쓸 수 있습니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_probe_connected"
+          }
+        ],
+        "tokens": [
+          {
+            "name": "value",
+            "type": "string",
+            "title": {
+              "en": "Probe connected",
+              "ko": "프로브 연결"
+            }
+          }
+        ],
+        "id": "probe_connected_changed"
+      },
+      {
+        "title": {
+          "en": "Progress changed",
+          "ko": "진행률 변경됨"
+        },
+        "titleFormatted": {
+          "en": "Progress changed",
+          "ko": "진행률 변경됨"
+        },
+        "hint": {
+          "en": "Fires on a change, not on every reading that repeats the same value. The new value is available as a token.",
+          "ko": "값이 바뀔 때만 실행됩니다. 같은 값을 다시 읽을 때는 실행되지 않습니다. 새 값은 토큰으로 쓸 수 있습니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_progress"
+          }
+        ],
+        "tokens": [
+          {
+            "name": "value",
+            "type": "string",
+            "title": {
+              "en": "Progress",
+              "ko": "진행률"
+            }
+          }
+        ],
+        "id": "progress_changed"
+      },
+      {
+        "title": {
+          "en": "Time remaining changed",
+          "ko": "남은 시간 변경됨"
+        },
+        "titleFormatted": {
+          "en": "Time remaining changed",
+          "ko": "남은 시간 변경됨"
+        },
+        "hint": {
+          "en": "Fires on a change, not on every reading that repeats the same value. The new value is available as a token.",
+          "ko": "값이 바뀔 때만 실행됩니다. 같은 값을 다시 읽을 때는 실행되지 않습니다. 새 값은 토큰으로 쓸 수 있습니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_remaining_minutes"
+          }
+        ],
+        "tokens": [
+          {
+            "name": "value",
+            "type": "string",
+            "title": {
+              "en": "Time remaining",
+              "ko": "남은 시간"
+            }
+          }
+        ],
+        "id": "remaining_minutes_changed"
+      },
+      {
+        "title": {
+          "en": "Safety auto-shutoff changed",
+          "ko": "안전 자동 차단 변경됨"
+        },
+        "titleFormatted": {
+          "en": "Safety auto-shutoff changed",
+          "ko": "안전 자동 차단 변경됨"
+        },
+        "hint": {
+          "en": "Fires on a change, not on every reading that repeats the same value. The new value is available as a token.",
+          "ko": "값이 바뀔 때만 실행됩니다. 같은 값을 다시 읽을 때는 실행되지 않습니다. 새 값은 토큰으로 쓸 수 있습니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_safety_shutoff"
+          }
+        ],
+        "tokens": [
+          {
+            "name": "value",
+            "type": "string",
+            "title": {
+              "en": "Safety auto-shutoff",
+              "ko": "안전 자동 차단"
+            }
+          }
+        ],
+        "id": "safety_shutoff_changed"
+      },
+      {
+        "title": {
+          "en": "Self check changed",
+          "ko": "자가 진단 변경됨"
+        },
+        "titleFormatted": {
+          "en": "Self check changed",
+          "ko": "자가 진단 변경됨"
+        },
+        "hint": {
+          "en": "Fires on a change, not on every reading that repeats the same value. The new value is available as a token.",
+          "ko": "값이 바뀔 때만 실행됩니다. 같은 값을 다시 읽을 때는 실행되지 않습니다. 새 값은 토큰으로 쓸 수 있습니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_selfcheck"
+          }
+        ],
+        "tokens": [
+          {
+            "name": "value",
+            "type": "string",
+            "title": {
+              "en": "Self check",
+              "ko": "자가 진단"
+            }
+          }
+        ],
+        "id": "selfcheck_changed"
       }
     ],
     "conditions": [
       {
         "title": {
+          "en": "Absence clean !{{is|is not}} on",
+          "ko": "부재 청정 !{{켜짐|꺼짐}}"
+        },
+        "titleFormatted": {
+          "en": "Absence clean !{{is|is not}} on",
+          "ko": "부재 청정 !{{켜짐|꺼짐}}"
+        },
+        "hint": {
+          "en": "Checks the value as the appliance last reported it.",
+          "ko": "가전이 마지막으로 보고한 값을 확인합니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_absence_clean"
+          }
+        ],
+        "id": "absence_clean_is"
+      },
+      {
+        "title": {
+          "en": "Absence detection !{{is|is not}} on",
+          "ko": "부재 감지 !{{켜짐|꺼짐}}"
+        },
+        "titleFormatted": {
+          "en": "Absence detection !{{is|is not}} on",
+          "ko": "부재 감지 !{{켜짐|꺼짐}}"
+        },
+        "hint": {
+          "en": "Checks the value as the appliance last reported it.",
+          "ko": "가전이 마지막으로 보고한 값을 확인합니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_absence_detect"
+          }
+        ],
+        "id": "absence_detect_is"
+      },
+      {
+        "title": {
+          "en": "Absence threshold !{{is|is not}} at least [[value]] min",
+          "ko": "부재 판정 시간 [[value]] min !{{이상|미만}}"
+        },
+        "titleFormatted": {
+          "en": "Absence threshold !{{is|is not}} at least [[value]] min",
+          "ko": "부재 판정 시간 [[value]] min !{{이상|미만}}"
+        },
+        "hint": {
+          "en": "Checks the value as the appliance last reported it.",
+          "ko": "가전이 마지막으로 보고한 값을 확인합니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_absence_minutes"
+          },
+          {
+            "name": "value",
+            "type": "number",
+            "min": 0,
+            "max": 240,
+            "step": 30
+          }
+        ],
+        "id": "absence_minutes_is"
+      },
+      {
+        "title": {
+          "en": "Motion monitoring !{{is|is not}} on",
+          "ko": "모션 모니터링 !{{켜짐|꺼짐}}"
+        },
+        "titleFormatted": {
+          "en": "Motion monitoring !{{is|is not}} on",
+          "ko": "모션 모니터링 !{{켜짐|꺼짐}}"
+        },
+        "hint": {
+          "en": "Checks the value as the appliance last reported it.",
+          "ko": "가전이 마지막으로 보고한 값을 확인합니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_absence_monitoring"
+          }
+        ],
+        "id": "absence_monitoring_is"
+      },
+      {
+        "title": {
+          "en": "Absence power saving !{{is|is not}} on",
+          "ko": "부재 절전 !{{켜짐|꺼짐}}"
+        },
+        "titleFormatted": {
+          "en": "Absence power saving !{{is|is not}} on",
+          "ko": "부재 절전 !{{켜짐|꺼짐}}"
+        },
+        "hint": {
+          "en": "Checks the value as the appliance last reported it.",
+          "ko": "가전이 마지막으로 보고한 값을 확인합니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_absence_power_saving"
+          }
+        ],
+        "id": "absence_power_saving_is"
+      },
+      {
+        "title": {
+          "en": "Mode !{{is|is not}} [[value]]",
+          "ko": "운전 모드 [[value]] !{{임|아님}}"
+        },
+        "titleFormatted": {
+          "en": "Mode !{{is|is not}} [[value]]",
+          "ko": "운전 모드 [[value]] !{{임|아님}}"
+        },
+        "hint": {
+          "en": "Checks the value as the appliance last reported it.",
+          "ko": "가전이 마지막으로 보고한 값을 확인합니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_ac_mode"
+          },
+          {
+            "name": "value",
+            "type": "dropdown",
+            "values": [
+              {
+                "id": "AIComfort",
+                "title": {
+                  "en": "AI Comfort",
+                  "ko": "AI 쾌적"
+                }
+              },
+              {
+                "id": "Auto",
+                "title": {
+                  "en": "Auto",
+                  "ko": "자동"
+                }
+              },
+              {
+                "id": "Cool",
+                "title": {
+                  "en": "Cool",
+                  "ko": "냉방"
+                }
+              },
+              {
+                "id": "Dry",
+                "title": {
+                  "en": "Dry",
+                  "ko": "제습"
+                }
+              },
+              {
+                "id": "Fan",
+                "title": {
+                  "en": "Fan",
+                  "ko": "송풍"
+                }
+              },
+              {
+                "id": "Heat",
+                "title": {
+                  "en": "Heat",
+                  "ko": "난방"
+                }
+              },
+              {
+                "id": "Wind",
+                "title": {
+                  "en": "Wind",
+                  "ko": "바람"
+                }
+              }
+            ]
+          }
+        ],
+        "id": "ac_mode_is"
+      },
+      {
+        "title": {
+          "en": "Air purify !{{is|is not}} on",
+          "ko": "공기청정 !{{켜짐|꺼짐}}"
+        },
+        "titleFormatted": {
+          "en": "Air purify !{{is|is not}} on",
+          "ko": "공기청정 !{{켜짐|꺼짐}}"
+        },
+        "hint": {
+          "en": "Checks the value as the appliance last reported it.",
+          "ko": "가전이 마지막으로 보고한 값을 확인합니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_air_purify"
+          }
+        ],
+        "id": "air_purify_is"
+      },
+      {
+        "title": {
+          "en": "Air cleanliness !{{is|is not}} at least [[value]]",
+          "ko": "공기 청정도 [[value]] !{{이상|미만}}"
+        },
+        "titleFormatted": {
+          "en": "Air cleanliness !{{is|is not}} at least [[value]]",
+          "ko": "공기 청정도 [[value]] !{{이상|미만}}"
+        },
+        "hint": {
+          "en": "Checks the value as the appliance last reported it.",
+          "ko": "가전이 마지막으로 보고한 값을 확인합니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_air_quality"
+          },
+          {
+            "name": "value",
+            "type": "number"
+          }
+        ],
+        "id": "air_quality_is"
+      },
+      {
+        "title": {
+          "en": "Active alarm !{{is|is not}} [[value]]",
+          "ko": "발생 알람 [[value]] !{{임|아님}}"
+        },
+        "titleFormatted": {
+          "en": "Active alarm !{{is|is not}} [[value]]",
+          "ko": "발생 알람 [[value]] !{{임|아님}}"
+        },
+        "hint": {
+          "en": "Checks the value as the appliance last reported it.",
+          "ko": "가전이 마지막으로 보고한 값을 확인합니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_alarm_code"
+          },
+          {
+            "name": "value",
+            "type": "text"
+          }
+        ],
+        "id": "alarm_code_is"
+      },
+      {
+        "title": {
+          "en": "Dust bag needs attention !{{is|is not}} on",
+          "ko": "먼지봉투 점검 필요 !{{켜짐|꺼짐}}"
+        },
+        "titleFormatted": {
+          "en": "Dust bag needs attention !{{is|is not}} on",
+          "ko": "먼지봉투 점검 필요 !{{켜짐|꺼짐}}"
+        },
+        "hint": {
+          "en": "Checks the value as the appliance last reported it.",
+          "ko": "가전이 마지막으로 보고한 값을 확인합니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_alarm_dustbag"
+          }
+        ],
+        "id": "alarm_dustbag_is"
+      },
+      {
+        "title": {
+          "en": "Filter needs attention !{{is|is not}} on",
+          "ko": "필터 점검 필요 !{{켜짐|꺼짐}}"
+        },
+        "titleFormatted": {
+          "en": "Filter needs attention !{{is|is not}} on",
+          "ko": "필터 점검 필요 !{{켜짐|꺼짐}}"
+        },
+        "hint": {
+          "en": "Checks the value as the appliance last reported it.",
+          "ko": "가전이 마지막으로 보고한 값을 확인합니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_alarm_filter"
+          }
+        ],
+        "id": "alarm_filter_is"
+      },
+      {
+        "title": {
+          "en": "Hot surface !{{is|is not}} on",
+          "ko": "잔열 경고 !{{켜짐|꺼짐}}"
+        },
+        "titleFormatted": {
+          "en": "Hot surface !{{is|is not}} on",
+          "ko": "잔열 경고 !{{켜짐|꺼짐}}"
+        },
+        "hint": {
+          "en": "Checks the value as the appliance last reported it.",
+          "ko": "가전이 마지막으로 보고한 값을 확인합니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_alarm_hot_surface"
+          }
+        ],
+        "id": "alarm_hot_surface_is"
+      },
+      {
+        "title": {
+          "en": "Auto clean !{{is|is not}} on",
+          "ko": "자동 건조 !{{켜짐|꺼짐}}"
+        },
+        "titleFormatted": {
+          "en": "Auto clean !{{is|is not}} on",
+          "ko": "자동 건조 !{{켜짐|꺼짐}}"
+        },
+        "hint": {
+          "en": "Checks the value as the appliance last reported it.",
+          "ko": "가전이 마지막으로 보고한 값을 확인합니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_auto_clean"
+          }
+        ],
+        "id": "auto_clean_is"
+      },
+      {
+        "title": {
+          "en": "Automatic ventilation !{{is|is not}} on",
+          "ko": "자동 환기 !{{켜짐|꺼짐}}"
+        },
+        "titleFormatted": {
+          "en": "Automatic ventilation !{{is|is not}} on",
+          "ko": "자동 환기 !{{켜짐|꺼짐}}"
+        },
+        "hint": {
+          "en": "Checks the value as the appliance last reported it.",
+          "ko": "가전이 마지막으로 보고한 값을 확인합니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_auto_ventilation"
+          }
+        ],
+        "id": "auto_ventilation_is"
+      },
+      {
+        "title": {
+          "en": "Auto fill !{{is|is not}} on",
+          "ko": "자동 급수 !{{켜짐|꺼짐}}"
+        },
+        "titleFormatted": {
+          "en": "Auto fill !{{is|is not}} on",
+          "ko": "자동 급수 !{{켜짐|꺼짐}}"
+        },
+        "hint": {
+          "en": "Checks the value as the appliance last reported it.",
+          "ko": "가전이 마지막으로 보고한 값을 확인합니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_autofill"
+          }
+        ],
+        "id": "autofill_is"
+      },
+      {
+        "title": {
+          "en": "A burner is on !{{is|is not}} on",
+          "ko": "버너 사용 중 !{{켜짐|꺼짐}}"
+        },
+        "titleFormatted": {
+          "en": "A burner is on !{{is|is not}} on",
+          "ko": "버너 사용 중 !{{켜짐|꺼짐}}"
+        },
+        "hint": {
+          "en": "Checks the value as the appliance last reported it.",
+          "ko": "가전이 마지막으로 보고한 값을 확인합니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_burner_any_active"
+          }
+        ],
+        "id": "burner_any_active_is"
+      },
+      {
+        "title": {
+          "en": "Burner level !{{is|is not}} [[value]]",
+          "ko": "화력 [[value]] !{{임|아님}}"
+        },
+        "titleFormatted": {
+          "en": "Burner level !{{is|is not}} [[value]]",
+          "ko": "화력 [[value]] !{{임|아님}}"
+        },
+        "hint": {
+          "en": "Checks the value as the appliance last reported it.",
+          "ko": "가전이 마지막으로 보고한 값을 확인합니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_burner_level"
+          },
+          {
+            "name": "value",
+            "type": "text"
+          }
+        ],
+        "id": "burner_level_is"
+      },
+      {
+        "title": {
+          "en": "Burner state !{{is|is not}} [[value]]",
+          "ko": "버너 상태 [[value]] !{{임|아님}}"
+        },
+        "titleFormatted": {
+          "en": "Burner state !{{is|is not}} [[value]]",
+          "ko": "버너 상태 [[value]] !{{임|아님}}"
+        },
+        "hint": {
+          "en": "Checks the value as the appliance last reported it.",
+          "ko": "가전이 마지막으로 보고한 값을 확인합니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_burner_state"
+          },
+          {
+            "name": "value",
+            "type": "text"
+          }
+        ],
+        "id": "burner_state_is"
+      },
+      {
+        "title": {
+          "en": "Interior light !{{is|is not}} on",
+          "ko": "내부 조명 !{{켜짐|꺼짐}}"
+        },
+        "titleFormatted": {
+          "en": "Interior light !{{is|is not}} on",
+          "ko": "내부 조명 !{{켜짐|꺼짐}}"
+        },
+        "hint": {
+          "en": "Checks the value as the appliance last reported it.",
+          "ko": "가전이 마지막으로 보고한 값을 확인합니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_cabinet_light"
+          }
+        ],
+        "id": "cabinet_light_is"
+      },
+      {
+        "title": {
+          "en": "Child lock !{{is|is not}} on",
+          "ko": "차일드락 !{{켜짐|꺼짐}}"
+        },
+        "titleFormatted": {
+          "en": "Child lock !{{is|is not}} on",
+          "ko": "차일드락 !{{켜짐|꺼짐}}"
+        },
+        "hint": {
+          "en": "Checks the value as the appliance last reported it.",
+          "ko": "가전이 마지막으로 보고한 값을 확인합니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_child_lock"
+          }
+        ],
+        "id": "child_lock_is"
+      },
+      {
+        "title": {
+          "en": "Convenient mode !{{is|is not}} [[value]]",
+          "ko": "쾌적 모드 [[value]] !{{임|아님}}"
+        },
+        "titleFormatted": {
+          "en": "Convenient mode !{{is|is not}} [[value]]",
+          "ko": "쾌적 모드 [[value]] !{{임|아님}}"
+        },
+        "hint": {
+          "en": "Checks the value as the appliance last reported it.",
+          "ko": "가전이 마지막으로 보고한 값을 확인합니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_convenient_mode"
+          },
+          {
+            "name": "value",
+            "type": "dropdown",
+            "values": [
+              {
+                "id": "Off",
+                "title": {
+                  "en": "Off",
+                  "ko": "꺼짐"
+                }
+              },
+              {
+                "id": "Nano",
+                "title": {
+                  "en": "Wind-Free",
+                  "ko": "무풍"
+                }
+              },
+              {
+                "id": "LongWind",
+                "title": {
+                  "en": "Long wind",
+                  "ko": "롱바람"
+                }
+              },
+              {
+                "id": "Speed",
+                "title": {
+                  "en": "Speed",
+                  "ko": "스피드운전"
+                }
+              },
+              {
+                "id": "Sleep",
+                "title": {
+                  "en": "Sleep",
+                  "ko": "취침"
+                }
+              },
+              {
+                "id": "NanoSleep",
+                "title": {
+                  "en": "Wind-Free sleep",
+                  "ko": "무풍 취침"
+                }
+              }
+            ]
+          }
+        ],
+        "id": "convenient_mode_is"
+      },
+      {
+        "title": {
+          "en": "Convertible compartment !{{is|is not}} [[value]]",
+          "ko": "변온실 [[value]] !{{임|아님}}"
+        },
+        "titleFormatted": {
+          "en": "Convertible compartment !{{is|is not}} [[value]]",
+          "ko": "변온실 [[value]] !{{임|아님}}"
+        },
+        "hint": {
+          "en": "Checks the value as the appliance last reported it.",
+          "ko": "가전이 마지막으로 보고한 값을 확인합니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_convertible_mode"
+          },
+          {
+            "name": "value",
+            "type": "text"
+          }
+        ],
+        "id": "convertible_mode_is"
+      },
+      {
+        "title": {
+          "en": "Cycle running !{{is|is not}} on",
+          "ko": "동작 중 !{{켜짐|꺼짐}}"
+        },
+        "titleFormatted": {
+          "en": "Cycle running !{{is|is not}} on",
+          "ko": "동작 중 !{{켜짐|꺼짐}}"
+        },
+        "hint": {
+          "en": "Checks the value as the appliance last reported it.",
+          "ko": "가전이 마지막으로 보고한 값을 확인합니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_cycle_active"
+          }
+        ],
+        "id": "cycle_active_is"
+      },
+      {
+        "title": {
+          "en": "Dry level !{{is|is not}} [[value]]",
+          "ko": "건조 강도 [[value]] !{{임|아님}}"
+        },
+        "titleFormatted": {
+          "en": "Dry level !{{is|is not}} [[value]]",
+          "ko": "건조 강도 [[value]] !{{임|아님}}"
+        },
+        "hint": {
+          "en": "Checks the value as the appliance last reported it.",
+          "ko": "가전이 마지막으로 보고한 값을 확인합니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_dry_level"
+          },
+          {
+            "name": "value",
+            "type": "text"
+          }
+        ],
+        "id": "dry_level_is"
+      },
+      {
+        "title": {
+          "en": "Dust PM1.0 !{{is|is not}} at least [[value]] µg/m³",
+          "ko": "초미세먼지 PM1.0 [[value]] µg/m³ !{{이상|미만}}"
+        },
+        "titleFormatted": {
+          "en": "Dust PM1.0 !{{is|is not}} at least [[value]] µg/m³",
+          "ko": "초미세먼지 PM1.0 [[value]] µg/m³ !{{이상|미만}}"
+        },
+        "hint": {
+          "en": "Checks the value as the appliance last reported it.",
+          "ko": "가전이 마지막으로 보고한 값을 확인합니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_dust_pm1"
+          },
+          {
+            "name": "value",
+            "type": "number"
+          }
+        ],
+        "id": "dust_pm1_is"
+      },
+      {
+        "title": {
+          "en": "Dust PM10 !{{is|is not}} at least [[value]] µg/m³",
+          "ko": "미세먼지 PM10 [[value]] µg/m³ !{{이상|미만}}"
+        },
+        "titleFormatted": {
+          "en": "Dust PM10 !{{is|is not}} at least [[value]] µg/m³",
+          "ko": "미세먼지 PM10 [[value]] µg/m³ !{{이상|미만}}"
+        },
+        "hint": {
+          "en": "Checks the value as the appliance last reported it.",
+          "ko": "가전이 마지막으로 보고한 값을 확인합니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_dust_pm10"
+          },
+          {
+            "name": "value",
+            "type": "number"
+          }
+        ],
+        "id": "dust_pm10_is"
+      },
+      {
+        "title": {
+          "en": "Dust bag usage !{{is|is not}} at least [[value]] %",
+          "ko": "먼지봉투 사용량 [[value]] % !{{이상|미만}}"
+        },
+        "titleFormatted": {
+          "en": "Dust bag usage !{{is|is not}} at least [[value]] %",
+          "ko": "먼지봉투 사용량 [[value]] % !{{이상|미만}}"
+        },
+        "hint": {
+          "en": "Checks the value as the appliance last reported it.",
+          "ko": "가전이 마지막으로 보고한 값을 확인합니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_dustbag_usage"
+          },
+          {
+            "name": "value",
+            "type": "number",
+            "min": 0,
+            "max": 100
+          }
+        ],
+        "id": "dustbag_usage_is"
+      },
+      {
+        "title": {
+          "en": "Edge lighting !{{is|is not}} on",
+          "ko": "엣지 라이팅 !{{켜짐|꺼짐}}"
+        },
+        "titleFormatted": {
+          "en": "Edge lighting !{{is|is not}} on",
+          "ko": "엣지 라이팅 !{{켜짐|꺼짐}}"
+        },
+        "hint": {
+          "en": "Checks the value as the appliance last reported it.",
+          "ko": "가전이 마지막으로 보고한 값을 확인합니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_edge_light"
+          }
+        ],
+        "id": "edge_light_is"
+      },
+      {
+        "title": {
+          "en": "Fan speed !{{is|is not}} [[value]]",
+          "ko": "풍량 [[value]] !{{임|아님}}"
+        },
+        "titleFormatted": {
+          "en": "Fan speed !{{is|is not}} [[value]]",
+          "ko": "풍량 [[value]] !{{임|아님}}"
+        },
+        "hint": {
+          "en": "Checks the value as the appliance last reported it.",
+          "ko": "가전이 마지막으로 보고한 값을 확인합니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_fan_mode"
+          },
+          {
+            "name": "value",
+            "type": "dropdown",
+            "values": [
+              {
+                "id": "auto",
+                "title": {
+                  "en": "Auto",
+                  "ko": "자동"
+                }
+              },
+              {
+                "id": "low",
+                "title": {
+                  "en": "Low",
+                  "ko": "약"
+                }
+              },
+              {
+                "id": "mid",
+                "title": {
+                  "en": "Medium",
+                  "ko": "중"
+                }
+              },
+              {
+                "id": "high",
+                "title": {
+                  "en": "High",
+                  "ko": "강"
+                }
+              }
+            ]
+          }
+        ],
+        "id": "fan_mode_is"
+      },
+      {
+        "title": {
+          "en": "Fan level !{{is|is not}} at least [[value]]",
+          "ko": "풍량 단계 [[value]] !{{이상|미만}}"
+        },
+        "titleFormatted": {
+          "en": "Fan level !{{is|is not}} at least [[value]]",
+          "ko": "풍량 단계 [[value]] !{{이상|미만}}"
+        },
+        "hint": {
+          "en": "Checks the value as the appliance last reported it.",
+          "ko": "가전이 마지막으로 보고한 값을 확인합니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_fan_speed_level"
+          },
+          {
+            "name": "value",
+            "type": "number",
+            "min": 0,
+            "max": 10
+          }
+        ],
+        "id": "fan_speed_level_is"
+      },
+      {
+        "title": {
+          "en": "Filter usage !{{is|is not}} at least [[value]] %",
+          "ko": "필터 사용량 [[value]] % !{{이상|미만}}"
+        },
+        "titleFormatted": {
+          "en": "Filter usage !{{is|is not}} at least [[value]] %",
+          "ko": "필터 사용량 [[value]] % !{{이상|미만}}"
+        },
+        "hint": {
+          "en": "Checks the value as the appliance last reported it.",
+          "ko": "가전이 마지막으로 보고한 값을 확인합니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_filter_usage"
+          },
+          {
+            "name": "value",
+            "type": "number",
+            "min": 0,
+            "max": 100
+          }
+        ],
+        "id": "filter_usage_is"
+      },
+      {
+        "title": {
+          "en": "Firmware update available !{{is|is not}} on",
+          "ko": "펌웨어 업데이트 있음 !{{켜짐|꺼짐}}"
+        },
+        "titleFormatted": {
+          "en": "Firmware update available !{{is|is not}} on",
+          "ko": "펌웨어 업데이트 있음 !{{켜짐|꺼짐}}"
+        },
+        "hint": {
+          "en": "Checks the value as the appliance last reported it.",
+          "ko": "가전이 마지막으로 보고한 값을 확인합니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_firmware_update"
+          }
+        ],
+        "id": "firmware_update_is"
+      },
+      {
+        "title": {
+          "en": "Heated dry !{{is|is not}} [[value]]",
+          "ko": "가열 건조 [[value]] !{{임|아님}}"
+        },
+        "titleFormatted": {
+          "en": "Heated dry !{{is|is not}} [[value]]",
+          "ko": "가열 건조 [[value]] !{{임|아님}}"
+        },
+        "hint": {
+          "en": "Checks the value as the appliance last reported it.",
+          "ko": "가전이 마지막으로 보고한 값을 확인합니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_heated_dry"
+          },
+          {
+            "name": "value",
+            "type": "text"
+          }
+        ],
+        "id": "heated_dry_is"
+      },
+      {
+        "title": {
+          "en": "Fan speed !{{is|is not}} at least [[value]]",
+          "ko": "풍량 [[value]] !{{이상|미만}}"
+        },
+        "titleFormatted": {
+          "en": "Fan speed !{{is|is not}} at least [[value]]",
+          "ko": "풍량 [[value]] !{{이상|미만}}"
+        },
+        "hint": {
+          "en": "Checks the value as the appliance last reported it.",
+          "ko": "가전이 마지막으로 보고한 값을 확인합니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_hood_fan_speed"
+          },
+          {
+            "name": "value",
+            "type": "number",
+            "min": 1,
+            "max": 10,
+            "step": 1
+          }
+        ],
+        "id": "hood_fan_speed_is"
+      },
+      {
+        "title": {
+          "en": "Ice maker !{{is|is not}} on",
+          "ko": "제빙기 !{{켜짐|꺼짐}}"
+        },
+        "titleFormatted": {
+          "en": "Ice maker !{{is|is not}} on",
+          "ko": "제빙기 !{{켜짐|꺼짐}}"
+        },
+        "hint": {
+          "en": "Checks the value as the appliance last reported it.",
+          "ko": "가전이 마지막으로 보고한 값을 확인합니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_ice_maker"
+          }
+        ],
+        "id": "ice_maker_is"
+      },
+      {
+        "title": {
+          "en": "State !{{is|is not}} arriving by push",
+          "ko": "상태가 푸시로 !{{수신됨|수신되지 않음}}"
+        },
+        "titleFormatted": {
           "en": "State !{{is|is not}} arriving by push",
           "ko": "상태가 푸시로 !{{수신됨|수신되지 않음}}"
         },
@@ -215,6 +1590,2174 @@
           }
         ],
         "id": "is_pushing"
+      },
+      {
+        "title": {
+          "en": "Light brightness !{{is|is not}} at least [[value]]",
+          "ko": "조명 밝기 [[value]] !{{이상|미만}}"
+        },
+        "titleFormatted": {
+          "en": "Light brightness !{{is|is not}} at least [[value]]",
+          "ko": "조명 밝기 [[value]] !{{이상|미만}}"
+        },
+        "hint": {
+          "en": "Checks the value as the appliance last reported it.",
+          "ko": "가전이 마지막으로 보고한 값을 확인합니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_lamp_brightness"
+          },
+          {
+            "name": "value",
+            "type": "number",
+            "min": 1,
+            "max": 10,
+            "step": 1
+          }
+        ],
+        "id": "lamp_brightness_is"
+      },
+      {
+        "title": {
+          "en": "The light !{{is|is not}} on",
+          "ko": "조명이 !{{켜져 있음|꺼져 있음}}"
+        },
+        "titleFormatted": {
+          "en": "The light !{{is|is not}} on",
+          "ko": "조명이 !{{켜져 있음|꺼져 있음}}"
+        },
+        "hint": {
+          "en": "Checks the light as the appliance last reported it.",
+          "ko": "가전이 마지막으로 보고한 조명 상태를 확인합니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_display_light"
+          }
+        ],
+        "id": "light_is_on"
+      },
+      {
+        "title": {
+          "en": "Panel brightness !{{is|is not}} [[value]]",
+          "ko": "표시등 밝기 [[value]] !{{임|아님}}"
+        },
+        "titleFormatted": {
+          "en": "Panel brightness !{{is|is not}} [[value]]",
+          "ko": "표시등 밝기 [[value]] !{{임|아님}}"
+        },
+        "hint": {
+          "en": "Checks the value as the appliance last reported it.",
+          "ko": "가전이 마지막으로 보고한 값을 확인합니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_light_mode"
+          },
+          {
+            "name": "value",
+            "type": "dropdown",
+            "values": [
+              {
+                "id": "Smart",
+                "title": {
+                  "en": "Smart",
+                  "ko": "자동"
+                }
+              },
+              {
+                "id": "Low",
+                "title": {
+                  "en": "Low",
+                  "ko": "약"
+                }
+              },
+              {
+                "id": "High",
+                "title": {
+                  "en": "High",
+                  "ko": "강"
+                }
+              }
+            ]
+          }
+        ],
+        "id": "light_mode_is"
+      },
+      {
+        "title": {
+          "en": "Machine state !{{is|is not}} [[value]]",
+          "ko": "동작 상태 [[value]] !{{임|아님}}"
+        },
+        "titleFormatted": {
+          "en": "Machine state !{{is|is not}} [[value]]",
+          "ko": "동작 상태 [[value]] !{{임|아님}}"
+        },
+        "hint": {
+          "en": "Checks the value as the appliance last reported it.",
+          "ko": "가전이 마지막으로 보고한 값을 확인합니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_machine_state"
+          },
+          {
+            "name": "value",
+            "type": "text"
+          }
+        ],
+        "id": "machine_state_is"
+      },
+      {
+        "title": {
+          "en": "Avoid direct wind !{{is|is not}} on",
+          "ko": "바람 피함 !{{켜짐|꺼짐}}"
+        },
+        "titleFormatted": {
+          "en": "Avoid direct wind !{{is|is not}} on",
+          "ko": "바람 피함 !{{켜짐|꺼짐}}"
+        },
+        "hint": {
+          "en": "Checks the value as the appliance last reported it.",
+          "ko": "가전이 마지막으로 보고한 값을 확인합니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_motion_detect_wind"
+          }
+        ],
+        "id": "motion_detect_wind_is"
+      },
+      {
+        "title": {
+          "en": "Mute beep once !{{is|is not}} on",
+          "ko": "1회 무음 !{{켜짐|꺼짐}}"
+        },
+        "titleFormatted": {
+          "en": "Mute beep once !{{is|is not}} on",
+          "ko": "1회 무음 !{{켜짐|꺼짐}}"
+        },
+        "hint": {
+          "en": "Checks the value as the appliance last reported it.",
+          "ko": "가전이 마지막으로 보고한 값을 확인합니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_mute_once"
+          }
+        ],
+        "id": "mute_once_is"
+      },
+      {
+        "title": {
+          "en": "Status !{{is|is not}} [[value]]",
+          "ko": "동작 상태 [[value]] !{{임|아님}}"
+        },
+        "titleFormatted": {
+          "en": "Status !{{is|is not}} [[value]]",
+          "ko": "동작 상태 [[value]] !{{임|아님}}"
+        },
+        "hint": {
+          "en": "Checks the value as the appliance last reported it.",
+          "ko": "가전이 마지막으로 보고한 값을 확인합니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_operation_state"
+          },
+          {
+            "name": "value",
+            "type": "text"
+          }
+        ],
+        "id": "operation_state_is"
+      },
+      {
+        "title": {
+          "en": "Oven mode !{{is|is not}} [[value]]",
+          "ko": "오븐 모드 [[value]] !{{임|아님}}"
+        },
+        "titleFormatted": {
+          "en": "Oven mode !{{is|is not}} [[value]]",
+          "ko": "오븐 모드 [[value]] !{{임|아님}}"
+        },
+        "hint": {
+          "en": "Checks the value as the appliance last reported it.",
+          "ko": "가전이 마지막으로 보고한 값을 확인합니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_oven_mode"
+          },
+          {
+            "name": "value",
+            "type": "text"
+          }
+        ],
+        "id": "oven_mode_is"
+      },
+      {
+        "title": {
+          "en": "Pet filter !{{is|is not}} on",
+          "ko": "펫 필터 !{{켜짐|꺼짐}}"
+        },
+        "titleFormatted": {
+          "en": "Pet filter !{{is|is not}} on",
+          "ko": "펫 필터 !{{켜짐|꺼짐}}"
+        },
+        "hint": {
+          "en": "Checks the value as the appliance last reported it.",
+          "ko": "가전이 마지막으로 보고한 값을 확인합니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_pet_filter"
+          }
+        ],
+        "id": "pet_filter_is"
+      },
+      {
+        "title": {
+          "en": "Power saving level !{{is|is not}} [[value]]",
+          "ko": "절전 강도 [[value]] !{{임|아님}}"
+        },
+        "titleFormatted": {
+          "en": "Power saving level !{{is|is not}} [[value]]",
+          "ko": "절전 강도 [[value]] !{{임|아님}}"
+        },
+        "hint": {
+          "en": "Checks the value as the appliance last reported it.",
+          "ko": "가전이 마지막으로 보고한 값을 확인합니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_power_save_mode"
+          },
+          {
+            "name": "value",
+            "type": "dropdown",
+            "values": [
+              {
+                "id": "Eco",
+                "title": {
+                  "en": "Eco",
+                  "ko": "절약"
+                }
+              },
+              {
+                "id": "Normal",
+                "title": {
+                  "en": "Normal",
+                  "ko": "표준"
+                }
+              },
+              {
+                "id": "Comfort",
+                "title": {
+                  "en": "Comfort",
+                  "ko": "쾌적"
+                }
+              }
+            ]
+          }
+        ],
+        "id": "power_save_mode_is"
+      },
+      {
+        "title": {
+          "en": "Power !{{is|is not}} on",
+          "ko": "전원 !{{켜짐|꺼짐}}"
+        },
+        "titleFormatted": {
+          "en": "Power !{{is|is not}} on",
+          "ko": "전원 !{{켜짐|꺼짐}}"
+        },
+        "hint": {
+          "en": "Checks the value as the appliance last reported it.",
+          "ko": "가전이 마지막으로 보고한 값을 확인합니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_power_state"
+          }
+        ],
+        "id": "power_state_is"
+      },
+      {
+        "title": {
+          "en": "Probe connected !{{is|is not}} on",
+          "ko": "프로브 연결 !{{켜짐|꺼짐}}"
+        },
+        "titleFormatted": {
+          "en": "Probe connected !{{is|is not}} on",
+          "ko": "프로브 연결 !{{켜짐|꺼짐}}"
+        },
+        "hint": {
+          "en": "Checks the value as the appliance last reported it.",
+          "ko": "가전이 마지막으로 보고한 값을 확인합니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_probe_connected"
+          }
+        ],
+        "id": "probe_connected_is"
+      },
+      {
+        "title": {
+          "en": "Progress !{{is|is not}} at least [[value]] %",
+          "ko": "진행률 [[value]] % !{{이상|미만}}"
+        },
+        "titleFormatted": {
+          "en": "Progress !{{is|is not}} at least [[value]] %",
+          "ko": "진행률 [[value]] % !{{이상|미만}}"
+        },
+        "hint": {
+          "en": "Checks the value as the appliance last reported it.",
+          "ko": "가전이 마지막으로 보고한 값을 확인합니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_progress"
+          },
+          {
+            "name": "value",
+            "type": "number",
+            "min": 0,
+            "max": 100
+          }
+        ],
+        "id": "progress_is"
+      },
+      {
+        "title": {
+          "en": "Rapid freezing !{{is|is not}} on",
+          "ko": "급속 냉동 !{{켜짐|꺼짐}}"
+        },
+        "titleFormatted": {
+          "en": "Rapid freezing !{{is|is not}} on",
+          "ko": "급속 냉동 !{{켜짐|꺼짐}}"
+        },
+        "hint": {
+          "en": "Checks the value as the appliance last reported it.",
+          "ko": "가전이 마지막으로 보고한 값을 확인합니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_rapid_freeze"
+          }
+        ],
+        "id": "rapid_freeze_is"
+      },
+      {
+        "title": {
+          "en": "Rapid cooling !{{is|is not}} on",
+          "ko": "급속 냉장 !{{켜짐|꺼짐}}"
+        },
+        "titleFormatted": {
+          "en": "Rapid cooling !{{is|is not}} on",
+          "ko": "급속 냉장 !{{켜짐|꺼짐}}"
+        },
+        "hint": {
+          "en": "Checks the value as the appliance last reported it.",
+          "ko": "가전이 마지막으로 보고한 값을 확인합니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_rapid_fridge"
+          }
+        ],
+        "id": "rapid_fridge_is"
+      },
+      {
+        "title": {
+          "en": "Time remaining !{{is|is not}} at least [[value]] min",
+          "ko": "남은 시간 [[value]] min !{{이상|미만}}"
+        },
+        "titleFormatted": {
+          "en": "Time remaining !{{is|is not}} at least [[value]] min",
+          "ko": "남은 시간 [[value]] min !{{이상|미만}}"
+        },
+        "hint": {
+          "en": "Checks the value as the appliance last reported it.",
+          "ko": "가전이 마지막으로 보고한 값을 확인합니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_remaining_minutes"
+          },
+          {
+            "name": "value",
+            "type": "number",
+            "min": 0,
+            "max": 1440
+          }
+        ],
+        "id": "remaining_minutes_is"
+      },
+      {
+        "title": {
+          "en": "Rinse cycles !{{is|is not}} at least [[value]]",
+          "ko": "헹굼 횟수 [[value]] !{{이상|미만}}"
+        },
+        "titleFormatted": {
+          "en": "Rinse cycles !{{is|is not}} at least [[value]]",
+          "ko": "헹굼 횟수 [[value]] !{{이상|미만}}"
+        },
+        "hint": {
+          "en": "Checks the value as the appliance last reported it.",
+          "ko": "가전이 마지막으로 보고한 값을 확인합니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_rinse_cycles"
+          },
+          {
+            "name": "value",
+            "type": "number",
+            "min": 0,
+            "max": 10
+          }
+        ],
+        "id": "rinse_cycles_is"
+      },
+      {
+        "title": {
+          "en": "Sabbath mode !{{is|is not}} on",
+          "ko": "안식일 모드 !{{켜짐|꺼짐}}"
+        },
+        "titleFormatted": {
+          "en": "Sabbath mode !{{is|is not}} on",
+          "ko": "안식일 모드 !{{켜짐|꺼짐}}"
+        },
+        "hint": {
+          "en": "Checks the value as the appliance last reported it.",
+          "ko": "가전이 마지막으로 보고한 값을 확인합니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_sabbath"
+          }
+        ],
+        "id": "sabbath_is"
+      },
+      {
+        "title": {
+          "en": "Safety auto-shutoff !{{is|is not}} on",
+          "ko": "안전 자동 차단 !{{켜짐|꺼짐}}"
+        },
+        "titleFormatted": {
+          "en": "Safety auto-shutoff !{{is|is not}} on",
+          "ko": "안전 자동 차단 !{{켜짐|꺼짐}}"
+        },
+        "hint": {
+          "en": "Checks the value as the appliance last reported it.",
+          "ko": "가전이 마지막으로 보고한 값을 확인합니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_safety_shutoff"
+          }
+        ],
+        "id": "safety_shutoff_is"
+      },
+      {
+        "title": {
+          "en": "Sanitize !{{is|is not}} on",
+          "ko": "살균 !{{켜짐|꺼짐}}"
+        },
+        "titleFormatted": {
+          "en": "Sanitize !{{is|is not}} on",
+          "ko": "살균 !{{켜짐|꺼짐}}"
+        },
+        "hint": {
+          "en": "Checks the value as the appliance last reported it.",
+          "ko": "가전이 마지막으로 보고한 값을 확인합니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_sanitize"
+          }
+        ],
+        "id": "sanitize_is"
+      },
+      {
+        "title": {
+          "en": "Self check !{{is|is not}} [[value]]",
+          "ko": "자가 진단 [[value]] !{{임|아님}}"
+        },
+        "titleFormatted": {
+          "en": "Self check !{{is|is not}} [[value]]",
+          "ko": "자가 진단 [[value]] !{{임|아님}}"
+        },
+        "hint": {
+          "en": "Checks the value as the appliance last reported it.",
+          "ko": "가전이 마지막으로 보고한 값을 확인합니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_selfcheck"
+          },
+          {
+            "name": "value",
+            "type": "text"
+          }
+        ],
+        "id": "selfcheck_is"
+      },
+      {
+        "title": {
+          "en": "Smart control enabled !{{is|is not}} on",
+          "ko": "스마트 제어 허용 !{{켜짐|꺼짐}}"
+        },
+        "titleFormatted": {
+          "en": "Smart control enabled !{{is|is not}} on",
+          "ko": "스마트 제어 허용 !{{켜짐|꺼짐}}"
+        },
+        "hint": {
+          "en": "Checks the value as the appliance last reported it.",
+          "ko": "가전이 마지막으로 보고한 값을 확인합니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_smart_control"
+          }
+        ],
+        "id": "smart_control_is"
+      },
+      {
+        "title": {
+          "en": "Smart sensing cooling !{{is|is not}} on",
+          "ko": "스마트 센싱 냉방 !{{켜짐|꺼짐}}"
+        },
+        "titleFormatted": {
+          "en": "Smart sensing cooling !{{is|is not}} on",
+          "ko": "스마트 센싱 냉방 !{{켜짐|꺼짐}}"
+        },
+        "hint": {
+          "en": "Checks the value as the appliance last reported it.",
+          "ko": "가전이 마지막으로 보고한 값을 확인합니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_smart_sensing_cooling"
+          }
+        ],
+        "id": "smart_sensing_cooling_is"
+      },
+      {
+        "title": {
+          "en": "Sound mode !{{is|is not}} [[value]]",
+          "ko": "사운드 모드 [[value]] !{{임|아님}}"
+        },
+        "titleFormatted": {
+          "en": "Sound mode !{{is|is not}} [[value]]",
+          "ko": "사운드 모드 [[value]] !{{임|아님}}"
+        },
+        "hint": {
+          "en": "Checks the value as the appliance last reported it.",
+          "ko": "가전이 마지막으로 보고한 값을 확인합니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_sound_mode"
+          },
+          {
+            "name": "value",
+            "type": "text"
+          }
+        ],
+        "id": "sound_mode_is"
+      },
+      {
+        "title": {
+          "en": "Sound volume !{{is|is not}} at least [[value]]",
+          "ko": "사운드 볼륨 [[value]] !{{이상|미만}}"
+        },
+        "titleFormatted": {
+          "en": "Sound volume !{{is|is not}} at least [[value]]",
+          "ko": "사운드 볼륨 [[value]] !{{이상|미만}}"
+        },
+        "hint": {
+          "en": "Checks the value as the appliance last reported it.",
+          "ko": "가전이 마지막으로 보고한 값을 확인합니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_sound_volume"
+          },
+          {
+            "name": "value",
+            "type": "number",
+            "min": 0,
+            "max": 100
+          }
+        ],
+        "id": "sound_volume_is"
+      },
+      {
+        "title": {
+          "en": "Spin speed !{{is|is not}} [[value]]",
+          "ko": "탈수 강도 [[value]] !{{임|아님}}"
+        },
+        "titleFormatted": {
+          "en": "Spin speed !{{is|is not}} [[value]]",
+          "ko": "탈수 강도 [[value]] !{{임|아님}}"
+        },
+        "hint": {
+          "en": "Checks the value as the appliance last reported it.",
+          "ko": "가전이 마지막으로 보고한 값을 확인합니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_spin_speed"
+          },
+          {
+            "name": "value",
+            "type": "text"
+          }
+        ],
+        "id": "spin_speed_is"
+      },
+      {
+        "title": {
+          "en": "Target humidity !{{is|is not}} at least [[value]] %",
+          "ko": "목표 습도 [[value]] % !{{이상|미만}}"
+        },
+        "titleFormatted": {
+          "en": "Target humidity !{{is|is not}} at least [[value]] %",
+          "ko": "목표 습도 [[value]] % !{{이상|미만}}"
+        },
+        "hint": {
+          "en": "Checks the value as the appliance last reported it.",
+          "ko": "가전이 마지막으로 보고한 값을 확인합니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_target_humidity"
+          },
+          {
+            "name": "value",
+            "type": "number",
+            "min": 30,
+            "max": 70,
+            "step": 5
+          }
+        ],
+        "id": "target_humidity_is"
+      },
+      {
+        "title": {
+          "en": "Set temperature !{{is|is not}} at least [[value]] °C",
+          "ko": "설정 온도 [[value]] °C !{{이상|미만}}"
+        },
+        "titleFormatted": {
+          "en": "Set temperature !{{is|is not}} at least [[value]] °C",
+          "ko": "설정 온도 [[value]] °C !{{이상|미만}}"
+        },
+        "hint": {
+          "en": "Checks the value as the appliance last reported it.",
+          "ko": "가전이 마지막으로 보고한 값을 확인합니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_target_temperature_readonly"
+          },
+          {
+            "name": "value",
+            "type": "number"
+          }
+        ],
+        "id": "target_temperature_readonly_is"
+      },
+      {
+        "title": {
+          "en": "UV sterilisation !{{is|is not}} on",
+          "ko": "UV 살균 !{{켜짐|꺼짐}}"
+        },
+        "titleFormatted": {
+          "en": "UV sterilisation !{{is|is not}} on",
+          "ko": "UV 살균 !{{켜짐|꺼짐}}"
+        },
+        "hint": {
+          "en": "Checks the value as the appliance last reported it.",
+          "ko": "가전이 마지막으로 보고한 값을 확인합니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_uvled"
+          }
+        ],
+        "id": "uvled_is"
+      },
+      {
+        "title": {
+          "en": "Wash temperature !{{is|is not}} [[value]]",
+          "ko": "세탁 온도 [[value]] !{{임|아님}}"
+        },
+        "titleFormatted": {
+          "en": "Wash temperature !{{is|is not}} [[value]]",
+          "ko": "세탁 온도 [[value]] !{{임|아님}}"
+        },
+        "hint": {
+          "en": "Checks the value as the appliance last reported it.",
+          "ko": "가전이 마지막으로 보고한 값을 확인합니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_wash_temperature"
+          },
+          {
+            "name": "value",
+            "type": "text"
+          }
+        ],
+        "id": "wash_temperature_is"
+      },
+      {
+        "title": {
+          "en": "Water used !{{is|is not}} at least [[value]] L",
+          "ko": "누적 사용 수량 [[value]] L !{{이상|미만}}"
+        },
+        "titleFormatted": {
+          "en": "Water used !{{is|is not}} at least [[value]] L",
+          "ko": "누적 사용 수량 [[value]] L !{{이상|미만}}"
+        },
+        "hint": {
+          "en": "Checks the value as the appliance last reported it.",
+          "ko": "가전이 마지막으로 보고한 값을 확인합니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_water_total"
+          },
+          {
+            "name": "value",
+            "type": "number"
+          }
+        ],
+        "id": "water_total_is"
+      },
+      {
+        "title": {
+          "en": "Welcome lighting !{{is|is not}} on",
+          "ko": "웰컴 라이팅 !{{켜짐|꺼짐}}"
+        },
+        "titleFormatted": {
+          "en": "Welcome lighting !{{is|is not}} on",
+          "ko": "웰컴 라이팅 !{{켜짐|꺼짐}}"
+        },
+        "hint": {
+          "en": "Checks the value as the appliance last reported it.",
+          "ko": "가전이 마지막으로 보고한 값을 확인합니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_welcome_light"
+          }
+        ],
+        "id": "welcome_light_is"
+      },
+      {
+        "title": {
+          "en": "Airflow direction !{{is|is not}} [[value]]",
+          "ko": "풍향 [[value]] !{{임|아님}}"
+        },
+        "titleFormatted": {
+          "en": "Airflow direction !{{is|is not}} [[value]]",
+          "ko": "풍향 [[value]] !{{임|아님}}"
+        },
+        "hint": {
+          "en": "Checks the value as the appliance last reported it.",
+          "ko": "가전이 마지막으로 보고한 값을 확인합니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_wind_direction"
+          },
+          {
+            "name": "value",
+            "type": "dropdown",
+            "values": [
+              {
+                "id": "Fix",
+                "title": {
+                  "en": "Fixed",
+                  "ko": "고정"
+                }
+              },
+              {
+                "id": "Left_And_Right",
+                "title": {
+                  "en": "Left and right",
+                  "ko": "좌우"
+                }
+              },
+              {
+                "id": "All",
+                "title": {
+                  "en": "All directions",
+                  "ko": "전체"
+                }
+              }
+            ]
+          }
+        ],
+        "id": "wind_direction_is"
+      },
+      {
+        "title": {
+          "en": "Airflow toward people !{{is|is not}} [[value]]",
+          "ko": "사람 방향 바람 [[value]] !{{임|아님}}"
+        },
+        "titleFormatted": {
+          "en": "Airflow toward people !{{is|is not}} [[value]]",
+          "ko": "사람 방향 바람 [[value]] !{{임|아님}}"
+        },
+        "hint": {
+          "en": "Checks the value as the appliance last reported it.",
+          "ko": "가전이 마지막으로 보고한 값을 확인합니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_wind_target"
+          },
+          {
+            "name": "value",
+            "type": "dropdown",
+            "values": [
+              {
+                "id": "Direct",
+                "title": {
+                  "en": "Direct",
+                  "ko": "직바람"
+                }
+              },
+              {
+                "id": "Indirect",
+                "title": {
+                  "en": "Indirect",
+                  "ko": "간접풍"
+                }
+              }
+            ]
+          }
+        ],
+        "id": "wind_target_is"
+      },
+      {
+        "title": {
+          "en": "Wrinkle prevention !{{is|is not}} on",
+          "ko": "주름 방지 !{{켜짐|꺼짐}}"
+        },
+        "titleFormatted": {
+          "en": "Wrinkle prevention !{{is|is not}} on",
+          "ko": "주름 방지 !{{켜짐|꺼짐}}"
+        },
+        "hint": {
+          "en": "Checks the value as the appliance last reported it.",
+          "ko": "가전이 마지막으로 보고한 값을 확인합니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_wrinkle_prevent"
+          }
+        ],
+        "id": "wrinkle_prevent_is"
+      }
+    ],
+    "actions": [
+      {
+        "title": {
+          "en": "Turn Absence clean on or off",
+          "ko": "부재 청정 켜기 또는 끄기"
+        },
+        "titleFormatted": {
+          "en": "Turn Absence clean [[state]]",
+          "ko": "부재 청정 [[state]]"
+        },
+        "hint": {
+          "en": "Fails the Flow if the appliance refuses the change, rather than reporting a success it did not achieve.",
+          "ko": "가전이 변경을 거부하면 플로우를 실패로 처리합니다. 이루지 못한 성공을 보고하지 않습니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_absence_clean"
+          },
+          {
+            "name": "state",
+            "type": "dropdown",
+            "values": [
+              {
+                "id": "on",
+                "title": {
+                  "en": "on",
+                  "ko": "켜기"
+                }
+              },
+              {
+                "id": "off",
+                "title": {
+                  "en": "off",
+                  "ko": "끄기"
+                }
+              }
+            ]
+          }
+        ],
+        "id": "set_absence_clean"
+      },
+      {
+        "title": {
+          "en": "Turn Absence power saving on or off",
+          "ko": "부재 절전 켜기 또는 끄기"
+        },
+        "titleFormatted": {
+          "en": "Turn Absence power saving [[state]]",
+          "ko": "부재 절전 [[state]]"
+        },
+        "hint": {
+          "en": "Fails the Flow if the appliance refuses the change, rather than reporting a success it did not achieve.",
+          "ko": "가전이 변경을 거부하면 플로우를 실패로 처리합니다. 이루지 못한 성공을 보고하지 않습니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_absence_power_saving"
+          },
+          {
+            "name": "state",
+            "type": "dropdown",
+            "values": [
+              {
+                "id": "on",
+                "title": {
+                  "en": "on",
+                  "ko": "켜기"
+                }
+              },
+              {
+                "id": "off",
+                "title": {
+                  "en": "off",
+                  "ko": "끄기"
+                }
+              }
+            ]
+          }
+        ],
+        "id": "set_absence_power_saving"
+      },
+      {
+        "title": {
+          "en": "Set Mode",
+          "ko": "운전 모드 설정"
+        },
+        "titleFormatted": {
+          "en": "Set Mode to [[value]]",
+          "ko": "운전 모드 설정: [[value]]"
+        },
+        "hint": {
+          "en": "Fails the Flow if the appliance refuses the change, rather than reporting a success it did not achieve.",
+          "ko": "가전이 변경을 거부하면 플로우를 실패로 처리합니다. 이루지 못한 성공을 보고하지 않습니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_ac_mode"
+          },
+          {
+            "name": "value",
+            "type": "dropdown",
+            "values": [
+              {
+                "id": "AIComfort",
+                "title": {
+                  "en": "AI Comfort",
+                  "ko": "AI 쾌적"
+                }
+              },
+              {
+                "id": "Auto",
+                "title": {
+                  "en": "Auto",
+                  "ko": "자동"
+                }
+              },
+              {
+                "id": "Cool",
+                "title": {
+                  "en": "Cool",
+                  "ko": "냉방"
+                }
+              },
+              {
+                "id": "Dry",
+                "title": {
+                  "en": "Dry",
+                  "ko": "제습"
+                }
+              },
+              {
+                "id": "Fan",
+                "title": {
+                  "en": "Fan",
+                  "ko": "송풍"
+                }
+              },
+              {
+                "id": "Heat",
+                "title": {
+                  "en": "Heat",
+                  "ko": "난방"
+                }
+              },
+              {
+                "id": "Wind",
+                "title": {
+                  "en": "Wind",
+                  "ko": "바람"
+                }
+              }
+            ]
+          }
+        ],
+        "id": "set_ac_mode"
+      },
+      {
+        "title": {
+          "en": "Turn Air purify on or off",
+          "ko": "공기청정 켜기 또는 끄기"
+        },
+        "titleFormatted": {
+          "en": "Turn Air purify [[state]]",
+          "ko": "공기청정 [[state]]"
+        },
+        "hint": {
+          "en": "Fails the Flow if the appliance refuses the change, rather than reporting a success it did not achieve.",
+          "ko": "가전이 변경을 거부하면 플로우를 실패로 처리합니다. 이루지 못한 성공을 보고하지 않습니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_air_purify"
+          },
+          {
+            "name": "state",
+            "type": "dropdown",
+            "values": [
+              {
+                "id": "on",
+                "title": {
+                  "en": "on",
+                  "ko": "켜기"
+                }
+              },
+              {
+                "id": "off",
+                "title": {
+                  "en": "off",
+                  "ko": "끄기"
+                }
+              }
+            ]
+          }
+        ],
+        "id": "set_air_purify"
+      },
+      {
+        "title": {
+          "en": "Turn Auto clean on or off",
+          "ko": "자동 건조 켜기 또는 끄기"
+        },
+        "titleFormatted": {
+          "en": "Turn Auto clean [[state]]",
+          "ko": "자동 건조 [[state]]"
+        },
+        "hint": {
+          "en": "Fails the Flow if the appliance refuses the change, rather than reporting a success it did not achieve.",
+          "ko": "가전이 변경을 거부하면 플로우를 실패로 처리합니다. 이루지 못한 성공을 보고하지 않습니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_auto_clean"
+          },
+          {
+            "name": "state",
+            "type": "dropdown",
+            "values": [
+              {
+                "id": "on",
+                "title": {
+                  "en": "on",
+                  "ko": "켜기"
+                }
+              },
+              {
+                "id": "off",
+                "title": {
+                  "en": "off",
+                  "ko": "끄기"
+                }
+              }
+            ]
+          }
+        ],
+        "id": "set_auto_clean"
+      },
+      {
+        "title": {
+          "en": "Turn Auto fill on or off",
+          "ko": "자동 급수 켜기 또는 끄기"
+        },
+        "titleFormatted": {
+          "en": "Turn Auto fill [[state]]",
+          "ko": "자동 급수 [[state]]"
+        },
+        "hint": {
+          "en": "Fails the Flow if the appliance refuses the change, rather than reporting a success it did not achieve.",
+          "ko": "가전이 변경을 거부하면 플로우를 실패로 처리합니다. 이루지 못한 성공을 보고하지 않습니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_autofill"
+          },
+          {
+            "name": "state",
+            "type": "dropdown",
+            "values": [
+              {
+                "id": "on",
+                "title": {
+                  "en": "on",
+                  "ko": "켜기"
+                }
+              },
+              {
+                "id": "off",
+                "title": {
+                  "en": "off",
+                  "ko": "끄기"
+                }
+              }
+            ]
+          }
+        ],
+        "id": "set_autofill"
+      },
+      {
+        "title": {
+          "en": "Turn Interior light on or off",
+          "ko": "내부 조명 켜기 또는 끄기"
+        },
+        "titleFormatted": {
+          "en": "Turn Interior light [[state]]",
+          "ko": "내부 조명 [[state]]"
+        },
+        "hint": {
+          "en": "Fails the Flow if the appliance refuses the change, rather than reporting a success it did not achieve.",
+          "ko": "가전이 변경을 거부하면 플로우를 실패로 처리합니다. 이루지 못한 성공을 보고하지 않습니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_cabinet_light"
+          },
+          {
+            "name": "state",
+            "type": "dropdown",
+            "values": [
+              {
+                "id": "on",
+                "title": {
+                  "en": "on",
+                  "ko": "켜기"
+                }
+              },
+              {
+                "id": "off",
+                "title": {
+                  "en": "off",
+                  "ko": "끄기"
+                }
+              }
+            ]
+          }
+        ],
+        "id": "set_cabinet_light"
+      },
+      {
+        "title": {
+          "en": "Turn Child lock on or off",
+          "ko": "차일드락 켜기 또는 끄기"
+        },
+        "titleFormatted": {
+          "en": "Turn Child lock [[state]]",
+          "ko": "차일드락 [[state]]"
+        },
+        "hint": {
+          "en": "Fails the Flow if the appliance refuses the change, rather than reporting a success it did not achieve.",
+          "ko": "가전이 변경을 거부하면 플로우를 실패로 처리합니다. 이루지 못한 성공을 보고하지 않습니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_child_lock"
+          },
+          {
+            "name": "state",
+            "type": "dropdown",
+            "values": [
+              {
+                "id": "on",
+                "title": {
+                  "en": "on",
+                  "ko": "켜기"
+                }
+              },
+              {
+                "id": "off",
+                "title": {
+                  "en": "off",
+                  "ko": "끄기"
+                }
+              }
+            ]
+          }
+        ],
+        "id": "set_child_lock"
+      },
+      {
+        "title": {
+          "en": "Set Convenient mode",
+          "ko": "쾌적 모드 설정"
+        },
+        "titleFormatted": {
+          "en": "Set Convenient mode to [[value]]",
+          "ko": "쾌적 모드 설정: [[value]]"
+        },
+        "hint": {
+          "en": "Fails the Flow if the appliance refuses the change, rather than reporting a success it did not achieve.",
+          "ko": "가전이 변경을 거부하면 플로우를 실패로 처리합니다. 이루지 못한 성공을 보고하지 않습니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_convenient_mode"
+          },
+          {
+            "name": "value",
+            "type": "dropdown",
+            "values": [
+              {
+                "id": "Off",
+                "title": {
+                  "en": "Off",
+                  "ko": "꺼짐"
+                }
+              },
+              {
+                "id": "Nano",
+                "title": {
+                  "en": "Wind-Free",
+                  "ko": "무풍"
+                }
+              },
+              {
+                "id": "LongWind",
+                "title": {
+                  "en": "Long wind",
+                  "ko": "롱바람"
+                }
+              },
+              {
+                "id": "Speed",
+                "title": {
+                  "en": "Speed",
+                  "ko": "스피드운전"
+                }
+              },
+              {
+                "id": "Sleep",
+                "title": {
+                  "en": "Sleep",
+                  "ko": "취침"
+                }
+              },
+              {
+                "id": "NanoSleep",
+                "title": {
+                  "en": "Wind-Free sleep",
+                  "ko": "무풍 취침"
+                }
+              }
+            ]
+          }
+        ],
+        "id": "set_convenient_mode"
+      },
+      {
+        "title": {
+          "en": "Turn Edge lighting on or off",
+          "ko": "엣지 라이팅 켜기 또는 끄기"
+        },
+        "titleFormatted": {
+          "en": "Turn Edge lighting [[state]]",
+          "ko": "엣지 라이팅 [[state]]"
+        },
+        "hint": {
+          "en": "Fails the Flow if the appliance refuses the change, rather than reporting a success it did not achieve.",
+          "ko": "가전이 변경을 거부하면 플로우를 실패로 처리합니다. 이루지 못한 성공을 보고하지 않습니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_edge_light"
+          },
+          {
+            "name": "state",
+            "type": "dropdown",
+            "values": [
+              {
+                "id": "on",
+                "title": {
+                  "en": "on",
+                  "ko": "켜기"
+                }
+              },
+              {
+                "id": "off",
+                "title": {
+                  "en": "off",
+                  "ko": "끄기"
+                }
+              }
+            ]
+          }
+        ],
+        "id": "set_edge_light"
+      },
+      {
+        "title": {
+          "en": "Set Fan speed",
+          "ko": "풍량 설정"
+        },
+        "titleFormatted": {
+          "en": "Set Fan speed to [[value]]",
+          "ko": "풍량 설정: [[value]]"
+        },
+        "hint": {
+          "en": "Fails the Flow if the appliance refuses the change, rather than reporting a success it did not achieve.",
+          "ko": "가전이 변경을 거부하면 플로우를 실패로 처리합니다. 이루지 못한 성공을 보고하지 않습니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_fan_mode"
+          },
+          {
+            "name": "value",
+            "type": "dropdown",
+            "values": [
+              {
+                "id": "auto",
+                "title": {
+                  "en": "Auto",
+                  "ko": "자동"
+                }
+              },
+              {
+                "id": "low",
+                "title": {
+                  "en": "Low",
+                  "ko": "약"
+                }
+              },
+              {
+                "id": "mid",
+                "title": {
+                  "en": "Medium",
+                  "ko": "중"
+                }
+              },
+              {
+                "id": "high",
+                "title": {
+                  "en": "High",
+                  "ko": "강"
+                }
+              }
+            ]
+          }
+        ],
+        "id": "set_fan_mode"
+      },
+      {
+        "title": {
+          "en": "Set Fan speed",
+          "ko": "풍량 설정"
+        },
+        "titleFormatted": {
+          "en": "Set Fan speed to [[value]]",
+          "ko": "풍량 설정: [[value]]"
+        },
+        "hint": {
+          "en": "Fails the Flow if the appliance refuses the change, rather than reporting a success it did not achieve.",
+          "ko": "가전이 변경을 거부하면 플로우를 실패로 처리합니다. 이루지 못한 성공을 보고하지 않습니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_hood_fan_speed"
+          },
+          {
+            "name": "value",
+            "type": "number",
+            "min": 1,
+            "max": 10,
+            "step": 1
+          }
+        ],
+        "id": "set_hood_fan_speed"
+      },
+      {
+        "title": {
+          "en": "Turn Ice maker on or off",
+          "ko": "제빙기 켜기 또는 끄기"
+        },
+        "titleFormatted": {
+          "en": "Turn Ice maker [[state]]",
+          "ko": "제빙기 [[state]]"
+        },
+        "hint": {
+          "en": "Fails the Flow if the appliance refuses the change, rather than reporting a success it did not achieve.",
+          "ko": "가전이 변경을 거부하면 플로우를 실패로 처리합니다. 이루지 못한 성공을 보고하지 않습니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_ice_maker"
+          },
+          {
+            "name": "state",
+            "type": "dropdown",
+            "values": [
+              {
+                "id": "on",
+                "title": {
+                  "en": "on",
+                  "ko": "켜기"
+                }
+              },
+              {
+                "id": "off",
+                "title": {
+                  "en": "off",
+                  "ko": "끄기"
+                }
+              }
+            ]
+          }
+        ],
+        "id": "set_ice_maker"
+      },
+      {
+        "title": {
+          "en": "Set Light brightness",
+          "ko": "조명 밝기 설정"
+        },
+        "titleFormatted": {
+          "en": "Set Light brightness to [[value]]",
+          "ko": "조명 밝기 설정: [[value]]"
+        },
+        "hint": {
+          "en": "Fails the Flow if the appliance refuses the change, rather than reporting a success it did not achieve.",
+          "ko": "가전이 변경을 거부하면 플로우를 실패로 처리합니다. 이루지 못한 성공을 보고하지 않습니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_lamp_brightness"
+          },
+          {
+            "name": "value",
+            "type": "number",
+            "min": 1,
+            "max": 10,
+            "step": 1
+          }
+        ],
+        "id": "set_lamp_brightness"
+      },
+      {
+        "title": {
+          "en": "Set the light",
+          "ko": "조명 설정"
+        },
+        "titleFormatted": {
+          "en": "Turn the light [[state]]",
+          "ko": "조명을 [[state]]"
+        },
+        "hint": {
+          "en": "Fails the Flow if the appliance refuses the change, rather than reporting success it did not achieve.",
+          "ko": "가전이 변경을 거부하면 플로우를 실패로 처리합니다. 이루지 못한 성공을 보고하지 않습니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_display_light"
+          },
+          {
+            "name": "state",
+            "type": "dropdown",
+            "values": [
+              {
+                "id": "on",
+                "title": {
+                  "en": "on",
+                  "ko": "켜기"
+                }
+              },
+              {
+                "id": "off",
+                "title": {
+                  "en": "off",
+                  "ko": "끄기"
+                }
+              }
+            ]
+          }
+        ],
+        "id": "set_light"
+      },
+      {
+        "title": {
+          "en": "Turn Avoid direct wind on or off",
+          "ko": "바람 피함 켜기 또는 끄기"
+        },
+        "titleFormatted": {
+          "en": "Turn Avoid direct wind [[state]]",
+          "ko": "바람 피함 [[state]]"
+        },
+        "hint": {
+          "en": "Fails the Flow if the appliance refuses the change, rather than reporting a success it did not achieve.",
+          "ko": "가전이 변경을 거부하면 플로우를 실패로 처리합니다. 이루지 못한 성공을 보고하지 않습니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_motion_detect_wind"
+          },
+          {
+            "name": "state",
+            "type": "dropdown",
+            "values": [
+              {
+                "id": "on",
+                "title": {
+                  "en": "on",
+                  "ko": "켜기"
+                }
+              },
+              {
+                "id": "off",
+                "title": {
+                  "en": "off",
+                  "ko": "끄기"
+                }
+              }
+            ]
+          }
+        ],
+        "id": "set_motion_detect_wind"
+      },
+      {
+        "title": {
+          "en": "Turn Mute beep once on or off",
+          "ko": "1회 무음 켜기 또는 끄기"
+        },
+        "titleFormatted": {
+          "en": "Turn Mute beep once [[state]]",
+          "ko": "1회 무음 [[state]]"
+        },
+        "hint": {
+          "en": "Fails the Flow if the appliance refuses the change, rather than reporting a success it did not achieve.",
+          "ko": "가전이 변경을 거부하면 플로우를 실패로 처리합니다. 이루지 못한 성공을 보고하지 않습니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_mute_once"
+          },
+          {
+            "name": "state",
+            "type": "dropdown",
+            "values": [
+              {
+                "id": "on",
+                "title": {
+                  "en": "on",
+                  "ko": "켜기"
+                }
+              },
+              {
+                "id": "off",
+                "title": {
+                  "en": "off",
+                  "ko": "끄기"
+                }
+              }
+            ]
+          }
+        ],
+        "id": "set_mute_once"
+      },
+      {
+        "title": {
+          "en": "Turn Pet filter on or off",
+          "ko": "펫 필터 켜기 또는 끄기"
+        },
+        "titleFormatted": {
+          "en": "Turn Pet filter [[state]]",
+          "ko": "펫 필터 [[state]]"
+        },
+        "hint": {
+          "en": "Fails the Flow if the appliance refuses the change, rather than reporting a success it did not achieve.",
+          "ko": "가전이 변경을 거부하면 플로우를 실패로 처리합니다. 이루지 못한 성공을 보고하지 않습니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_pet_filter"
+          },
+          {
+            "name": "state",
+            "type": "dropdown",
+            "values": [
+              {
+                "id": "on",
+                "title": {
+                  "en": "on",
+                  "ko": "켜기"
+                }
+              },
+              {
+                "id": "off",
+                "title": {
+                  "en": "off",
+                  "ko": "끄기"
+                }
+              }
+            ]
+          }
+        ],
+        "id": "set_pet_filter"
+      },
+      {
+        "title": {
+          "en": "Turn Rapid freezing on or off",
+          "ko": "급속 냉동 켜기 또는 끄기"
+        },
+        "titleFormatted": {
+          "en": "Turn Rapid freezing [[state]]",
+          "ko": "급속 냉동 [[state]]"
+        },
+        "hint": {
+          "en": "Fails the Flow if the appliance refuses the change, rather than reporting a success it did not achieve.",
+          "ko": "가전이 변경을 거부하면 플로우를 실패로 처리합니다. 이루지 못한 성공을 보고하지 않습니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_rapid_freeze"
+          },
+          {
+            "name": "state",
+            "type": "dropdown",
+            "values": [
+              {
+                "id": "on",
+                "title": {
+                  "en": "on",
+                  "ko": "켜기"
+                }
+              },
+              {
+                "id": "off",
+                "title": {
+                  "en": "off",
+                  "ko": "끄기"
+                }
+              }
+            ]
+          }
+        ],
+        "id": "set_rapid_freeze"
+      },
+      {
+        "title": {
+          "en": "Turn Rapid cooling on or off",
+          "ko": "급속 냉장 켜기 또는 끄기"
+        },
+        "titleFormatted": {
+          "en": "Turn Rapid cooling [[state]]",
+          "ko": "급속 냉장 [[state]]"
+        },
+        "hint": {
+          "en": "Fails the Flow if the appliance refuses the change, rather than reporting a success it did not achieve.",
+          "ko": "가전이 변경을 거부하면 플로우를 실패로 처리합니다. 이루지 못한 성공을 보고하지 않습니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_rapid_fridge"
+          },
+          {
+            "name": "state",
+            "type": "dropdown",
+            "values": [
+              {
+                "id": "on",
+                "title": {
+                  "en": "on",
+                  "ko": "켜기"
+                }
+              },
+              {
+                "id": "off",
+                "title": {
+                  "en": "off",
+                  "ko": "끄기"
+                }
+              }
+            ]
+          }
+        ],
+        "id": "set_rapid_fridge"
+      },
+      {
+        "title": {
+          "en": "Turn Sabbath mode on or off",
+          "ko": "안식일 모드 켜기 또는 끄기"
+        },
+        "titleFormatted": {
+          "en": "Turn Sabbath mode [[state]]",
+          "ko": "안식일 모드 [[state]]"
+        },
+        "hint": {
+          "en": "Fails the Flow if the appliance refuses the change, rather than reporting a success it did not achieve.",
+          "ko": "가전이 변경을 거부하면 플로우를 실패로 처리합니다. 이루지 못한 성공을 보고하지 않습니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_sabbath"
+          },
+          {
+            "name": "state",
+            "type": "dropdown",
+            "values": [
+              {
+                "id": "on",
+                "title": {
+                  "en": "on",
+                  "ko": "켜기"
+                }
+              },
+              {
+                "id": "off",
+                "title": {
+                  "en": "off",
+                  "ko": "끄기"
+                }
+              }
+            ]
+          }
+        ],
+        "id": "set_sabbath"
+      },
+      {
+        "title": {
+          "en": "Turn Sanitize on or off",
+          "ko": "살균 켜기 또는 끄기"
+        },
+        "titleFormatted": {
+          "en": "Turn Sanitize [[state]]",
+          "ko": "살균 [[state]]"
+        },
+        "hint": {
+          "en": "Fails the Flow if the appliance refuses the change, rather than reporting a success it did not achieve.",
+          "ko": "가전이 변경을 거부하면 플로우를 실패로 처리합니다. 이루지 못한 성공을 보고하지 않습니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_sanitize"
+          },
+          {
+            "name": "state",
+            "type": "dropdown",
+            "values": [
+              {
+                "id": "on",
+                "title": {
+                  "en": "on",
+                  "ko": "켜기"
+                }
+              },
+              {
+                "id": "off",
+                "title": {
+                  "en": "off",
+                  "ko": "끄기"
+                }
+              }
+            ]
+          }
+        ],
+        "id": "set_sanitize"
+      },
+      {
+        "title": {
+          "en": "Turn Smart sensing cooling on or off",
+          "ko": "스마트 센싱 냉방 켜기 또는 끄기"
+        },
+        "titleFormatted": {
+          "en": "Turn Smart sensing cooling [[state]]",
+          "ko": "스마트 센싱 냉방 [[state]]"
+        },
+        "hint": {
+          "en": "Fails the Flow if the appliance refuses the change, rather than reporting a success it did not achieve.",
+          "ko": "가전이 변경을 거부하면 플로우를 실패로 처리합니다. 이루지 못한 성공을 보고하지 않습니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_smart_sensing_cooling"
+          },
+          {
+            "name": "state",
+            "type": "dropdown",
+            "values": [
+              {
+                "id": "on",
+                "title": {
+                  "en": "on",
+                  "ko": "켜기"
+                }
+              },
+              {
+                "id": "off",
+                "title": {
+                  "en": "off",
+                  "ko": "끄기"
+                }
+              }
+            ]
+          }
+        ],
+        "id": "set_smart_sensing_cooling"
+      },
+      {
+        "title": {
+          "en": "Set Target humidity",
+          "ko": "목표 습도 설정"
+        },
+        "titleFormatted": {
+          "en": "Set Target humidity to [[value]]",
+          "ko": "목표 습도 설정: [[value]]"
+        },
+        "hint": {
+          "en": "Fails the Flow if the appliance refuses the change, rather than reporting a success it did not achieve.",
+          "ko": "가전이 변경을 거부하면 플로우를 실패로 처리합니다. 이루지 못한 성공을 보고하지 않습니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_target_humidity"
+          },
+          {
+            "name": "value",
+            "type": "number",
+            "min": 30,
+            "max": 70,
+            "step": 5
+          }
+        ],
+        "id": "set_target_humidity"
+      },
+      {
+        "title": {
+          "en": "Turn UV sterilisation on or off",
+          "ko": "UV 살균 켜기 또는 끄기"
+        },
+        "titleFormatted": {
+          "en": "Turn UV sterilisation [[state]]",
+          "ko": "UV 살균 [[state]]"
+        },
+        "hint": {
+          "en": "Fails the Flow if the appliance refuses the change, rather than reporting a success it did not achieve.",
+          "ko": "가전이 변경을 거부하면 플로우를 실패로 처리합니다. 이루지 못한 성공을 보고하지 않습니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_uvled"
+          },
+          {
+            "name": "state",
+            "type": "dropdown",
+            "values": [
+              {
+                "id": "on",
+                "title": {
+                  "en": "on",
+                  "ko": "켜기"
+                }
+              },
+              {
+                "id": "off",
+                "title": {
+                  "en": "off",
+                  "ko": "끄기"
+                }
+              }
+            ]
+          }
+        ],
+        "id": "set_uvled"
+      },
+      {
+        "title": {
+          "en": "Turn Welcome lighting on or off",
+          "ko": "웰컴 라이팅 켜기 또는 끄기"
+        },
+        "titleFormatted": {
+          "en": "Turn Welcome lighting [[state]]",
+          "ko": "웰컴 라이팅 [[state]]"
+        },
+        "hint": {
+          "en": "Fails the Flow if the appliance refuses the change, rather than reporting a success it did not achieve.",
+          "ko": "가전이 변경을 거부하면 플로우를 실패로 처리합니다. 이루지 못한 성공을 보고하지 않습니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_welcome_light"
+          },
+          {
+            "name": "state",
+            "type": "dropdown",
+            "values": [
+              {
+                "id": "on",
+                "title": {
+                  "en": "on",
+                  "ko": "켜기"
+                }
+              },
+              {
+                "id": "off",
+                "title": {
+                  "en": "off",
+                  "ko": "끄기"
+                }
+              }
+            ]
+          }
+        ],
+        "id": "set_welcome_light"
+      },
+      {
+        "title": {
+          "en": "Set Airflow direction",
+          "ko": "풍향 설정"
+        },
+        "titleFormatted": {
+          "en": "Set Airflow direction to [[value]]",
+          "ko": "풍향 설정: [[value]]"
+        },
+        "hint": {
+          "en": "Fails the Flow if the appliance refuses the change, rather than reporting a success it did not achieve.",
+          "ko": "가전이 변경을 거부하면 플로우를 실패로 처리합니다. 이루지 못한 성공을 보고하지 않습니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_wind_direction"
+          },
+          {
+            "name": "value",
+            "type": "dropdown",
+            "values": [
+              {
+                "id": "Fix",
+                "title": {
+                  "en": "Fixed",
+                  "ko": "고정"
+                }
+              },
+              {
+                "id": "Left_And_Right",
+                "title": {
+                  "en": "Left and right",
+                  "ko": "좌우"
+                }
+              },
+              {
+                "id": "All",
+                "title": {
+                  "en": "All directions",
+                  "ko": "전체"
+                }
+              }
+            ]
+          }
+        ],
+        "id": "set_wind_direction"
+      },
+      {
+        "title": {
+          "en": "Turn Wrinkle prevention on or off",
+          "ko": "주름 방지 켜기 또는 끄기"
+        },
+        "titleFormatted": {
+          "en": "Turn Wrinkle prevention [[state]]",
+          "ko": "주름 방지 [[state]]"
+        },
+        "hint": {
+          "en": "Fails the Flow if the appliance refuses the change, rather than reporting a success it did not achieve.",
+          "ko": "가전이 변경을 거부하면 플로우를 실패로 처리합니다. 이루지 못한 성공을 보고하지 않습니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_wrinkle_prevent"
+          },
+          {
+            "name": "state",
+            "type": "dropdown",
+            "values": [
+              {
+                "id": "on",
+                "title": {
+                  "en": "on",
+                  "ko": "켜기"
+                }
+              },
+              {
+                "id": "off",
+                "title": {
+                  "en": "off",
+                  "ko": "끄기"
+                }
+              }
+            ]
+          }
+        ],
+        "id": "set_wrinkle_prevent"
       }
     ]
   },

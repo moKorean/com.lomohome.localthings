@@ -1,0 +1,21 @@
+{
+  "title": {
+    "en": "Auto fill !{{is|is not}} on",
+    "ko": "자동 급수 !{{켜짐|꺼짐}}"
+  },
+  "titleFormatted": {
+    "en": "Auto fill !{{is|is not}} on",
+    "ko": "자동 급수 !{{켜짐|꺼짐}}"
+  },
+  "hint": {
+    "en": "Checks the value as the appliance last reported it.",
+    "ko": "가전이 마지막으로 보고한 값을 확인합니다."
+  },
+  "args": [
+    {
+      "name": "device",
+      "type": "device",
+      "filter": "driver_id=appliance&capabilities=localthings_autofill"
+    }
+  ]
+}

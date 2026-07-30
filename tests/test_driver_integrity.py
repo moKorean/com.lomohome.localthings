@@ -22,7 +22,12 @@ VIEWS = (
     "drivers/appliance/pair/configure.html",
     "drivers/appliance/repair/reconnect.html",
 )
+# The driver and device implementations live in lib/appliance/ so a per-type driver
+# can subclass them; drivers/appliance/*.py are thin shims that export a subclass.
+# Both are parsed: the shims for their (small) own code, the bases for all of it.
 MODULES = (
+    "lib/appliance/driver.py",
+    "lib/appliance/device.py",
     "drivers/appliance/driver.py",
     "drivers/appliance/device.py",
     "app.py",
@@ -94,7 +99,7 @@ def test_every_private_method_called_on_self_is_defined(filename):
 
 def test_the_check_actually_finds_calls():
     """A walk that silently matches nothing would pass the test above forever."""
-    tree = ast.parse((APP_ROOT / "drivers/appliance/driver.py").read_text())
+    tree = ast.parse((APP_ROOT / "lib/appliance/driver.py").read_text())
     total = sum(len(_private_self_calls(cls)) for cls in _classes(tree))
     assert total > 5, f"only found {total} private self-calls; the walk looks broken"
 

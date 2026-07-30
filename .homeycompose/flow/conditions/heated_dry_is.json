@@ -1,0 +1,25 @@
+{
+  "title": {
+    "en": "Heated dry !{{is|is not}} [[value]]",
+    "ko": "가열 건조 [[value]] !{{임|아님}}"
+  },
+  "titleFormatted": {
+    "en": "Heated dry !{{is|is not}} [[value]]",
+    "ko": "가열 건조 [[value]] !{{임|아님}}"
+  },
+  "hint": {
+    "en": "Checks the value as the appliance last reported it.",
+    "ko": "가전이 마지막으로 보고한 값을 확인합니다."
+  },
+  "args": [
+    {
+      "name": "device",
+      "type": "device",
+      "filter": "driver_id=appliance&capabilities=localthings_heated_dry"
+    },
+    {
+      "name": "value",
+      "type": "text"
+    }
+  ]
+}

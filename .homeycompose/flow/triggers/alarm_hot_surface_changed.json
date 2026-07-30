@@ -1,0 +1,31 @@
+{
+  "title": {
+    "en": "Hot surface changed",
+    "ko": "잔열 경고 변경됨"
+  },
+  "titleFormatted": {
+    "en": "Hot surface changed",
+    "ko": "잔열 경고 변경됨"
+  },
+  "hint": {
+    "en": "Fires on a change, not on every reading that repeats the same value. The new value is available as a token.",
+    "ko": "값이 바뀔 때만 실행됩니다. 같은 값을 다시 읽을 때는 실행되지 않습니다. 새 값은 토큰으로 쓸 수 있습니다."
+  },
+  "args": [
+    {
+      "name": "device",
+      "type": "device",
+      "filter": "driver_id=appliance&capabilities=localthings_alarm_hot_surface"
+    }
+  ],
+  "tokens": [
+    {
+      "name": "value",
+      "type": "string",
+      "title": {
+        "en": "Hot surface",
+        "ko": "잔열 경고"
+      }
+    }
+  ]
+}

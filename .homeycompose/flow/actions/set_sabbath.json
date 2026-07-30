@@ -1,0 +1,41 @@
+{
+  "title": {
+    "en": "Turn Sabbath mode on or off",
+    "ko": "안식일 모드 켜기 또는 끄기"
+  },
+  "titleFormatted": {
+    "en": "Turn Sabbath mode [[state]]",
+    "ko": "안식일 모드 [[state]]"
+  },
+  "hint": {
+    "en": "Fails the Flow if the appliance refuses the change, rather than reporting a success it did not achieve.",
+    "ko": "가전이 변경을 거부하면 플로우를 실패로 처리합니다. 이루지 못한 성공을 보고하지 않습니다."
+  },
+  "args": [
+    {
+      "name": "device",
+      "type": "device",
+      "filter": "driver_id=appliance&capabilities=localthings_sabbath"
+    },
+    {
+      "name": "state",
+      "type": "dropdown",
+      "values": [
+        {
+          "id": "on",
+          "title": {
+            "en": "on",
+            "ko": "켜기"
+          }
+        },
+        {
+          "id": "off",
+          "title": {
+            "en": "off",
+            "ko": "끄기"
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -3,11 +3,19 @@
     "en": "State !{{is|is not}} arriving by push",
     "ko": "상태가 푸시로 !{{수신됨|수신되지 않음}}"
   },
+  "titleFormatted": {
+    "en": "State !{{is|is not}} arriving by push",
+    "ko": "상태가 푸시로 !{{수신됨|수신되지 않음}}"
+  },
   "hint": {
     "en": "Push means the appliance notifies the app the moment something changes. Polling is the fallback, and state can then be up to the poll interval old.",
     "ko": "푸시는 가전이 변화 즉시 앱에 알리는 방식입니다. 폴링은 대체 방식이며, 이 경우 상태가 폴링 간격만큼 오래된 값일 수 있습니다."
   },
   "args": [
-    { "name": "device", "type": "device", "filter": "driver_id=appliance" }
+    {
+      "name": "device",
+      "type": "device",
+      "filter": "driver_id=appliance"
+    }
   ]
 }

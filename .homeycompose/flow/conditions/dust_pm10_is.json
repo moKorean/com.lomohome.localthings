@@ -1,0 +1,25 @@
+{
+  "title": {
+    "en": "Dust PM10 !{{is|is not}} at least [[value]] µg/m³",
+    "ko": "미세먼지 PM10 [[value]] µg/m³ !{{이상|미만}}"
+  },
+  "titleFormatted": {
+    "en": "Dust PM10 !{{is|is not}} at least [[value]] µg/m³",
+    "ko": "미세먼지 PM10 [[value]] µg/m³ !{{이상|미만}}"
+  },
+  "hint": {
+    "en": "Checks the value as the appliance last reported it.",
+    "ko": "가전이 마지막으로 보고한 값을 확인합니다."
+  },
+  "args": [
+    {
+      "name": "device",
+      "type": "device",
+      "filter": "driver_id=appliance&capabilities=localthings_dust_pm10"
+    },
+    {
+      "name": "value",
+      "type": "number"
+    }
+  ]
+}

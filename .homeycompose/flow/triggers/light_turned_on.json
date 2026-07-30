@@ -1,0 +1,21 @@
+{
+  "title": {
+    "en": "The light turned on",
+    "ko": "조명이 켜졌을 때"
+  },
+  "titleFormatted": {
+    "en": "The light turned on",
+    "ko": "조명이 켜졌을 때"
+  },
+  "hint": {
+    "en": "Fires on the transition to on, not on every reading that happens to be on.",
+    "ko": "켜짐으로 바뀌는 순간에 실행됩니다. 켜진 상태를 읽을 때마다 실행되지는 않습니다."
+  },
+  "args": [
+    {
+      "name": "device",
+      "type": "device",
+      "filter": "driver_id=appliance&capabilities=localthings_display_light"
+    }
+  ]
+}

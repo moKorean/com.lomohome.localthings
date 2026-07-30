@@ -1,0 +1,48 @@
+{
+  "title": {
+    "en": "Airflow direction !{{is|is not}} [[value]]",
+    "ko": "풍향 [[value]] !{{임|아님}}"
+  },
+  "titleFormatted": {
+    "en": "Airflow direction !{{is|is not}} [[value]]",
+    "ko": "풍향 [[value]] !{{임|아님}}"
+  },
+  "hint": {
+    "en": "Checks the value as the appliance last reported it.",
+    "ko": "가전이 마지막으로 보고한 값을 확인합니다."
+  },
+  "args": [
+    {
+      "name": "device",
+      "type": "device",
+      "filter": "driver_id=appliance&capabilities=localthings_wind_direction"
+    },
+    {
+      "name": "value",
+      "type": "dropdown",
+      "values": [
+        {
+          "id": "Fix",
+          "title": {
+            "en": "Fixed",
+            "ko": "고정"
+          }
+        },
+        {
+          "id": "Left_And_Right",
+          "title": {
+            "en": "Left and right",
+            "ko": "좌우"
+          }
+        },
+        {
+          "id": "All",
+          "title": {
+            "en": "All directions",
+            "ko": "전체"
+          }
+        }
+      ]
+    }
+  ]
+}

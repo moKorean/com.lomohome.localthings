@@ -1,0 +1,27 @@
+{
+  "title": {
+    "en": "Filter usage !{{is|is not}} at least [[value]] %",
+    "ko": "필터 사용량 [[value]] % !{{이상|미만}}"
+  },
+  "titleFormatted": {
+    "en": "Filter usage !{{is|is not}} at least [[value]] %",
+    "ko": "필터 사용량 [[value]] % !{{이상|미만}}"
+  },
+  "hint": {
+    "en": "Checks the value as the appliance last reported it.",
+    "ko": "가전이 마지막으로 보고한 값을 확인합니다."
+  },
+  "args": [
+    {
+      "name": "device",
+      "type": "device",
+      "filter": "driver_id=appliance&capabilities=localthings_filter_usage"
+    },
+    {
+      "name": "value",
+      "type": "number",
+      "min": 0,
+      "max": 100
+    }
+  ]
+}
