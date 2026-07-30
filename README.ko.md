@@ -6,7 +6,7 @@ SmartThings 클라우드 없이, 최신 삼성 가전을 집 안 네트워크에
 
 Home Assistant 통합 [mbillow/localthings](https://github.com/mbillow/localthings)를 Homey로 포팅하는 프로젝트입니다. 가전과 DTLS-over-CoAP 세션을 직접 맺어 상태를 읽고 명령을 보내므로, 클라우드 왕복이 없습니다.
 
-> **상태: [Homey 앱스토어 등록 완료](https://homey.app/a/com.lomohome.localthings/) (v0.5.2).** 에어컨 4대, 인덕션 1대, 주방 후드 1대, 냉장고 3대가 검색·페어링·제어까지 실기기에서 동작하고, 상태는 CoAP OBSERVE로 푸시받습니다(폴링은 5분 주기 안전 스윕). 커스텀 capability 70개 전부가 플로우에서 쓰입니다. 나머지 12종은 라우팅과 capability 매핑까지 이식했지만 실기기 검증은 못 했습니다. 설계와 실측 자료는 [`docs/PORTING.md`](docs/PORTING.md), 남은 미매핑 리소스와 결정 기록은 [`docs/BACKLOG.md`](docs/BACKLOG.md)를 참고하세요.
+> **상태: [Homey 앱스토어 등록 완료](https://homey.app/a/com.lomohome.localthings/)** — 실제로 배포 중인 버전은 링크에서 확인하세요. 제출한 버전은 인증을 통과할 때까지 스토어에 반영되지 않습니다. 에어컨 4대, 인덕션 1대, 주방 후드 1대, 냉장고 3대가 검색·페어링·제어까지 실기기에서 동작하고, 상태는 CoAP OBSERVE로 푸시받습니다(폴링은 5분 주기 안전 스윕). 커스텀 capability 70개 전부가 플로우에서 쓰입니다. 나머지 12종은 라우팅과 capability 매핑까지 이식했지만 실기기 검증은 못 했습니다. 설계와 실측 자료는 [`docs/PORTING.md`](docs/PORTING.md), 남은 미매핑 리소스와 결정 기록은 [`docs/BACKLOG.md`](docs/BACKLOG.md)를 참고하세요.
 
 ## 동작 방식
 
