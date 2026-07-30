@@ -101,5 +101,19 @@ PUSH_HEALTH_WINDOW_S = 600.0
 # briefly busy, and a full sweep is far more expensive than waiting one interval.
 RELOCATE_AFTER_FAILURES = 3
 
+# How many consecutive poll failures before the device is shown as unavailable.
+#
+# One above RELOCATE_AFTER_FAILURES, so relocation gets its attempt first — marking
+# the device unavailable and then recovering on the same cycle would flash a fault
+# the user never needed to see.
+#
+# Transient failures are normal and are not the user's problem. A restarted app
+# leaves the appliance holding an orphaned DTLS association for minutes, and the
+# first handshake into it is refused; the app recovers by itself from a different
+# source port. Surfacing that immediately put "DTLS handshake error" on a tile for
+# something that fixes itself, so the first few failures are logged and retried
+# quietly and only a persistent one is reported.
+UNAVAILABLE_AFTER_FAILURES = RELOCATE_AFTER_FAILURES + 1
+
 SAMSUNG_CLOUD_HOST = "connect-v2.samsungiotcloud.com"
 SAMSUNG_CLOUD_PORT = 443

@@ -31,6 +31,7 @@ from lib.const import (
     STORE_HOST,
     STORE_PORT,
     STORE_SERIAL,
+    UNAVAILABLE_AFTER_FAILURES,
     WRITE_SETTLE_S,
 )
 from lib.resources import read_serial
@@ -249,7 +250,13 @@ class ApplianceDevice(device.Device):
                 self.log(
                     f"poll failed ({self._failures}): {exc}; retrying in {delay:.0f}s"
                 )
-                await self.set_unavailable(str(exc))
+                # Only a persistent failure reaches the user. The first few are
+                # retried quietly: a restarted app leaves the appliance holding an
+                # orphaned DTLS association and the first handshake into it is
+                # refused, which the app recovers from on its own. Reporting that
+                # put protocol internals on a tile for something self-healing.
+                if self._failures >= UNAVAILABLE_AFTER_FAILURES:
+                    await self.set_unavailable(self._unavailable_reason(exc))
                 # Repeated failure is what a DHCP move looks like from here, so
                 # search for the appliance by serial before settling into backoff.
                 if self._failures == RELOCATE_AFTER_FAILURES:
@@ -260,6 +267,20 @@ class ApplianceDevice(device.Device):
                     except Exception as relocate_error:
                         self.log(f"relocation failed: {relocate_error}")
             await asyncio.sleep(delay)
+
+    def _unavailable_reason(self, exc: Exception) -> str:
+        """What to tell the user when the appliance stays unreachable.
+
+        Never `str(exc)`. That is where "DTLS handshake error (SSL routines, tlsv1
+        alert decode error)" came from — accurate, and no help to someone looking at
+        a greyed-out tile. The two causes a user can act on are told apart: an
+        appliance that will not complete a handshake, and one that is not answering
+        at all.
+        """
+        if probe.peer_holds_stale_session(exc):
+            return i18n.translate("error.handshake_refused", self._language)
+        return i18n.translate("error.unreachable", self._language,
+                              host=str(self._host))
 
     def _identity_is_verifiable(self) -> bool:
         """Whether the stored serial can actually prove identity.

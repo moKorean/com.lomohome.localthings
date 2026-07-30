@@ -160,3 +160,68 @@ def test_sound_settings_stay_read_only(ac_resources):
     no write has been observed and the reference exposes neither as writable."""
     for capability in ("localthings_sound_mode", "localthings_sound_volume"):
         assert not airconditioner.REGISTRY.spec_for(capability).writable, capability
+
+
+# --- transient failures must not reach the user ---------------------------
+
+
+def test_a_device_is_not_marked_unavailable_on_the_first_failure():
+    """A restarted app leaves the appliance holding an orphaned DTLS association, and
+    the first handshake into it is refused — which the app recovers from by itself
+    from another source port. Reporting that put "DTLS handshake error" on a tile for
+    something self-healing."""
+    from lib.const import RELOCATE_AFTER_FAILURES, UNAVAILABLE_AFTER_FAILURES
+    assert UNAVAILABLE_AFTER_FAILURES > 1
+    # Above the relocation threshold, so relocation gets its attempt before the user
+    # sees a fault; otherwise a recovered device would flash unavailable first.
+    assert UNAVAILABLE_AFTER_FAILURES > RELOCATE_AFTER_FAILURES
+
+
+def test_the_poll_loop_gates_set_unavailable_on_that_threshold():
+    source = (Path(__file__).parent.parent / "lib/appliance/device.py").read_text()
+    loop = source[source.index("async def _poll_loop"):]
+    loop = loop[:loop.index("def _unavailable_reason")]
+    assert "if self._failures >= UNAVAILABLE_AFTER_FAILURES:" in loop
+    assert "set_unavailable(self._unavailable_reason(exc))" in loop
+    # The raw exception must not be what the user reads.
+    assert "set_unavailable(str(exc))" not in loop
+
+
+def test_the_fault_message_is_translated_not_the_exception():
+    """`str(exc)` is where "DTLS handshake error (SSL routines, tlsv1 alert decode
+    error)" came from: accurate, and no help to someone looking at a greyed-out
+    tile."""
+    import ast
+
+    source = (Path(__file__).parent.parent / "lib/appliance/device.py").read_text()
+    function = next(
+        node for node in ast.walk(ast.parse(source))
+        if isinstance(node, ast.FunctionDef) and node.name == "_unavailable_reason"
+    )
+    # Code only. The docstring explains why str(exc) is wrong, and naming it there
+    # must not read as using it — the same trap a plain substring check fell into.
+    body = [n for n in function.body if not (
+        isinstance(n, ast.Expr) and isinstance(n.value, ast.Constant)
+        and isinstance(n.value.value, str)
+    )]
+    code = "\n".join(ast.unparse(n) for n in body)
+
+    assert "i18n.translate" in code
+    assert "peer_holds_stale_session" in code, (
+        "the two causes a user can act on are not told apart"
+    )
+    assert "str(exc)" not in code
+
+
+@pytest.mark.parametrize("key", ["error.handshake_refused", "error.unreachable"])
+def test_both_fault_messages_exist_in_both_languages(key):
+    from lib import i18n
+    english = i18n.translate(key, "en", host="192.168.1.9")
+    korean = i18n.translate(key, "ko", host="192.168.1.9")
+    assert english and english != key
+    assert korean and korean != key
+    assert english != korean, f"{key} is not actually translated"
+    # A message that only says what broke, without saying the app is still trying,
+    # reads as a dead end.
+    assert "retry" in english.lower() or "retrying" in english.lower()
+    assert "재시도" in korean
