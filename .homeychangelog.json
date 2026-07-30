@@ -26,5 +26,9 @@
   "0.5.1": {
     "en": "The app now has a support link that goes straight to the certificate setup guide, and the settings page links the guide in your own language.",
     "ko": "앱 정보에 지원 링크가 생겼습니다. 인증서 발급 안내로 바로 이어지고, 설정 화면에서는 사용 중인 언어에 맞는 안내를 엽니다."
+  },
+  "0.5.2": {
+    "en": "Water purifiers on the newer AILITE boards were being set up as refrigerators, and were offered fridge controls that could never work. They are now identified correctly, and report their sound settings. Range hoods that advertise their fan speeds as a range rather than a list now get a working speed control instead of an empty one.",
+    "ko": "최신 AILITE 보드 정수기가 냉장고로 잡혀서, 동작할 수 없는 냉장고 제어가 붙었습니다. 이제 정수기로 올바르게 인식하고 사운드 설정도 표시합니다. 팬 속도를 목록이 아니라 범위로 알려주는 후드에서도 속도 조절이 동작합니다."
   }
 }

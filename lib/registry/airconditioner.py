@@ -492,7 +492,9 @@ REGISTRY = Registry(
     ),
 )
 
-# Board-family tokens routed to this registry. 'CAC' (Korean ceiling/commercial)
-# is absent from the reference's table as of v0.16.0 — see docs/PORTING.md; the
-# rest mirror it.
+# Board-family tokens routed to this registry, mirroring the reference's table.
+# 'CAC' (Korean ceiling/commercial) was added here first, from the unit at
+# 192.168.1.90, and contributed upstream as mbillow/localthings#194; the
+# reference reached the same token independently as #191 and carries it as of
+# v0.17.0, so this is no longer a local-only addition — see docs/PORTING.md.
 BOARD_TOKENS = ("RAC", "PRAC", "KRAC", "CAC", "WAC", "FAC", "CAWW", "ARA")

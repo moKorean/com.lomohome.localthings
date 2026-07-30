@@ -594,6 +594,9 @@ HREF_HOOD_FILTER = "/filter/hoodfilter/vs/0"
 
 FIELD_FAN_SPEED = "x.com.samsung.da.hood.fanSpeed"
 FIELD_FAN_SUPPORTED = "x.com.samsung.da.hood.supportedFanSpeed"
+# Reference #201: the form used by boards that omit supportedFanSpeed entirely.
+FIELD_FAN_MIN = "x.com.samsung.da.hood.settableMinFanSpeed"
+FIELD_FAN_MAX = "x.com.samsung.da.hood.settableMaxFanSpeed"
 FIELD_AUTO_OPERATION = "x.com.samsung.da.hood.autoOperation"
 FIELD_LAMP_POWER = "x.com.samsung.lamp.power"
 FIELD_LAMP_CURRENT = "x.com.samsung.lamp.current"
@@ -605,7 +608,35 @@ def _codes(rep, field) -> list:
     return [str(code) for code in (rep.get(field) or ()) if str(code) != ""]
 
 
-def _read_level(value_field, list_field):
+def _field_codes(field):
+    """Codes read straight from a supported-values list."""
+    return lambda rep: _codes(rep, field)
+
+
+def _fan_codes(rep) -> list:
+    """The hood's fan-speed codes, from whichever form the board reports.
+
+    The verified AHD-WW-TP1-22 lists them in `supportedFanSpeed`, but reference
+    #201 found boards that omit that field and advertise a
+    `settableMinFanSpeed`/`settableMaxFanSpeed` pair instead. Without this those
+    hoods bound the capability and then had no codes at all: nothing to read, a
+    write that could never resolve, and an empty slider.
+
+    The range is only used as a fallback. Where both forms are present the
+    explicit list wins, because it is the one that can describe a
+    non-contiguous set — which the verified hood's 14-18 happens not to be, but
+    which nothing guarantees.
+    """
+    supported = _codes(rep, FIELD_FAN_SUPPORTED)
+    if supported:
+        return supported
+    low, high = as_int(rep.get(FIELD_FAN_MIN)), as_int(rep.get(FIELD_FAN_MAX))
+    if low is None or high is None or low > high:
+        return []
+    return [str(code) for code in range(low, high + 1)]
+
+
+def _read_level(value_field, codes_of):
     """Report a device code as its 1-based position in the supported list.
 
     The verified hood calls its five fan speeds "14" through "18" and its two lamp
@@ -616,7 +647,7 @@ def _read_level(value_field, list_field):
     """
 
     def read(rep, _resources):
-        codes = _codes(rep, list_field)
+        codes = codes_of(rep)
         current = rep.get(value_field)
         if current is None or not codes:
             return None
@@ -630,9 +661,9 @@ def _read_level(value_field, list_field):
     return read
 
 
-def _write_level(path, value_field, list_field):
+def _write_level(path, value_field, codes_of):
     def write(value, rep):
-        codes = _codes(rep, list_field)
+        codes = codes_of(rep)
         index = as_int(value)
         if not codes or index is None or not 1 <= index <= len(codes):
             return None
@@ -641,12 +672,23 @@ def _write_level(path, value_field, list_field):
     return write
 
 
-def _level_options(list_field):
+def _level_options(codes_of):
     def options(rep, _resources) -> dict:
-        codes = _codes(rep, list_field)
+        codes = codes_of(rep)
         return {"min": 1, "max": len(codes), "step": 1} if codes else {}
 
     return options
+
+
+def _has_codes(codes_of):
+    """Bind a level capability only where the device advertises the levels.
+
+    Without this a board that reports neither form gets a slider it cannot
+    honour. The reference reaches the same place from the other direction — it
+    drops the SET_SPEED feature when `speed_count` is 0 — but a Homey capability
+    is all-or-nothing, so the gate has to be on the capability itself.
+    """
+    return lambda rep, _resources: bool(codes_of(rep))
 
 
 def _has(field):
@@ -673,10 +715,11 @@ RANGE_HOOD = Registry(
         *shared.ENERGY,
         *shared.FIRMWARE,
         Spec("localthings_hood_fan_speed", HREF_HOOD_FAN,
-             _read_level(FIELD_FAN_SPEED, FIELD_FAN_SUPPORTED),
+             _read_level(FIELD_FAN_SPEED, _fan_codes),
              _write_level(["hood", "fanspeed", "vs", "0"],
-                          FIELD_FAN_SPEED, FIELD_FAN_SUPPORTED),
-             options=_level_options(FIELD_FAN_SUPPORTED)),
+                          FIELD_FAN_SPEED, _fan_codes),
+             exists=_has_codes(_fan_codes),
+             options=_level_options(_fan_codes)),
         Spec("localthings_auto_ventilation", HREF_HOOD_FAN,
              shared.flag(FIELD_AUTO_OPERATION),
              exists=_has(FIELD_AUTO_OPERATION)),
@@ -688,11 +731,11 @@ RANGE_HOOD = Registry(
              shared.write_flag(["hood", "lamp", "vs", "0"], FIELD_LAMP_POWER),
              titles={"en": "Light", "ko": "조명"}),
         Spec("localthings_lamp_brightness", HREF_HOOD_LAMP,
-             _read_level(FIELD_LAMP_CURRENT, FIELD_LAMP_RANGE),
+             _read_level(FIELD_LAMP_CURRENT, _field_codes(FIELD_LAMP_RANGE)),
              _write_level(["hood", "lamp", "vs", "0"],
-                          FIELD_LAMP_CURRENT, FIELD_LAMP_RANGE),
+                          FIELD_LAMP_CURRENT, _field_codes(FIELD_LAMP_RANGE)),
              exists=_has(FIELD_LAMP_RANGE),
-             options=_level_options(FIELD_LAMP_RANGE)),
+             options=_level_options(_field_codes(FIELD_LAMP_RANGE))),
         Spec("localthings_filter_usage", HREF_HOOD_FILTER, shared._filter_percent),
         Spec("localthings_alarm_filter", HREF_HOOD_FILTER,
              _read_filter_status_alarm),
@@ -717,6 +760,14 @@ WATER_PURIFIER = Registry(
         *shared.UNIVERSAL,
         *shared.WATER_FILTER,
         *shared.WATER_METER,
+        # Reference #196 (AILITE_DA-REF-WATERPURIFIER, RWP70F15ANW) found these
+        # two hrefs on this family, at the same paths the air conditioner and
+        # air purifier already read. Its own note is worth keeping: this board's
+        # supportedModes are voice/fixedTone/mute, which match neither of the
+        # other two families' value sets. That is only a hazard for a writer
+        # choosing from a hardcoded list — our sound mode is a free-form
+        # read-only string, so an unfamiliar value reports rather than rejects.
+        *shared.SOUND,
         Spec("localthings_child_lock", "/lock/vs/0", shared.flag("status"),
              shared.write_flag(["lock", "vs", "0"], "status")),
         Spec("localthings_operation_state", "/status/vs/0",

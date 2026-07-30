@@ -71,7 +71,23 @@ def _board_tokens(value: str, cut_at: str) -> list[str]:
 
 
 def _board_family_key(value: str, cut_at: str) -> str | None:
-    for token in _board_tokens(value, cut_at):
+    """The table is a flat lookup, not a priority list, so the token order within
+    a modelNum must not decide the answer.
+
+    One documented exception (reference #196): AILITE water purifiers spell their
+    modelNum '...-REF-WATERPURIFIER-...', where 'REF' names the shared cooling
+    board rather than the device type. Both tokens are in the table and both are
+    correct on their own, so scanning in order silently routed these to the
+    refrigerator — measured, not assumed: before this carve-out
+    'AILITE_DA-REF-WATERPURIFIER-24-COMMON' resolved to the fridge registry and
+    would have been given door alarms and compartment setpoints. 'WATERPURIFIER'
+    is the more specific of the two, so this one known co-occurrence resolves to
+    it.
+    """
+    tokens = _board_tokens(value, cut_at)
+    if "REF" in tokens and "WATERPURIFIER" in tokens:
+        return "water_purifier"
+    for token in tokens:
         key = _BOARD_TOKEN_TO_KEY.get(token)
         if key is not None:
             return key

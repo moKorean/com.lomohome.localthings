@@ -2,7 +2,7 @@
 
 레퍼런스:
 
-- `../localthings-reference/` — [mbillow/localthings](https://github.com/mbillow/localthings), `main` @ `119a4f4` (v0.16.0). 포팅 원본
+- `../localthings-reference/` — [mbillow/localthings](https://github.com/mbillow/localthings), `main` @ `eb93820` (v0.17.2). 포팅 원본
 - `../smartthings-local-reference/` — [QuiteYellow/SmartThings-Local](https://github.com/QuiteYellow/SmartThings-Local), `main` @ `8c2108a`. 전송 계층 소스 + `setup_cert.py`
 - `../homey-pythonscript-reference/` — [jaccoh/homey-pythonscript](https://github.com/jaccoh/homey-pythonscript), `main` @ `55f491f` (v0.4.0). Homey 파이썬 런타임 실증 사례
 

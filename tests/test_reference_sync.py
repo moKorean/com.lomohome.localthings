@@ -1,4 +1,4 @@
-"""Changes ported from the reference integration after its 0.16.0 release.
+"""Changes ported from the reference integration, last synced against v0.17.2.
 
 Each test names the reference issue it came from. The point is not that the port
 happened, but that it stays: a token table and a unit conversion are exactly the
@@ -225,3 +225,130 @@ def test_both_fault_messages_exist_in_both_languages(key):
     # reads as a dead end.
     assert "retry" in english.lower() or "retrying" in english.lower()
     assert "재시도" in korean
+
+
+# --- reference #196: AILITE water purifier routes past the REF board token ---
+
+
+def test_ailite_water_purifier_does_not_route_to_the_refrigerator():
+    """These boards spell modelNum '...-REF-WATERPURIFIER-...'. Both tokens are in
+    the table, so whichever the scan reaches first decides — and 'REF' comes first
+    in the string, which sent a water purifier to the fridge registry."""
+    resolved = registry.resolve({"/information/vs/0": {
+        "x.com.samsung.da.modelNum": "AILITE_DA-REF-WATERPURIFIER-24-COMMON|1|2",
+    }})
+    assert resolved is not None
+    assert resolved.name == "water_purifier"
+
+
+def test_the_carve_out_does_not_capture_a_plain_refrigerator():
+    """The exception is one documented co-occurrence, not a demotion of 'REF'."""
+    resolved = registry.resolve({"/information/vs/0": {
+        "x.com.samsung.da.modelNum": "AILITE_DA-REF-NORMAL-24-COMMON|1|2",
+    }})
+    assert resolved is not None
+    assert resolved.name == "refrigerator"
+
+
+def test_a_misrouted_water_purifier_would_have_had_fridge_controls():
+    """Why the mis-route mattered: it is not a cosmetic label. The fridge registry
+    binds compartment setpoints and a door alarm, none of which exist on a water
+    purifier, so the appliance would have offered controls that write nowhere."""
+    fridge = registry._REGISTRY_BY_KEY["refrigerator"]
+    purifier = registry._REGISTRY_BY_KEY["water_purifier"]
+    fridge_only = {s.capability for s in fridge.specs} - {s.capability for s in purifier.specs}
+    assert "target_temperature.fridge" in fridge_only
+    assert "alarm_contact" in fridge_only
+
+
+def test_the_water_purifier_reads_the_sound_resources():
+    """Reference #196 found /settings/sound/{mode,volume}/vs/0 on this family."""
+    caps = {(s.capability, s.href) for s in registry._REGISTRY_BY_KEY["water_purifier"].specs}
+    assert ("localthings_sound_mode", "/settings/sound/mode/vs/0") in caps
+    assert ("localthings_sound_volume", "/settings/sound/volume/vs/0") in caps
+
+
+def test_sound_mode_accepts_a_value_the_other_families_never_report():
+    """This board's supportedModes are voice/fixedTone/mute. Reference #196 warns
+    that reusing another family's value set would reject a live value; nothing may
+    turn our reader into a fixed list without this failing."""
+    definition = json.loads(
+        (Path(__file__).parent.parent / ".homeycompose" / "capabilities"
+         / "localthings_sound_mode.json").read_text()
+    )
+    assert definition["type"] == "string"
+    assert "values" not in definition, "an enum here would reject 'fixedTone'"
+
+    spec = next(s for s in registry._REGISTRY_BY_KEY["water_purifier"].specs
+                if s.capability == "localthings_sound_mode")
+    assert spec.read({"mode": "fixedTone"}, {}) == "fixedTone"
+
+
+# --- reference #201: fan speed from a min/max range ------------------------
+
+
+def _hood_fan_spec(capability="localthings_hood_fan_speed"):
+    return next(s for s in appliances.RANGE_HOOD.specs if s.capability == capability)
+
+
+def test_the_verified_hood_still_uses_its_supported_list():
+    """The AHD-WW-TP1-22 lists 14-18 explicitly. The fallback must not displace
+    the form that real hardware uses."""
+    rep = {"x.com.samsung.da.hood.fanSpeed": "16",
+           "x.com.samsung.da.hood.supportedFanSpeed": ["14", "15", "16", "17", "18"]}
+    spec = _hood_fan_spec()
+    assert spec.read(rep, {}) == 3
+    assert spec.options(rep, {}) == {"min": 1, "max": 5, "step": 1}
+
+
+def test_a_board_without_a_supported_list_falls_back_to_the_range():
+    """Reference #201: settableMin/MaxFanSpeed is the only form some boards give."""
+    rep = {"x.com.samsung.da.hood.fanSpeed": "2",
+           "x.com.samsung.da.hood.settableMinFanSpeed": "1",
+           "x.com.samsung.da.hood.settableMaxFanSpeed": "5"}
+    spec = _hood_fan_spec()
+    assert spec.exists(rep, {}) is True
+    assert spec.read(rep, {}) == 2
+    assert spec.options(rep, {}) == {"min": 1, "max": 5, "step": 1}
+    assert spec.write(4, rep) == (["hood", "fanspeed", "vs", "0"],
+                                  {"x.com.samsung.da.hood.fanSpeed": "4"})
+
+
+def test_an_explicit_list_wins_over_a_range_that_disagrees():
+    """Only the list can describe a non-contiguous set, so it is not a tie-break
+    by preference — the range cannot represent what the list can."""
+    rep = {"x.com.samsung.da.hood.fanSpeed": "30",
+           "x.com.samsung.da.hood.supportedFanSpeed": ["10", "20", "30"],
+           "x.com.samsung.da.hood.settableMinFanSpeed": "1",
+           "x.com.samsung.da.hood.settableMaxFanSpeed": "9"}
+    spec = _hood_fan_spec()
+    assert spec.read(rep, {}) == 3
+    assert spec.options(rep, {}) == {"min": 1, "max": 3, "step": 1}
+
+
+@pytest.mark.parametrize("rep", [
+    {"x.com.samsung.da.hood.fanSpeed": "1"},
+    {"x.com.samsung.da.hood.fanSpeed": "1",
+     "x.com.samsung.da.hood.settableMinFanSpeed": "1"},
+    {"x.com.samsung.da.hood.fanSpeed": "1",
+     "x.com.samsung.da.hood.settableMinFanSpeed": "5",
+     "x.com.samsung.da.hood.settableMaxFanSpeed": "1"},
+    {"x.com.samsung.da.hood.fanSpeed": "1",
+     "x.com.samsung.da.hood.settableMinFanSpeed": "low",
+     "x.com.samsung.da.hood.settableMaxFanSpeed": "high"},
+])
+def test_a_board_advertising_no_usable_levels_gets_no_slider(rep):
+    """Half a range, an inverted one, or a non-numeric one is not a range. Binding
+    the capability anyway is what produced a slider that could not be honoured."""
+    spec = _hood_fan_spec()
+    assert spec.exists(rep, {}) is False
+
+
+def test_the_lamp_level_was_not_swept_into_the_fan_fallback():
+    """The lamp reads its own range field and has no settableMin/Max form. A
+    refactor that pointed both at the fan's resolver would leave the lamp
+    reading a field it does not have."""
+    rep = {"x.com.samsung.lamp.current": "2", "x.com.samsung.lamp.range": ["1", "2"]}
+    spec = _hood_fan_spec("localthings_lamp_brightness")
+    assert spec.read(rep, {}) == 2
+    assert spec.options(rep, {}) == {"min": 1, "max": 2, "step": 1}
