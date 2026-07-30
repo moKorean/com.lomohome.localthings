@@ -1,7 +1,7 @@
 {
   "_comment": "This file is generated. Please edit .homeycompose/app.json instead.",
   "id": "com.lomohome.localthings",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "compatibility": ">=13.0.0",
   "sdk": 3,
   "runtime": "python",
@@ -116,6 +116,7 @@
   "bugs": {
     "url": "https://github.com/moKorean/com.lomohome.localthings/issues"
   },
+  "support": "https://github.com/moKorean/com.lomohome.localthings/blob/main/docs/CA-SETUP.en.md",
   "source": "https://github.com/moKorean/com.lomohome.localthings",
   "flow": {
     "triggers": [

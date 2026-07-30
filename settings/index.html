@@ -68,6 +68,9 @@
     .msg { margin-top: 12px; font-size: 13px; white-space: pre-wrap; }
     .msg.ok { color: var(--ok); } .msg.err { color: var(--err); }
     .meta { font-size: 12.5px; color: var(--muted); margin-top: 3px; }
+    /* The page had no anchors before, so links would have inherited body colour
+       and read as plain text. Underlined and brand-coloured so it looks tappable. */
+    a { color: var(--blue); text-decoration: underline; cursor: pointer; }
     .stored {
       border: 1px solid #bfe3cd; background: #f0faf4; border-radius: 8px;
       padding: 11px 12px; margin: 0 0 4px;
@@ -161,6 +164,15 @@
       + '...\n'
       + '<b>-----END PRIVATE KEY-----</b>';
 
+    // The manifest's `support` field is a plain string — the schema types it
+    // `string` with a `^(https://|mailto:)` pattern, unlike `name`/`description`
+    // which are i18nObjects — so it can only carry one language, and it carries
+    // English. Here the language is known, so each language links its own guide.
+    var GUIDE = {
+      en: 'https://github.com/moKorean/com.lomohome.localthings/blob/main/docs/CA-SETUP.en.md',
+      ko: 'https://github.com/moKorean/com.lomohome.localthings/blob/main/docs/CA-SETUP.md',
+    };
+
     var STRINGS = {
       en: {
         unknownError: 'Unknown error',
@@ -180,7 +192,7 @@
         howLede: 'One-time setup. The certificate is not tied to a specific appliance, so a single one works for every Samsung appliance on your network.',
         steps: [
           'On a computer with Python 3 and <code>openssl</code>, clone <code>QuiteYellow/SmartThings-Local</code>.',
-          'Run <code>setup_cert.py</code> with the command below. It fetches the public AC14K_M CA bundle, reads the identity from Samsung’s gateway, and signs a fresh key of its own. <code>pyOpenSSL</code> is only needed for the optional <code>--test</code> check. Full step-by-step instructions for macOS, Windows and Linux are in docs/CA-SETUP.en.md in the repository.',
+          'Run <code>setup_cert.py</code> with the command below. It fetches the public AC14K_M CA bundle, reads the identity from Samsung’s gateway, and signs a fresh key of its own. <code>pyOpenSSL</code> is only needed for the optional <code>--test</code> check. There is a <a href="' + GUIDE.en + '" data-external>step-by-step guide for macOS, Windows and Linux</a>.',
           'Open the two files it writes in <code>certs/</code> and paste their contents below.',
         ],
         howNote: 'Only these two files are needed. The CA private key used to sign them stays on your computer and is never sent to Homey.',
@@ -216,7 +228,7 @@
         howLede: '최초 1회만 하면 됩니다. 인증서는 특정 가전에 묶이지 않으므로 하나로 집 안 모든 삼성 가전에 사용됩니다.',
         steps: [
           'Python 3과 <code>openssl</code>이 있는 컴퓨터에서 <code>QuiteYellow/SmartThings-Local</code>을 클론합니다.',
-          '아래 명령으로 <code>setup_cert.py</code>를 실행합니다. 공개된 AC14K_M CA 번들을 받아 삼성 게이트웨이에서 식별자를 읽고, 새로 만든 키에 서명합니다. <code>pyOpenSSL</code>은 선택 항목인 <code>--test</code> 시험에만 필요합니다. macOS·Windows·Linux별 상세 안내는 저장소의 docs/CA-SETUP.md에 있습니다.',
+          '아래 명령으로 <code>setup_cert.py</code>를 실행합니다. 공개된 AC14K_M CA 번들을 받아 삼성 게이트웨이에서 식별자를 읽고, 새로 만든 키에 서명합니다. <code>pyOpenSSL</code>은 선택 항목인 <code>--test</code> 시험에만 필요합니다. <a href="' + GUIDE.ko + '" data-external>macOS·Windows·Linux별 상세 안내</a>를 참고하세요.',
           '<code>certs/</code>에 생성된 두 파일을 열어 아래에 붙여넣습니다.',
         ],
         howNote: '이 두 파일만 필요합니다. 서명에 쓰인 CA 개인키는 컴퓨터에 남고 Homey로 전송되지 않습니다.',
@@ -317,6 +329,24 @@
         var li = document.createElement('li');
         li.innerHTML = step;
         ol.appendChild(li);
+      });
+      externalise(ol);
+    }
+
+    // Inside Homey's settings webview a plain href either does nothing or replaces
+    // the settings page itself, so hand the URL to the host and swallow the click.
+    // Falling through to normal navigation would strand the user on a page with no
+    // way back, so an unavailable openURL is left as a no-op link instead.
+    function externalise(root) {
+      var links = root.querySelectorAll('a[data-external]');
+      Array.prototype.forEach.call(links, function (a) {
+        var url = a.getAttribute('href');
+        a.addEventListener('click', function (event) {
+          event.preventDefault();
+          // H, not the global Homey — see usable() below: the global is still the
+          // constructor until the instance lands, and only the instance has openURL.
+          if (H && typeof H.openURL === 'function') H.openURL(url);
+        });
       });
     }
 

@@ -11,10 +11,10 @@ DTLS-over-CoAP session straight to the appliance to read state and send commands
 there is no cloud round-trip.
 
 > **Status: in the [Homey App Store](https://homey.app/a/com.lomohome.localthings/)
-> (v0.5.0).** Four air conditioners, an induction
-> cooktop, a range hood and three refrigerators are discovered, paired and controlled on
-> real hardware, with state arriving by CoAP OBSERVE (polling continues as a five-minute
-> safety sweep). All 70 custom capabilities are usable in Flows. The remaining twelve
+> (v0.5.1).** Four air conditioners, an induction cooktop, a range hood and three
+> refrigerators are discovered, paired and controlled on real hardware, with state
+> arriving by CoAP OBSERVE (polling continues as a five-minute safety sweep). All 70
+> custom capabilities are usable in Flows. The remaining twelve
 > appliance types are routed and mapped but not verified against hardware. Design notes
 > and measurements are in [`docs/PORTING.md`](docs/PORTING.md); unmapped resources and
 > recorded decisions are in [`docs/BACKLOG.md`](docs/BACKLOG.md).

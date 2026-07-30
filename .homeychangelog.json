@@ -22,5 +22,9 @@
   "0.5.0": {
     "en": "The app is now called SmartThings Local, and its store image no longer carries text — both at the App Store review team's request. Nothing about how it works has changed, and your appliances and Flows are untouched.",
     "ko": "앱 이름이 '스마트싱스 로컬'로 바뀌고, 스토어 이미지에서 글자를 뺐습니다. 둘 다 앱스토어 심사 요청 사항입니다. 동작은 달라지지 않았고, 등록된 가전과 플로우도 그대로입니다."
+  },
+  "0.5.1": {
+    "en": "The app now has a support link that goes straight to the certificate setup guide, and the settings page links the guide in your own language.",
+    "ko": "앱 정보에 지원 링크가 생겼습니다. 인증서 발급 안내로 바로 이어지고, 설정 화면에서는 사용 중인 언어에 맞는 안내를 엽니다."
   }
 }
