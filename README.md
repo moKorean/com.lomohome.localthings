@@ -62,25 +62,20 @@ homey app install
 
 ### 2단계 — 클라이언트 인증서 발급 (컴퓨터에서 1회)
 
-가전은 `AC14K_M` 중간 CA가 서명한 인증서를 신뢰합니다.
+가전은 `AC14K_M` 중간 CA가 서명한 인증서를 신뢰합니다. 컴퓨터에서 스크립트 하나를 돌려 파일 두 개를 만드는 작업이고, **집 전체에 한 번만** 하면 됩니다.
 
-> **이 저장소는 필요한 CA 번들을 포함하지 않습니다.** 획득 방법의 예시 — `AC14K_M` 인증서와 키를 받아 서로 짝이 맞는지 확인하는 과정까지 — 는 `smartthings-local` 프로토콜 프로젝트의 [`setup_cert.py`](https://github.com/QuiteYellow/SmartThings-Local/blob/main/setup_cert.py)를 참고하세요.
->
-> 원문: *"This repo doesn't include the needed CA bundle. For an example of how to obtain it, including fetching the AC14K_M cert and key and verifying they pair, see the `smartthings-local` protocol project's [`setup_cert.py`](https://github.com/QuiteYellow/SmartThings-Local/blob/main/setup_cert.py)."* — [mbillow/localthings](https://github.com/mbillow/localthings)
+> **➡️ 전체 안내는 [`docs/CA-SETUP.md`](docs/CA-SETUP.md)에 있습니다.** macOS·Windows·Linux 각각의 준비물 확인부터 실행 명령, 결과 확인, 문제 해결까지 명령줄을 처음 쓰는 사람도 따라올 수 있게 적어 두었습니다.
 
-[`QuiteYellow/SmartThings-Local`](https://github.com/QuiteYellow/SmartThings-Local)의 `setup_cert.py`가 발급 전 과정을 자동화합니다. Python 3과 `openssl`이 필요합니다.
+요약하면 이렇습니다:
 
 ```sh
 git clone https://github.com/QuiteYellow/SmartThings-Local.git
 cd SmartThings-Local
 python3 -m venv .venv && .venv/bin/pip install pyOpenSSL
-
-# TARGET_IP는 선택입니다. 넣으면 붙여넣기 전에 실제 가전으로 검증합니다.
-OUT_DIR=./certs TARGET_IP=192.168.1.90 \
-  .venv/bin/python setup_cert.py --test
+OUT_DIR=./certs TARGET_IP=192.168.1.90 .venv/bin/python setup_cert.py --test
 ```
 
-`--test`가 `GET /oic/sec/acl -> 2.05`를 출력하면 가전이 인증서를 수락한 것입니다. 자세한 동작은 [`docs/CA-SETUP.md`](docs/CA-SETUP.md)에 있습니다.
+`--test`가 `GET /oic/sec/acl -> 2.05`를 출력하면 가전이 인증서를 수락한 것입니다.
 
 **인증서 하나가 집 안 모든 삼성 가전에 통용됩니다.** 인증서에 들어가는 식별자가 가전이 아니라 삼성 게이트웨이에서 오는 값이기 때문에, 기기별이 아니라 설치별로 하나만 있으면 됩니다.
 

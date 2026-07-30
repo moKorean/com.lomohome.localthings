@@ -88,35 +88,24 @@ into per-architecture virtualenvs.
 
 ### 2 — Issue a client certificate (once, on your computer)
 
-Appliances trust certificates signed by the `AC14K_M` intermediate CA.
+Appliances trust certificates signed by the `AC14K_M` intermediate CA. You run one
+script on your computer to produce two files, **once for the whole house.**
 
-> **This repository does not include the CA bundle it needs.** For an example of how to
-> obtain it — including fetching the `AC14K_M` certificate and key and verifying that
-> they pair — see the `smartthings-local` protocol project's
-> [`setup_cert.py`](https://github.com/QuiteYellow/SmartThings-Local/blob/main/setup_cert.py).
->
-> Quoting upstream: *"This repo doesn't include the needed CA bundle. For an example of
-> how to obtain it, including fetching the AC14K_M cert and key and verifying they
-> pair, see the `smartthings-local` protocol project's
-> [`setup_cert.py`](https://github.com/QuiteYellow/SmartThings-Local/blob/main/setup_cert.py)."*
-> — [mbillow/localthings](https://github.com/mbillow/localthings)
+> **➡️ The full walkthrough is in [`docs/CA-SETUP.en.md`](docs/CA-SETUP.en.md).** It
+> covers prerequisites and commands for macOS, Windows and Linux separately, how to tell
+> it worked, and what to do when it does not — written for someone who has never used a
+> command line.
 
-[`QuiteYellow/SmartThings-Local`](https://github.com/QuiteYellow/SmartThings-Local)'s
-`setup_cert.py` automates the whole thing. It needs Python 3 and `openssl`.
+In short:
 
 ```sh
 git clone https://github.com/QuiteYellow/SmartThings-Local.git
 cd SmartThings-Local
 python3 -m venv .venv && .venv/bin/pip install pyOpenSSL
-
-# TARGET_IP is optional. Supply it and the script verifies against a real
-# appliance before you paste anything.
-OUT_DIR=./certs TARGET_IP=192.168.1.90 \
-  .venv/bin/python setup_cert.py --test
+OUT_DIR=./certs TARGET_IP=192.168.1.90 .venv/bin/python setup_cert.py --test
 ```
 
 If `--test` prints `GET /oic/sec/acl -> 2.05`, the appliance accepted the certificate.
-[`docs/CA-SETUP.en.md`](docs/CA-SETUP.en.md) explains what the script does in detail.
 
 **One certificate covers every Samsung appliance in the house.** The identifier inside
 it comes from Samsung's gateway rather than from any appliance, so you need one per
