@@ -416,7 +416,7 @@ class ApplianceDriver(driver.Driver):
         """Probe one address and describe what it is."""
         result = await self._run(probe.probe, host, cert_pem, key_pem)
         resources = result["resources"]
-        reg = registry.resolve(resources)
+        reg = registry.resolve(resources, result.get("device_types") or ())
         identity = read_identity(resources)
         entry = {
             "host": host,
@@ -644,7 +644,7 @@ class ApplianceDriver(driver.Driver):
         result = await self._run(probe.probe, host, cert_pem, key_pem)
 
         resources = result["resources"]
-        reg = registry.resolve(resources)
+        reg = registry.resolve(resources, result.get("device_types") or ())
         identity = read_identity(resources)
         model = identity["model"].split("|")[0] or identity["description"]
 

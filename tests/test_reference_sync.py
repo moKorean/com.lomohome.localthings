@@ -352,3 +352,124 @@ def test_the_lamp_level_was_not_swept_into_the_fan_fallback():
     spec = _hood_fan_spec("localthings_lamp_brightness")
     assert spec.read(rep, {}) == 2
     assert spec.options(rep, {}) == {"min": 1, "max": 2, "step": 1}
+
+
+# --- reference: /oic/d as the primary type signal --------------------------
+#
+# Measured on nine appliances here, every one of which populates it and every one
+# agreeing with the board token: 4x oic.d.airconditioner, 3x oic.d.refrigerator,
+# oic.d.cooktop, x.com.st.d.hood. See docs/BACKLOG.md.
+
+
+def _oicd(*types) -> tuple:
+    return tuple(types)
+
+
+def test_oic_type_beats_an_unrecognised_model_string():
+    """The reason to read it at all: a modelNum whose board token means nothing to
+    us currently ends as 'unsupported appliance'."""
+    resources = {"/information/vs/0": {
+        "x.com.samsung.da.modelNum": "SOMETHING_UNRECOGNISED-99-XX|1|2",
+    }}
+    assert registry.resolve(resources) is None
+    resolved = registry.resolve(resources, _oicd("oic.wk.d", "oic.d.refrigerator"))
+    assert resolved is not None and resolved.name == "refrigerator"
+
+
+def test_the_hood_token_this_house_reports_is_mapped():
+    """`x.com.st.d.hood` is what the AHD-WW-TP1-22 actually answers with. It is
+    absent from the reference's table, so this is measured here, not inherited."""
+    resolved = registry.resolve({}, _oicd("oic.wk.d", "x.com.st.d.hood"))
+    assert resolved is not None and resolved.name == "range_hood"
+
+
+@pytest.mark.parametrize("oic_type,expected", [
+    ("oic.d.airconditioner", "airconditioner"),
+    ("oic.d.refrigerator", "refrigerator"),
+    ("x.com.st.d.hood", "range_hood"),
+])
+def test_every_type_measured_on_real_hardware_routes(oic_type, expected):
+    resolved = registry.resolve({}, _oicd("oic.wk.d", oic_type))
+    assert resolved is not None and resolved.name == expected
+
+
+def test_oic_d_cooktop_is_deliberately_not_mapped():
+    """The one measured type left out, and the reason it must stay out.
+
+    Our induction answers `oic.d.cooktop`, but `cooktop` is the unrelated gas
+    family — burner state in /mode/vs/0's options array, a different resource
+    surface entirely. The OCF type cannot tell them apart, so mapping it either
+    way silently mis-types the other, and as the *primary* signal it would
+    override a board token that had it right.
+    """
+    assert "oic.d.cooktop" not in registry._OIC_TYPE_TO_KEY
+    # The board token still resolves our induction, which is the point.
+    resolved = registry.resolve(
+        {"/information/vs/0": {"x.com.samsung.da.modelNum": "TP1X_DA-KS-COOKTOP-01001|1|2"}},
+        _oicd("oic.wk.d", "oic.d.cooktop"),
+    )
+    assert resolved is not None and resolved.name == "induction_cooktop"
+
+
+def test_the_gas_cooktop_is_not_captured_by_the_induction_mapping():
+    """The regression the exclusion prevents."""
+    resolved = registry.resolve(
+        {"/information/vs/0": {
+            "x.com.samsung.da.modelNum": "ARTIK051_GLOBAL_CT|1|2",
+            "x.com.samsung.da.description": "ARTIK051_GLOBAL_COOKTOP",
+        }},
+        _oicd("oic.wk.d", "oic.d.cooktop"),
+    )
+    assert resolved is not None and resolved.name == "cooktop"
+
+
+def test_every_mapped_oic_type_names_a_registry_that_exists():
+    """A typo here would route an appliance to nothing at all."""
+    for oic_type, key in registry._OIC_TYPE_TO_KEY.items():
+        assert key in registry._REGISTRY_BY_KEY, f"{oic_type} -> unknown key {key}"
+
+
+def test_the_generic_oic_wk_d_alone_decides_nothing():
+    """Every device carries it, so treating it as a type would route everything to
+    whichever registry it happened to be mapped to."""
+    assert "oic.wk.d" not in registry._OIC_TYPE_TO_KEY
+    assert registry.resolve({}, _oicd("oic.wk.d")) is None
+
+
+def test_absent_oic_d_changes_nothing():
+    """The signal is additive. Boards that will not answer /oic/d must resolve
+    exactly as they did before it was ever read."""
+    resources = {"/information/vs/0": {
+        "x.com.samsung.da.modelNum": "AHD-WW-TP1-22-COMMON|1|2",
+    }}
+    assert registry.resolve(resources).name == registry.resolve(resources, ()).name
+
+
+def test_probe_never_fails_because_of_the_extra_read():
+    """/device/0 has already succeeded when /oic/d is attempted, so a board that
+    refuses the path must still pair. Reading the code because the failure mode is
+    a raise, which no fixture can provoke."""
+    import ast
+    source = (Path(__file__).parent.parent / "lib" / "probe.py").read_text()
+    function = next(
+        node for node in ast.walk(ast.parse(source))
+        if isinstance(node, ast.FunctionDef) and node.name == "_read_device_types"
+    )
+    handlers = [n for n in ast.walk(function) if isinstance(n, ast.ExceptHandler)]
+    assert handlers, "an unguarded GET here turns a supplementary read into a pairing failure"
+    assert any(
+        isinstance(h.type, ast.Name) and h.type.id == "Exception" for h in handlers
+    ), "only catching ConnectionError leaves decode errors able to fail the probe"
+
+
+def test_the_device_swallows_the_same_read_failure():
+    import ast
+    source = (Path(__file__).parent.parent / "lib" / "appliance" / "device.py").read_text()
+    function = next(
+        node for node in ast.walk(ast.parse(source))
+        if isinstance(node, ast.AsyncFunctionDef) and node.name == "_read_device_types"
+    )
+    assert any(
+        isinstance(h.type, ast.Name) and h.type.id == "Exception"
+        for h in ast.walk(function) if isinstance(h, ast.ExceptHandler)
+    )

@@ -48,6 +48,10 @@ class ApplianceDevice(device.Device):
         self._failures = 0
         self._registry = None
         self._resources: dict = {}
+        # /oic/d's `rt`. Read once per session rather than per poll: it is a
+        # static declaration of what the appliance is, and it costs a GET the
+        # batch response cannot fold in.
+        self._device_types: tuple = ()
         # Resolved once at start: messages are raised from the poll loop and from
         # capability listeners, where awaiting a settings read on every failure would
         # be wasteful and would run during the failure it is describing.
@@ -408,12 +412,14 @@ class ApplianceDevice(device.Device):
                     host=self._host, expected=self._serial, found=seen))
 
         if self._registry is None:
-            self._registry = registry.resolve(self._resources)
+            self._device_types = await self._read_device_types()
+            self._registry = registry.resolve(self._resources, self._device_types)
             if self._registry is None:
                 raise RuntimeError(i18n.translate("error.not_recognised", self._language))
             unbound = registry.unbound_hrefs(self._resources, self._registry)
             self.log(
                 f"registry {self._registry.name}, "
+                f"oic.d {list(self._device_types) or 'absent'}, "
                 f"{len(unbound)} unbound resources: {unbound}"
             )
             await self._sync_device_class()
@@ -430,6 +436,30 @@ class ApplianceDevice(device.Device):
         self._evaluate_observe()
         await self._try_observe()
         await self._sync_settings()
+
+    async def _read_device_types(self) -> tuple:
+        """`/oic/d`'s `rt`, or an empty tuple if this appliance will not give it.
+
+        Every failure here is swallowed on purpose. This is an *additional* signal —
+        the board-token path resolved every appliance in this house without it — so a
+        board that answers 4.04, times out, or returns something unexpected must fall
+        back to the way that already worked. Letting this raise would turn a
+        supplementary read into a new way for pairing to fail, on exactly the
+        unfamiliar hardware it exists to help.
+        """
+        try:
+            rep = await self._session.read_resource(["oic", "d"])
+        except Exception as exc:
+            self.log(f"/oic/d unavailable ({type(exc).__name__}: {exc})")
+            return ()
+        types = (rep or {}).get("rt")
+        if isinstance(types, str):
+            types = [types]
+        if not isinstance(types, (list, tuple)):
+            return ()
+        # 'oic.wk.d' is on every device and names nothing; keeping it would only
+        # make the log noisier.
+        return tuple(str(t) for t in types if str(t) != "oic.wk.d")
 
     async def _sync_capabilities(self) -> None:
         """Bring the device's capability list in line with what the registry now maps.

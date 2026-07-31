@@ -238,7 +238,7 @@ async def write_resource(homey, **kwargs):
 
         homey api raw --method POST \
           --path /api/app/com.lomohome.localthings/write-resource \
-          --json '{"host":"192.168.1.203","path":"/temperature/desired/cooler/0",
+          --body '{"host":"192.168.1.203","path":"/temperature/desired/cooler/0",
                    "body":{"temperature":4}}'
 
     Returns the appliance's own response plus the resource re-read after the write, so
@@ -288,6 +288,57 @@ async def write_resource(homey, **kwargs):
     except Exception as exc:
         result["after_error"] = f"{type(exc).__name__}: {exc}"
     return result
+
+
+async def read_resource(homey, **kwargs):
+    """Read one resource on one appliance, or on every one of them.
+
+    The read-only counterpart to `write_resource`, for paths `/device/0` does not
+    carry. `/oic/d` is the case that motivated it: OCF's own device-type
+    declaration is the obvious thing to route appliance detection on, and the
+    reference now does, but it is absent from every batch response — so whether
+    this house's hardware populates it was unanswerable without a direct GET.
+
+        homey api raw --method POST \
+          --path /api/app/com.lomohome.localthings/read-resource \
+          --body '{"path":"/oic/d"}'
+
+    Omitting `host` reads the path on every paired appliance, which is what makes
+    it usable for "do any of these report X" rather than one unit at a time.
+    """
+    params = _params(kwargs)
+    path = str(params.get("path") or "").strip()
+    wanted = str(params.get("host") or "").strip()
+    if not path:
+        return {"error": "path is required"}
+    segments = [s for s in path.strip("/").split("/") if s]
+
+    try:
+        devices = homey.drivers.get_driver("appliance").get_devices()
+    except Exception as exc:
+        return {"error": f"{type(exc).__name__}: {exc}"}
+
+    out = {}
+    for device in devices:
+        host = str((device.get_store() or {}).get("host") or "")
+        if wanted and host != wanted:
+            continue
+        resolved = getattr(device, "_registry", None)
+        entry = {"host": host, "registry": resolved and resolved.name}
+        session = getattr(device, "_session", None)
+        if session is None:
+            entry["error"] = "device has no session"
+        else:
+            try:
+                entry["rep"] = await session.read_resource(segments)
+            except Exception as exc:
+                # A 4.04 on this path is itself the answer, so it is reported
+                # rather than raised.
+                entry["error"] = f"{type(exc).__name__}: {exc}"
+        out[device.get_name()] = entry
+    if not out:
+        return {"error": f"no paired appliance at {wanted}" if wanted else "no devices"}
+    return out
 
 
 def _device_report(homey) -> list:

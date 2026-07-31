@@ -113,17 +113,76 @@ def _consumer_model_key(description: str) -> str | None:
     return None
 
 
-def resolve(resources: dict) -> Registry | None:
+# `/oic/d`'s `rt` — the appliance naming its own OCF device type — to registry key.
+# Consulted before any board-part-number parsing, because there is nothing to infer:
+# the device is stating what it is.
+#
+# Measured on this house's nine appliances, all of which populate it:
+#
+#     4 air conditioners   oic.d.airconditioner
+#     3 refrigerators      oic.d.refrigerator
+#     1 induction cooktop  oic.d.cooktop        (deliberately absent — see below)
+#     1 range hood         x.com.st.d.hood
+#
+# Every one agreed with what the board token already concluded, so this changes
+# nothing here. It earns its place on *other* people's hardware: an unfamiliar
+# modelNum currently ends as "unsupported appliance", and this is a second,
+# independent way to type the same unit.
+#
+# `x.com.st.d.*` is SmartThings' vendor extension for categories OCF never gave an
+# `oic.d.*` name, the same convention as the `x.com.samsung.da.*` resource fields.
+#
+# Kept as narrow as the board-token table: every entry is either measured here or
+# carried over from the reference, never a guess at what the OCF vocabulary might
+# contain.
+#
+# **`oic.d.cooktop` is excluded on purpose.** Our induction reports it, but
+# `cooktop` and `induction_cooktop` are two unrelated registries that happen to
+# share the English word — a gas cooktop's burner state lives in `/mode/vs/0`'s
+# options array, a completely different resource surface. Nothing in the OCF type
+# distinguishes them, so mapping it to either one would silently mis-type the
+# other, and as the *primary* signal it would override a board token that had it
+# right. The board token keeps deciding between those two.
+_OIC_TYPE_TO_KEY: dict[str, str] = {
+    "oic.d.airconditioner": "airconditioner",   # measured: 4 units
+    "oic.d.refrigerator": "refrigerator",       # measured: 3 units
+    "x.com.st.d.hood": "range_hood",            # measured: 1 unit
+    # From the reference's own table; our keys for these already match.
+    "oic.d.airpurifier": "air_purifier",
+    "oic.d.dishwasher": "dishwasher",
+    "oic.d.dryer": "dryer",
+    "oic.d.oven": "oven",
+    "oic.d.washer": "washer",
+    "x.com.st.d.stickcleaner": "vacuum_station",
+    "x.com.st.d.steamcloset": "air_dresser",
+}
+
+
+def _oic_type_key(device_types) -> str | None:
+    for device_type in device_types or ():
+        key = _OIC_TYPE_TO_KEY.get(str(device_type))
+        if key is not None:
+            return key
+    return None
+
+
+def resolve(resources: dict, device_types=()) -> Registry | None:
     """Registry for a parsed /device/0 dump, or None if unrecognised.
 
-    Narrowest evidence first: the board token in `modelNum`, then the same token in
-    `description` (some units carry it only there), then the consumer-model prefix. A
-    device whose fields disagree is typed by its board, which is what determines the
-    resource surface.
+    `device_types` is `/oic/d`'s `rt`, which has to be read separately — it is
+    absent from every `/device/0` batch response. When it names a type we know, it
+    wins: the appliance is declaring what it is, rather than us parsing a board
+    part number out of a model string.
+
+    Then narrowest evidence first, unchanged: the board token in `modelNum`, then
+    the same token in `description` (some units carry it only there), then the
+    consumer-model prefix. A device whose fields disagree is typed by its board,
+    which is what determines the resource surface.
     """
     identity = read_identity(resources)
     key = (
-        _board_family_key(identity["model"], "|")
+        _oic_type_key(device_types)
+        or _board_family_key(identity["model"], "|")
         or _board_family_key(identity["description"], "/")
         or _consumer_model_key(identity["description"])
     )

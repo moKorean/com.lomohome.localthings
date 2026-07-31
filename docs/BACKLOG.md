@@ -278,6 +278,34 @@ action = "Start"
 1개가 되어야 자연스러운데 SDK가 드라이버 간 `create_device`를 제공하지 않으므로, 이식은
 기기 모델 자체를 다시 설계하는 일입니다. 검증할 하드웨어가 없는 상태에서 할 작업이 아닙니다.
 
+### `/oic/d` 실측 — 채택 완료, 한 종류만 보류
+
+레퍼런스가 v0.17.2 이후 기기 종류 판정을 `/oic/d`의 `rt`로 옮겼습니다(보드 파트넘버 파싱보다
+앞서 판정). 우리도 채택했고, 채택 전에 실기기 9대를 측정했습니다.
+
+| 대수 | `rt` | 기기 |
+|---|---|---|
+| 4 | `oic.d.airconditioner` | `AJ023CN1UBC1`, "Samsung System A/C" |
+| 3 | `oic.d.refrigerator` | "[refrigerator] Samsung" |
+| 1 | `oic.d.cooktop` | `TP1X_DA-KS-COOKTOP`, "Samsung Cooktop" |
+| 1 | `x.com.st.d.hood` | `AHD-WW-TP1-22-COMMON`, "Samsung Hood" |
+
+**9대 전부가 값을 채우고, 전부 기존 보드 토큰 판정과 일치했습니다.** 즉 우리 집 기기에서는
+아무것도 바뀌지 않습니다. 이득은 **다른 사람 기기**에서 나옵니다 — 낯선 modelNum은 지금
+"지원되지 않는 기기"로 끝나는데, 이제 독립적인 두 번째 판정 경로가 생겼습니다.
+
+측정에는 `/read-resource` 엔드포인트를 새로 만들었습니다. `/oic/d`는 **모든 `/device/0` 배치
+응답에 없어서**(Collection이 아님) 직접 GET하지 않으면 답을 알 수 없었습니다.
+
+**`oic.d.cooktop`은 의도적으로 매핑하지 않았습니다.** 우리 인덕션이 이 값을 보고하지만,
+`cooktop`(가스, NA9300K — 버너 상태가 `/mode/vs/0`의 options 배열)과 `induction_cooktop`은
+영어 단어만 같은 별개 레지스트리입니다. OCF 타입으로는 구분이 안 되므로 어느 쪽에 매핑해도
+다른 쪽을 잘못 판정하고, **1순위 신호이므로 제대로 맞힌 보드 토큰을 덮어씁니다.** 이 둘은
+보드 토큰이 계속 판정합니다.
+
+레퍼런스 테이블에 없던 `x.com.st.d.hood`와 이 `oic.d.cooktop` 주의사항은 업스트림에
+기여했습니다 — [mbillow/localthings#230](https://github.com/mbillow/localthings/pull/230).
+
 ### 정수기 진단 리소스 (`#196`)
 
 레퍼런스가 AILITE 보드(RWP70F15ANW)에서 새로 매핑한 것 중 셋을 보류했습니다.

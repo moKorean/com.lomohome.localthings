@@ -128,11 +128,35 @@ def order_candidates(ports: list[int]) -> list[int]:
     return preferred + rest
 
 
+def _read_device_types(session) -> tuple:
+    """`/oic/d`'s `rt` on an open session, or `()` if the appliance will not say.
+
+    Deliberately cannot fail the probe. `/device/0` has already succeeded by this
+    point, so the appliance is reachable and pairable; a board that answers 4.04 on
+    `/oic/d` must still pair on its board token, exactly as it did before this read
+    existed. Turning a supplementary signal into a pairing failure would be worst on
+    the unfamiliar hardware it is meant to help.
+    """
+    try:
+        code, payload = session.get(["oic", "d"], timeout=PROBE_GET_TIMEOUT_S)
+        if code != 0x45 or not payload:
+            return ()
+        decoded = cbor2.loads(payload)
+        types = decoded.get("rt") if isinstance(decoded, dict) else None
+    except Exception:
+        return ()
+    if isinstance(types, str):
+        types = [types]
+    if not isinstance(types, (list, tuple)):
+        return ()
+    return tuple(str(t) for t in types if str(t) != "oic.wk.d")
+
+
 def probe(host: str, leaf_cert_pem: str, leaf_key_pem: str) -> dict:
     """Find the live port and read /device/0. Blocking; run in an executor.
 
-    Returns {port, serial, resources}. Raises ConnectionError when no port in
-    the range answers.
+    Returns {port, serial, resources, device_types}. Raises ConnectionError when no
+    port in the range answers.
     """
     candidates = find_live_ports(host)
     if not candidates:
@@ -164,6 +188,7 @@ def probe(host: str, leaf_cert_pem: str, leaf_key_pem: str) -> dict:
                 "port": port,
                 "serial": read_serial(resources, host, port),
                 "resources": resources,
+                "device_types": _read_device_types(session),
             }
         finally:
             if session is not None:

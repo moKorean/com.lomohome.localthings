@@ -30,5 +30,9 @@
   "0.5.2": {
     "en": "Water purifiers on the newer AILITE boards were being set up as refrigerators, and were offered fridge controls that could never work. They are now identified correctly, and report their sound settings. Range hoods that advertise their fan speeds as a range rather than a list now get a working speed control instead of an empty one.",
     "ko": "최신 AILITE 보드 정수기가 냉장고로 잡혀서, 동작할 수 없는 냉장고 제어가 붙었습니다. 이제 정수기로 올바르게 인식하고 사운드 설정도 표시합니다. 팬 속도를 목록이 아니라 범위로 알려주는 후드에서도 속도 조절이 동작합니다."
+  },
+  "0.5.3": {
+    "en": "Appliances are now identified from the device type they declare themselves, not only from their model number. Every appliance already worked out correctly here, so nothing changes if yours did too — but an appliance whose model number the app did not recognise now has a second chance to be identified instead of being reported as unsupported. Also adds the newer clean-station board.",
+    "ko": "가전 종류를 모델명뿐 아니라 기기가 스스로 밝히는 종류로도 판정합니다. 기존에 잘 인식되던 기기는 그대로입니다 — 다만 모델명을 알아보지 못해 '지원되지 않는 기기'로 끝났던 가전에 판정 기회가 한 번 더 생깁니다. 최신 청정스테이션 보드도 추가했습니다."
   }
 }

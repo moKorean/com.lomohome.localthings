@@ -147,6 +147,18 @@ class Session:
         payload = await self._get(["device", "0"])
         return parse_device0(cbor2.loads(payload))
 
+    async def read_resource(self, path_segs: list[str]) -> dict:
+        """One resource's own representation, off the batch path.
+
+        `/device/0` is a Collection and does not carry everything the appliance
+        hosts — `/oic/d`, the one place OCF standardises "what am I", is absent
+        from every batch response. Answering whether real hardware populates it
+        needs a direct GET, so this is the read-only counterpart to `write`.
+        """
+        payload = await self._get(list(path_segs))
+        decoded = cbor2.loads(payload)
+        return decoded if isinstance(decoded, dict) else {"value": decoded}
+
     async def _get(self, path_segs: list[str]) -> bytes:
         async with self._lock:
             await self._connect_unlocked()

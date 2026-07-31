@@ -1,6 +1,6 @@
 {
   "id": "com.lomohome.localthings",
-  "version": "0.5.2",
+  "version": "0.5.3",
   "compatibility": ">=13.0.0",
   "sdk": 3,
   "runtime": "python",
@@ -77,6 +77,10 @@
     "resources": {
       "method": "GET",
       "path": "/resources"
+    },
+    "read_resource": {
+      "method": "POST",
+      "path": "/read-resource"
     },
     "write_resource": {
       "method": "POST",

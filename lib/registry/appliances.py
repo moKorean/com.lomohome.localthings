@@ -839,6 +839,9 @@ BOARD_TOKENS = {
     "CT": GAS_COOKTOP,
     "WATERPURIFIER": WATER_PURIFIER,
     "VSKR": VACUUM_STATION,
+    # Reference #219 — the same stick-vacuum clean station as VSKR on a different
+    # regional board. Two tokens, one family.
+    "VSWW": VACUUM_STATION,
     "DF": AIR_DRESSER,
 }
 
