@@ -31,6 +31,7 @@ there is no cloud round-trip.
 | Protocol | CoAP, with token-stable Block2 transfers and OBSERVE subscriptions |
 | Payload | OCF resource representations encoded as CBOR |
 | Modelling | The `/device/0` batch response is parsed into per-href resources, and a per-appliance-type registry maps hrefs onto Homey capabilities |
+| Identification | `/oic/d`, where the appliance declares its own OCF device type, then the board token in its model strings. Two independent routes to the same answer |
 
 ## Which appliances
 
@@ -248,7 +249,7 @@ lib/
   compat.py                   SDK contract adapters (settings and i18n, sync and async)
   session.py                  asyncio wrapper around DtlsCoapSession
   resources.py                /device/0 batch parsing, serial handling
-  registry/                   Board-token routing and per-appliance capability maps
+  registry/                   Type routing (/oic/d, then board tokens) and per-appliance capability maps
   support.py                  Unsupported-appliance report, with per-unit identifiers redacted
   selfcheck.py                Runtime self-check, once at startup
   appliance/                  Driver and device implementation, separated so a per-type driver could subclass it
@@ -427,6 +428,28 @@ homey api raw --path /api/app/com.lomohome.localthings/diagnostics
 
 It returns the resolved language, locales, credential sizes, and per-device push state
 (subscription count, notifications seen, whether it is observing).
+
+Two more endpoints exist because mapping an appliance correctly means reading what it
+actually reports rather than guessing, which is how the range hood shipped with every
+field name wrong:
+
+```sh
+# every resource each appliance reports (per-unit identifiers redacted; raw=1 opts out)
+homey api raw --path /api/app/com.lomohome.localthings/resources
+
+# one path, on every appliance at once — for paths /device/0 does not carry
+homey api raw -X POST --path /api/app/com.lomohome.localthings/read-resource \
+  --body '{"path":"/oic/d"}'
+
+# write one path and read it straight back, so "accepted but not committed" shows up
+homey api raw -X POST --path /api/app/com.lomohome.localthings/write-resource \
+  --body '{"host":"192.168.1.203","path":"/temperature/desired/cooler/0",
+           "body":{"temperature":4}}'
+```
+
+`/oic/d` is the case `read-resource` was added for: it is absent from every `/device/0`
+batch response, so whether real hardware populates it could not be answered without a
+direct GET. All nine appliances here do.
 
 `homey app build` pulls the official builder images
 (`ghcr.io/athombv/python-homey-app-builder-{arm64,amd64}`) and produces

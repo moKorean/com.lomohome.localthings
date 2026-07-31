@@ -18,6 +18,7 @@ Home Assistant 통합 [mbillow/localthings](https://github.com/mbillow/localthin
 | 프로토콜 | CoAP (token-stable Block2 전송, OBSERVE 구독) |
 | 페이로드 | CBOR로 인코딩된 OCF 리소스 표현 |
 | 모델링 | `/device/0` 배치 응답을 href별 리소스로 파싱 → 가전 종류별 레지스트리가 href를 Homey capability로 매핑 |
+| 종류 판정 | 기기가 스스로 밝히는 OCF 종류(`/oic/d`)를 먼저 보고, 그다음 모델 문자열의 보드 토큰. 같은 답에 이르는 독립적인 두 경로 |
 
 ## 대상 기기
 
@@ -186,7 +187,7 @@ lib/
   compat.py                   SDK 계약 어댑터 (settings·i18n 동기/비동기 양쪽)
   session.py                  DtlsCoapSession의 asyncio 래퍼
   resources.py                /device/0 배치 파싱, 시리얼 처리
-  registry/                   보드 토큰 라우팅 + 가전별 capability 맵
+  registry/                   종류 라우팅(/oic/d → 보드 토큰) + 가전별 capability 맵
   support.py                  미지원 기기 리포트 (개별 식별자 리댁션)
   selfcheck.py                런타임 자체 점검 (기동 시 1회)
   appliance/                  드라이버·기기 구현. 종류별 드라이버가 상속할 수 있게 분리
@@ -320,6 +321,26 @@ homey api raw --path /api/app/com.lomohome.localthings/diagnostics
 ```
 
 해석된 언어, 로케일, 자격증명 크기, 기기별 푸시 상태(구독 수·알림 수·observing)를 반환합니다.
+
+가전을 제대로 매핑하려면 추측이 아니라 기기가 실제로 보고하는 값을 읽어야 하므로 — 주방 후드가
+모든 필드명을 틀린 채 배포된 이유가 그것입니다 — 엔드포인트가 둘 더 있습니다.
+
+```sh
+# 각 가전이 보고하는 모든 리소스 (개별 식별자는 기본 리댁션, raw=1로 해제)
+homey api raw --path /api/app/com.lomohome.localthings/resources
+
+# 경로 하나를 전체 가전에서 한 번에 읽기 — /device/0에 없는 경로용
+homey api raw -X POST --path /api/app/com.lomohome.localthings/read-resource \
+  --body '{"path":"/oic/d"}'
+
+# 쓰고 바로 다시 읽기 — "수락됐지만 반영 안 됨"이 구분됩니다
+homey api raw -X POST --path /api/app/com.lomohome.localthings/write-resource \
+  --body '{"host":"192.168.1.203","path":"/temperature/desired/cooler/0",
+           "body":{"temperature":4}}'
+```
+
+`read-resource`를 만든 계기가 `/oic/d`입니다. 이 경로는 **모든 `/device/0` 배치 응답에 없어서**
+직접 GET하지 않으면 실기기가 값을 채우는지 알 수 없었습니다. 우리 9대는 전부 채웁니다.
 
 `homey app build`는 공식 빌더 이미지(`ghcr.io/athombv/python-homey-app-builder-{arm64,amd64}`)를 받아 `python_packages/{amd64,arm64}/.venv/`를 만듭니다. 이 venv들은 `app.json`에서 재생성 가능하므로 커밋하지 않습니다(약 36 MB의 바이너리). 클론 직후에는 `homey app build`를 한 번 돌리면 됩니다.
 
