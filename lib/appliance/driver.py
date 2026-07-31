@@ -97,8 +97,11 @@ class ApplianceDriver(driver.Driver):
             current = device.get_capability_value(capability)
             if current is None:
                 return False
-            if "state" in args:                      # boolean card
-                return bool(current) == (str(args["state"]).lower() == "on")
+            # No `state` branch here, unlike _action_for. Not one of the generated
+            # condition cards declares that argument: their titles use Homey's own
+            # `!{{is|is not}}` inversion, so a boolean condition reports the value and
+            # Homey negates it when the user picks the second form. Reading a `state`
+            # argument would have been answering a question no card asks.
             wanted = args.get("value")
             if isinstance(current, bool):
                 return bool(current)

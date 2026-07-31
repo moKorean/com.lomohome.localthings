@@ -228,3 +228,221 @@ def test_boolean_capabilities_get_both_directions():
         capability = name[: -len("_true")]
         assert capability in booleans, f"{name} is not a boolean capability"
         assert f"{capability}_false" in triggers, f"{capability} has no _false card"
+
+
+# --- the run-listener call signature ---------------------------------------
+#
+# homey-stubs types the contract as
+#
+#     async def __call__(self, card_arguments: Mapping[str, Any],
+#                        **trigger_kwargs: Any) -> ReturnType
+#
+# One positional parameter; everything else — `manual` among them — arrives as a
+# keyword. A listener written JS-style as `(args, state)` declares a second
+# *positional* parameter that Homey never fills, and then dies on the first
+# keyword it is handed: "unexpected keyword argument 'manual'". Every card fails,
+# and only at run time, because registration itself does not inspect the
+# signature. Observed in another app; these pin that this one cannot acquire it.
+#
+# Capability listeners are a different path with a different signature and are
+# unaffected — which is why device cards kept working there while Flow cards did not.
+
+def _listener_functions():
+    """Every function in the driver that Homey will call as a run listener.
+
+    Found by following `_flow_cards`, so a listener added there is covered without
+    this list being maintained by hand.
+    """
+    import ast
+    tree = ast.parse(DRIVER.read_text())
+    cards = next(
+        node for node in ast.walk(tree)
+        if isinstance(node, ast.FunctionDef) and node.name == "_flow_cards"
+    )
+    # The yielded listeners: `self._on_x` directly, or `self._factory(...)` whose
+    # inner function is what actually gets registered.
+    named, factories = set(), set()
+    for node in ast.walk(cards):
+        if isinstance(node, ast.Attribute) and node.attr.startswith("_on_"):
+            named.add(node.attr)
+        if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute) \
+                and node.func.attr.endswith("_for"):
+            factories.add(node.func.attr)
+    assert named, "no _on_* listeners found — has _flow_cards been restructured?"
+    assert factories, "no listener factories found — has _flow_cards been restructured?"
+
+    found = {}
+    for node in ast.walk(tree):
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            if node.name in named:
+                found[node.name] = node
+            if node.name in factories:
+                inner = next(
+                    (n for n in ast.walk(node)
+                     if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef))
+                     and n is not node),
+                    None,
+                )
+                assert inner is not None, f"{node.name} returns no inner listener"
+                found[f"{node.name}:{inner.name}"] = inner
+    return found
+
+
+def test_every_run_listener_matches_the_sdk_signature():
+    functions = _listener_functions()
+    # Both factories and all three hand-written cards, or the walk missed something.
+    assert len(functions) >= 5, sorted(functions)
+    for label, fn in sorted(functions.items()):
+        arguments = fn.args
+        positional = [p.arg for p in arguments.posonlyargs + arguments.args]
+        if positional and positional[0] == "self":
+            positional = positional[1:]
+        assert len(positional) == 1, (
+            f"{label} takes {positional}; Homey passes exactly one positional "
+            f"argument and sends everything else as a keyword, so a second "
+            f"positional parameter is never filled"
+        )
+        assert arguments.kwarg is not None, (
+            f"{label} has no **kwargs, so Homey passing `manual` raises "
+            f"'unexpected keyword argument' and the card fails at run time"
+        )
+
+
+def test_every_run_listener_is_async():
+    """The SDK awaits the return value; a plain def would hand it a coroutine-less
+    result and, for a condition, make every card read as true."""
+    for label, fn in sorted(_listener_functions().items()):
+        assert isinstance(fn, __import__("ast").AsyncFunctionDef), f"{label} is not async"
+
+
+@pytest.fixture
+def driver_instance():
+    """The real driver class, with the runtime-provided `homey` module stubbed.
+
+    Built with __new__ so no Homey session is needed: these listeners read only
+    their arguments and the device handed to them.
+    """
+    import types
+    stub = types.ModuleType("homey")
+    driver_module = types.ModuleType("homey.driver")
+
+    class Driver:
+        def log(self, *args):
+            pass
+
+    driver_module.Driver = Driver
+    stub.driver = driver_module
+    saved = {name: sys.modules.get(name) for name in ("homey", "homey.driver")}
+    sys.modules["homey"], sys.modules["homey.driver"] = stub, driver_module
+    try:
+        from lib.appliance.driver import ApplianceDriver
+        yield object.__new__(ApplianceDriver)
+    finally:
+        for name, module in saved.items():
+            if module is None:
+                sys.modules.pop(name, None)
+            else:
+                sys.modules[name] = module
+
+
+class _FakeDevice:
+    def __init__(self):
+        self.written = None
+
+    def get_capability_value(self, capability):
+        return "Cool"
+
+    def is_pushing(self):
+        return True
+
+    async def trigger_capability_listener(self, capability, value):
+        self.written = (capability, value)
+
+
+# What Homey actually sends alongside the card arguments. `manual` is the one that
+# broke the other app; the rest are here so nothing depends on it being alone.
+TRIGGER_KWARGS = {"manual": True, "tokens": {}, "state": {}}
+
+
+@pytest.mark.parametrize("label,args", [
+    ("condition", {"value": "Cool"}),
+    ("action", {"value": "Cool"}),
+])
+def test_the_generated_listeners_accept_homeys_trigger_arguments(
+        driver_instance, label, args):
+    import asyncio
+    factory = (driver_instance._condition_for if label == "condition"
+               else driver_instance._action_for)
+    listener = factory("localthings_mode")
+    device = _FakeDevice()
+    # No pytest.raises: a TypeError here is the bug, and letting it propagate names
+    # the missing parameter in the failure output.
+    asyncio.run(listener({"device": device, **args}, **TRIGGER_KWARGS))
+
+
+@pytest.mark.parametrize("name,args", [
+    ("_on_is_pushing", {}),
+    ("_on_light_is_on", {"state": "on"}),
+    ("_on_set_light", {"state": "on"}),
+])
+def test_the_hand_written_listeners_accept_homeys_trigger_arguments(
+        driver_instance, name, args):
+    import asyncio
+    listener = getattr(driver_instance, name)
+    asyncio.run(listener({"device": _FakeDevice(), **args}, **TRIGGER_KWARGS))
+
+
+def test_no_condition_card_declares_a_state_argument():
+    """Conditions rely on Homey inverting them, not on an on/off argument.
+
+    Every condition title carries `!{{is|is not}}`, so the listener reports the value
+    and Homey negates it for the second form. A listener that also read a `state`
+    argument would be answering a question no card asks — and would invert twice if
+    one were ever added without checking this.
+    """
+    for path in sorted((FLOW / "conditions").glob("*.json")):
+        names = {a.get("name") for a in json.loads(path.read_text()).get("args") or ()}
+        assert "state" not in names, f"{path.name} declares state; see _condition_for"
+
+
+def test_boolean_actions_are_the_ones_that_carry_state():
+    """The asymmetry is real and load-bearing: _action_for reads `state` because
+    boolean *actions* have to say which way to set it, while conditions do not."""
+    with_state = [
+        path.name for path in sorted((FLOW / "actions").glob("*.json"))
+        if any(a.get("name") == "state"
+               for a in json.loads(path.read_text()).get("args") or ())
+    ]
+    assert with_state, "no action carries state, so _action_for's branch is dead"
+
+
+def test_a_boolean_condition_reports_the_value_for_homey_to_invert(driver_instance):
+    """What the removed `state` branch would have broken."""
+    import asyncio
+    listener = driver_instance._condition_for("localthings_child_lock")
+    device = _FakeDevice()
+    device.get_capability_value = lambda capability: True
+    assert asyncio.run(listener({"device": device}, **TRIGGER_KWARGS)) is True
+    device.get_capability_value = lambda capability: False
+    assert asyncio.run(listener({"device": device}, **TRIGGER_KWARGS)) is False
+
+
+def test_a_boolean_action_maps_the_dropdown_onto_the_capability(driver_instance):
+    import asyncio
+    listener = driver_instance._action_for("localthings_child_lock")
+    for choice, expected in (("on", True), ("off", False)):
+        device = _FakeDevice()
+        asyncio.run(listener({"device": device, "state": choice}, **TRIGGER_KWARGS))
+        assert device.written == ("localthings_child_lock", expected)
+
+
+def test_the_light_condition_reflects_the_capability(driver_instance):
+    """The light card has only a device argument, same as every generated condition."""
+    import asyncio
+    device = _FakeDevice()
+    device.get_capability_value = lambda capability: True
+    assert asyncio.run(driver_instance._on_light_is_on({"device": device},
+                                                      **TRIGGER_KWARGS)) is True
+    device.get_capability_value = lambda capability: False
+    assert asyncio.run(driver_instance._on_light_is_on({"device": device},
+                                                       **TRIGGER_KWARGS)) is False
