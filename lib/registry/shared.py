@@ -70,12 +70,43 @@ POWER = (
 
 # --- child lock ------------------------------------------------------------
 
+FIELD_KIDS_LOCK = "x.com.samsung.da.kidsLock"
+
+
+def _read_vendor_kids_lock(rep, _resources):
+    """The vendor kids-lock, which reports `Ready`/`Run` — not `On`/`Off`.
+
+    This was read through the generic On/Off `flag` helper, which meant a locked
+    appliance reported unlocked: `Run` is not `On`, so the value was False either
+    way and the capability could never be true. Reference #181/#183 name the
+    vocabulary; every dump in their corpus reports one of those two.
+    """
+    value = rep.get(FIELD_KIDS_LOCK)
+    return None if value is None else str(value) != "Ready"
+
+
+# Both kids-lock surfaces are read-only. Reference #181/#183 measured it: the
+# write sent `Enable`, a value no dump has ever reported back, and the reporter
+# confirmed that writing the *correct* value (`Run`) still answered 4.05. The
+# SmartThings app offers no control for it either — the resource is genuinely
+# read-only on this hardware, not merely wrong-valued. Offering a switch that
+# always fails is worse than offering a reading.
+#
+#
+# Hence a capability of its own rather than the writable `localthings_child_lock`.
+# That one stays, because other appliances lock through entirely different
+# resources that do accept writes — the induction cooktop's `childLock` on
+# `/cooktop/status/vs/0`, verified on the unit here, and the water purifier's
+# `status` on `/lock/vs/0`. One shared capability would have forced a choice
+# between a toggle that errors on every kids-lock appliance and losing a control
+# that demonstrably works on the cooktop. Both carry the same title, so the split
+# is invisible to a user: one appliance shows a switch, another a reading.
 CHILD_LOCK = (
-    Spec("localthings_child_lock", "/kidslock/0", boolean("value"),
-         write_boolean(["kidslock", "0"], "value")),
-    Spec("localthings_child_lock", "/kidslock/vs/0",
-         flag("x.com.samsung.da.kidsLock"),
-         write_flag(["kidslock", "vs", "0"], "x.com.samsung.da.kidsLock")),
+    Spec("localthings_child_lock_state", "/kidslock/0", boolean("value")),
+    Spec("localthings_child_lock_state", "/kidslock/vs/0", _read_vendor_kids_lock,
+         # Only when the OCF form is absent, or an appliance carrying both would
+         # bind the same capability twice.
+         exists=lambda rep, resources: "/kidslock/0" not in resources),
 )
 
 # --- remote control -------------------------------------------------------

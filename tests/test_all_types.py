@@ -23,7 +23,7 @@ CAPABILITY_DIR = APP_ROOT / ".homeycompose" / "capabilities"
 SYSTEM_CAPABILITIES = {
     "onoff", "target_temperature", "measure_temperature", "measure_humidity",
     "measure_power", "meter_power", "measure_pm25", "measure_battery",
-    "alarm_contact",
+    "measure_co2", "alarm_contact",
 }
 
 

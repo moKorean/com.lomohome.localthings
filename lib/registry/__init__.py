@@ -147,6 +147,7 @@ _OIC_TYPE_TO_KEY: dict[str, str] = {
     "oic.d.airconditioner": "airconditioner",   # measured: 4 units
     "oic.d.refrigerator": "refrigerator",       # measured: 3 units
     "x.com.st.d.hood": "range_hood",            # measured: 1 unit
+    "x.com.st.d.airqualitysensor": "air_monitor",
     # From the reference's own table; our keys for these already match.
     "oic.d.airpurifier": "air_purifier",
     "oic.d.dishwasher": "dishwasher",

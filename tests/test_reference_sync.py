@@ -15,7 +15,7 @@ import pytest
 
 from lib import probe, registry
 from lib.const import PREFERRED_PROBE_PORTS, PROBE_PORT_RANGE
-from lib.registry import airconditioner, appliances
+from lib.registry import airconditioner, appliances, shared
 
 FIXTURES = Path(__file__).parent / "fixtures"
 
@@ -473,3 +473,150 @@ def test_the_device_swallows_the_same_read_failure():
         isinstance(h.type, ast.Name) and h.type.id == "Exception"
         for h in ast.walk(function) if isinstance(h, ast.ExceptHandler)
     )
+
+
+# --- reference #189: repeated-hex-digit placeholder serials -----------------
+
+
+@pytest.mark.parametrize("serial", ["FFFFFFFFFFFFFFF", "0000000000", "aaaaaaaa"])
+def test_a_repeated_hex_digit_serial_is_a_placeholder(serial):
+    """The DA_WM_A51_20_COMMON laundry boards report a flash-unset sentinel. In
+    reference #189 a washer and a dryer — two physical units — both reported
+    'FFFFFFFFFFFFFFF'. Serial is this app's identity, so sharing one would give
+    the two devices the same id and make each poll's serial check pass against
+    the wrong appliance."""
+    from lib.resources import is_placeholder_serial
+    assert is_placeholder_serial(serial) is True
+
+
+@pytest.mark.parametrize("serial", [
+    "0FBC1234ABCD", "AAAAAAA", "--------", "ZZZZZZZZ", "0A0A0A0A0A",
+])
+def test_a_real_serial_is_not_mistaken_for_one(serial):
+    """The rule is deliberately narrow: eight or more characters, all identical,
+    all a hex digit. 'AAAAAAA' is seven; '--------' is not hex; 'ZZZZZZZZ' is not
+    hex — none of them may be discarded."""
+    from lib.resources import is_placeholder_serial
+    assert is_placeholder_serial(serial) is False
+
+
+def test_a_placeholder_serial_falls_back_to_host_and_port():
+    from lib.resources import read_serial
+    resources = {"/information/vs/0": {"x.com.samsung.da.serialNum": "FFFFFFFFFFFFFFF"}}
+    assert read_serial(resources, "192.168.1.5", 49154) == "192.168.1.5:49154"
+
+
+# --- reference #181/#183: the kids lock is read-only ------------------------
+
+
+def test_the_vendor_kids_lock_reads_its_own_vocabulary():
+    """It reports Ready/Run, and was being read through an On/Off helper — so a
+    locked appliance reported unlocked, because 'Run' is not 'On'."""
+    spec = next(s for s in shared.CHILD_LOCK if s.href == "/kidslock/vs/0")
+    assert spec.read({"x.com.samsung.da.kidsLock": "Run"}, {}) is True
+    assert spec.read({"x.com.samsung.da.kidsLock": "Ready"}, {}) is False
+    assert spec.read({}, {}) is None
+
+
+def test_neither_kids_lock_surface_is_writable():
+    """#181's reporter confirmed a 4.05 even when writing the correct value, and
+    the SmartThings app offers no control either."""
+    for spec in shared.CHILD_LOCK:
+        assert not spec.writable, f"{spec.href} still offers a write"
+
+
+def test_the_vendor_kids_lock_yields_to_the_ocf_one():
+    """An appliance carrying both would otherwise bind one capability twice."""
+    spec = next(s for s in shared.CHILD_LOCK if s.href == "/kidslock/vs/0")
+    assert spec.exists({}, {"/kidslock/vs/0": {}}) is True
+    assert spec.exists({}, {"/kidslock/0": {}, "/kidslock/vs/0": {}}) is False
+
+
+def test_the_cooktop_child_lock_is_still_writable():
+    """The regression the capability split exists to prevent: this one is verified
+    on real hardware here and must not be made read-only along with the others."""
+    from lib.registry import induction_cooktop
+    spec = next(s for s in induction_cooktop.REGISTRY.specs
+                if s.capability == "localthings_child_lock")
+    assert spec.writable
+    assert spec.write(True, {}) == (["cooktop", "status", "vs", "0"], {"childLock": "on"})
+
+
+def test_the_two_child_lock_capabilities_look_the_same_to_a_user():
+    """Split by writability, not by meaning — so the titles must match."""
+    root = Path(__file__).parent.parent / ".homeycompose" / "capabilities"
+    writable = json.loads((root / "localthings_child_lock.json").read_text())
+    readonly = json.loads((root / "localthings_child_lock_state.json").read_text())
+    assert writable["title"] == readonly["title"]
+    assert writable["setable"] is True and readonly["setable"] is False
+
+
+# --- reference: AC odor controller, measured on all four units here ---------
+
+
+def test_the_odor_controller_reads_the_option_token():
+    spec = next(s for s in airconditioner.REGISTRY.specs
+                if s.capability == "localthings_odor_controller")
+    options = {"x.com.samsung.da.options": ["Sleep_16", "SmartCoolClean_On"]}
+    assert spec.read(options, {}) is True
+    assert spec.read({"x.com.samsung.da.options": ["SmartCoolClean_Off"]}, {}) is False
+    assert not spec.writable, "no write contract is confirmed for it"
+
+
+def test_the_odor_progress_reads_a_number():
+    spec = next(s for s in airconditioner.REGISTRY.specs
+                if s.capability == "localthings_odor_progress")
+    assert spec.read({"x.com.samsung.da.options": ["ProgressSmartClean_40"]}, {}) == 40
+
+
+@pytest.mark.parametrize("capability,token", [
+    ("localthings_odor_controller", "SmartCoolClean"),
+    ("localthings_odor_progress", "ProgressSmartClean"),
+])
+def test_each_odor_capability_is_gated_on_its_own_token(capability, token):
+    """A board that advertises neither must bind neither — token presence is the
+    only signal that the feature exists."""
+    spec = next(s for s in airconditioner.REGISTRY.specs if s.capability == capability)
+    assert spec.exists({"x.com.samsung.da.options": [f"{token}_Off"]}, {}) is True
+    assert spec.exists({"x.com.samsung.da.options": ["Sleep_16"]}, {}) is False
+    assert spec.exists({}, {}) is False
+
+
+def test_the_option_token_reader_ignores_a_prefix_that_only_looks_similar():
+    """'ProgressSmartClean' starts with neither 'SmartCoolClean' nor the reverse,
+    but 'DiagnosisAI' and 'ProgressDiagnosisAI' do overlap that way on these
+    units — a substring match would cross them."""
+    options = {"x.com.samsung.da.options": ["ProgressDiagnosisAI_7", "DiagnosisAI_Off"]}
+    assert airconditioner._option_token(options, "DiagnosisAI") == "Off"
+    assert airconditioner._option_token(options, "ProgressDiagnosisAI") == "7"
+
+
+# --- reference #210: the air quality monitor -------------------------------
+
+
+def test_the_air_monitor_routes_from_both_signals():
+    by_board = registry.resolve({"/information/vs/0": {
+        "x.com.samsung.da.modelNum": "ASM-KR-TP1-22-COMMON|1|2"}})
+    by_type = registry.resolve({}, ("oic.wk.d", "x.com.st.d.airqualitysensor"))
+    assert by_board is not None and by_board.name == "air_monitor"
+    assert by_type is not None and by_type.name == "air_monitor"
+
+
+def test_the_air_monitor_reads_its_sensors():
+    reg = registry._REGISTRY_BY_KEY["air_monitor"]
+    rep = {"x.com.samsung.da.items": [
+        {"x.com.samsung.da.type": "CO2", "x.com.samsung.da.value": [640]},
+        {"x.com.samsung.da.type": "FineDust", "x.com.samsung.da.value": [12]},
+    ]}
+    readings = {s.capability: s.read(rep, {}) for s in reg.specs
+                if s.href == "/sensors/vs/0"}
+    assert readings["measure_co2"] == 640
+    assert readings["measure_pm25"] == 12
+
+
+def test_the_air_monitor_has_no_power_control():
+    """A battery puck with no /power/* resource at all — offering onoff would be a
+    switch that writes nowhere."""
+    reg = registry._REGISTRY_BY_KEY["air_monitor"]
+    assert not [s for s in reg.specs if s.capability == "onoff"]
+    assert [s for s in reg.specs if s.capability == "measure_battery"]

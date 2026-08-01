@@ -34,5 +34,9 @@
   "0.5.3": {
     "en": "Appliances are now identified from the device type they declare themselves, not only from their model number. Every appliance already worked out correctly here, so nothing changes if yours did too — but an appliance whose model number the app did not recognise now has a second chance to be identified instead of being reported as unsupported. Also adds the newer clean-station board.",
     "ko": "가전 종류를 모델명뿐 아니라 기기가 스스로 밝히는 종류로도 판정합니다. 기존에 잘 인식되던 기기는 그대로입니다 — 다만 모델명을 알아보지 못해 '지원되지 않는 기기'로 끝났던 가전에 판정 기회가 한 번 더 생깁니다. 최신 청정스테이션 보드도 추가했습니다."
+  },
+  "0.5.4": {
+    "en": "Air conditioners now show Smart Cool Clean, the odor-controller self-clean, with its progress. Samsung's Air Monitor is recognised. On appliances whose child lock is reported through the shared vendor resource, a locked appliance was showing as unlocked and the on/off switch could never work — it now reads correctly and is shown as a reading rather than a control. Cooktop and water-purifier child-lock switches are unaffected. Two appliances that report a blank serial number no longer collide with each other.",
+    "ko": "에어컨에 스마트 쿨 클린(탈취 자가세척) 상태와 진행률이 표시됩니다. 삼성 에어모니터를 인식합니다. 차일드락을 공용 리소스로 보고하는 가전에서 잠긴 상태가 해제로 표시되고 켜기/끄기가 동작할 수 없었습니다 — 이제 올바르게 읽히고, 조작 스위치가 아니라 표시로 바뀝니다. 인덕션·정수기의 차일드락 스위치는 그대로입니다. 시리얼이 비어 있는 가전 두 대가 서로 충돌하던 문제도 고쳤습니다."
   }
 }

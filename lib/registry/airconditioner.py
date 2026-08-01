@@ -11,7 +11,7 @@ explicitly avoids.
 """
 
 from . import shared
-from .base import Registry, Spec, as_float, first_item
+from .base import Registry, Spec, as_float, as_int, first_item
 
 HREF_POWER = "/power/vs/0"
 HREF_MODE = "/mode/vs/0"
@@ -104,6 +104,41 @@ def _fan_name_to_code(rep: dict) -> dict[str, str]:
 #
 # Read-only. The reference ignores both hrefs outright, so there is no confirmed
 # write, and these change how the appliance manages its own compressor.
+
+
+def _option_token(rep, name: str):
+    """The value half of a `<name>_<value>` entry in `/mode/vs/0`'s options list.
+
+    The list is a flat array of `Token_Value` strings — 25 to 26 of them on the
+    four units here — so a token is read by prefix rather than by a field of its
+    own. Returns None when the appliance does not advertise it at all, which is
+    what gates the capabilities below: absence of the token is the only signal
+    that a board lacks the feature.
+    """
+    options = rep.get("x.com.samsung.da.options")
+    if not isinstance(options, list):
+        return None
+    prefix = f"{name}_"
+    for option in options:
+        if isinstance(option, str) and option.startswith(prefix):
+            return option[len(prefix):]
+    return None
+
+
+def _read_odor_controller(rep, _resources):
+    """Smart Cool Clean, the odor-controller self-clean cycle.
+
+    Read-only: no write contract is confirmed for it, and the reference reached
+    the same conclusion. Measured on all four air conditioners here, every one
+    reporting `SmartCoolClean_Off`.
+    """
+    token = _option_token(rep, "SmartCoolClean")
+    return None if token is None else token == "On"
+
+
+def _read_odor_progress(rep, _resources):
+    """0-100 progress of that cycle, from `ProgressSmartClean_<n>`."""
+    return as_int(_option_token(rep, "ProgressSmartClean"))
 
 
 def _read_absence_minutes(rep, _resources):
@@ -419,6 +454,14 @@ REGISTRY = Registry(
              options=_setpoint_options),
         Spec("measure_temperature", HREF_TEMPS, _read_current_temp),
         Spec("localthings_ac_mode", HREF_MODE, _read_mode, _write_mode),
+        # Smart Cool Clean, the odor-controller self-clean. Both tokens are
+        # present on all four units here (SmartCoolClean_Off,
+        # ProgressSmartClean_0), and each capability is gated on its own token
+        # so a board without the feature binds neither.
+        Spec("localthings_odor_controller", HREF_MODE, _read_odor_controller,
+             exists=lambda rep, _r: _option_token(rep, "SmartCoolClean") is not None),
+        Spec("localthings_odor_progress", HREF_MODE, _read_odor_progress,
+             exists=lambda rep, _r: _option_token(rep, "ProgressSmartClean") is not None),
         Spec("localthings_fan_mode", HREF_WIND_STRENGTH, _read_fan, _write_fan),
         Spec("measure_humidity", HREF_HUMIDITY, _read_humidity),
         # Present and populated on all three verified units, but unbound until

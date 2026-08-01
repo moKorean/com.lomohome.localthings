@@ -40,11 +40,29 @@ def parse_device0(device0) -> dict[str, dict]:
 def is_placeholder_serial(serial: str) -> bool:
     """True for a non-empty serialNum that isn't actually a real identity.
 
-    The ARTIK051_DONGLE_REF firmware family reports the literal 'Nothing(SVC)'
-    for every unit — non-empty, so a plain falsy check misses it. The serial
-    feeds the Homey device id, so two such units would silently collide.
+    Two firmware families do this, and both are non-empty, so a plain falsy
+    check misses them:
+
+    - ARTIK051_DONGLE_REF reports the literal 'Nothing(SVC)' on every unit.
+    - The DA_WM_A51_20_COMMON laundry boards report a flash-unset sentinel —
+      every character the same repeated hex digit. Reference #189 had a washer
+      and a dryer, two different physical units, both reporting
+      'FFFFFFFFFFFFFFF'.
+
+    The serial is this app's identity for an appliance: it seeds the device id,
+    and every poll re-checks it so two units that swap addresses cannot drive
+    each other. A placeholder shared across units would defeat both, so these
+    fall back to host:port instead.
+
+    The repeated-digit rule is deliberately narrow — at least 8 characters, all
+    identical, and a hex digit. A real serial is not going to be 'AAAAAAAA',
+    while a short or non-hex run ('---', '0000') could plausibly be part of one.
     """
-    return (serial or "").strip().lower().startswith("nothing")
+    text = (serial or "").strip()
+    if text.lower().startswith("nothing"):
+        return True
+    upper = text.upper()
+    return len(upper) >= 8 and len(set(upper)) == 1 and upper[0] in "0123456789ABCDEF"
 
 
 def read_serial(resources: dict, host: str, port: int) -> str:

@@ -15,7 +15,7 @@ there is no cloud round-trip.
 > in certification for a while before it is served. Four air conditioners, an
 > induction cooktop, a range hood and three refrigerators are discovered, paired
 > and controlled on real hardware, with state arriving by CoAP OBSERVE (polling
-> continues as a five-minute safety sweep). All 70 custom capabilities are usable
+> continues as a five-minute safety sweep). All 73 custom capabilities are usable
 > in Flows. The remaining twelve
 > appliance types are routed and mapped but not verified against hardware. Design notes
 > and measurements are in [`docs/PORTING.md`](docs/PORTING.md); unmapped resources and
@@ -38,7 +38,7 @@ there is no cloud round-trip.
 Samsung appliances running Tizen RT 3.x / DAWIT 3.0+ firmware — roughly 2022 and later.
 
 **The app claims support for air conditioners, induction cooktops, range hoods and
-refrigerators** — the four types verified on real hardware. The code routes all sixteen
+refrigerators** — the four types verified on real hardware. The code routes all seventeen
 types the reference covers (see [Support status](#support-status)), but the other twelve
 are deliberately left out of the app description and tags because they could not be
 tested. They may well work; please try one and report what you find.
@@ -157,11 +157,11 @@ homey api raw --path /api/app/com.lomohome.localthings/diagnostics
 
 ## Flow automation
 
-Homey creates Flow cards for **its own built-in capabilities only**. The 70 this app
+Homey creates Flow cards for **its own built-in capabilities only**. The 73 this app
 defines had none, so you could not switch a hood's light from a Flow or raise a
 notification from filter wear.
 
-There are now **123 cards** — 28 actions, 71 conditions, 24 triggers.
+There are now **126 cards** — 28 actions, 74 conditions, 24 triggers.
 
 | Kind | Scope |
 |---|---|
@@ -287,7 +287,7 @@ computed for it, so a unit gets exactly what it reported.
 
 ### Support status
 
-All **sixteen** types the reference supports are routed, but they are verified to
+All **seventeen** types the reference supports are routed, but they are verified to
 different degrees. An unverified entry was ported from the reference's field definitions
 and never seen on the appliance itself — and as the range hood demonstrated,
 **guessing field names is usually wrong**: it pairs, shows capabilities, and reads
@@ -295,7 +295,7 @@ nothing.
 
 | Appliance | Status |
 |---|---|
-| **Air conditioner** (`RAC/PRAC/KRAC/CAC/WAC/FAC/CAWW/ARA`) | **Verified on hardware.** Power, target and current temperature, mode, fan, comfort modes, airflow, air purify, auto clean, panel and edge lighting, UV, absence power saving, humidity, power, dust, filter, sound (36) |
+| **Air conditioner** (`RAC/PRAC/KRAC/CAC/WAC/FAC/CAWW/ARA`) | **Verified on hardware.** Power, target and current temperature, mode, fan, comfort modes, airflow, air purify, auto clean, panel and edge lighting, UV, absence power saving, humidity, power, dust, filter, sound, Smart Cool Clean state and progress (38) |
 | **Induction cooktop** (`COOKTOP`) | **Verified on hardware.** Per-burner level, state and residual heat, child lock (writable), smart control, safety shutoff, power, Bluetooth probe (19) |
 | **Range hood** (`AHD`) | **Verified on hardware** (AHD-WW-TP1-22). Power, 5-step fan (writable), light on/off and 2-step brightness (writable), auto-ventilation state, filter usage and replacement alarm, air quality and PM10/2.5/1.0, cumulative energy (14) |
 | **Refrigerator** (`REF`) | **Verified on hardware** (three TP2X_REF_21K Kitchen Fit units — convertible cooling, convertible freezing, fridge-only). Per-compartment current and target temperature (writable), convertible-compartment mode, rapid cool (writable), door, two cumulative energy counters, instantaneous power, self check, firmware (9) |
@@ -307,8 +307,9 @@ nothing.
 | Oven, range, microwave (`OVEN/RANGE/MICROWAVE`) | Unverified. Operation state, mode, cavity and target temperature, door — **no heat control** |
 | Gas cooktop (`CT`) | Unverified. Power state, whether a burner is in use — **read-only** |
 | Water purifier (`WATERPURIFIER`) | Unverified. Operation state, child lock, water filter, cumulative water |
-| Clean station (`VSKR`) | Unverified. Operation state, dust bag usage and warning |
+| Clean station (`VSKR`, `VSWW`) | Unverified. Operation state, dust bag usage and warning |
 | AirDresser (`DF`) | Unverified. Operation state, progress, sanitize |
+| Air monitor (`ASM`) | Unverified. Air quality, PM10/2.5/1.0, CO2, humidity, battery — sensors only, the board has no power resource |
 
 **What "unverified" means**: the field names, resource paths and writability were taken
 from the reference's definitions, and routing and manifest consistency are covered by
@@ -468,7 +469,7 @@ python3 -m venv .venv
 ## Languages
 
 Korean and English are supported, and **any language not declared falls back to
-English** — app name, description, 70 capabilities, 123 Flow cards, settings labels,
+English** — app name, description, 73 capabilities, 126 Flow cards, settings labels,
 three webviews and device names alike. `tests/test_i18n.py` enforces it, because adding
 a Korean string and forgetting the English one is invisible to whoever wrote it.
 

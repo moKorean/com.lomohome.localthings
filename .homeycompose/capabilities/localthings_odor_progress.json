@@ -1,0 +1,17 @@
+{
+  "type": "number",
+  "title": {
+    "en": "Smart Cool Clean progress",
+    "ko": "스마트 쿨 클린 진행률"
+  },
+  "getable": true,
+  "setable": false,
+  "units": {
+    "en": "%"
+  },
+  "min": 0,
+  "max": 100,
+  "decimals": 0,
+  "uiComponent": "sensor",
+  "icon": "/assets/capabilities/mdi-progress-clock.svg"
+}

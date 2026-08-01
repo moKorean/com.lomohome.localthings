@@ -306,6 +306,25 @@ action = "Start"
 레퍼런스 테이블에 없던 `x.com.st.d.hood`와 이 `oic.d.cooktop` 주의사항은 업스트림에
 기여했습니다 — [mbillow/localthings#230](https://github.com/mbillow/localthings/pull/230).
 
+### 에어모니터 미매핑 리소스 (`#210`)
+
+`ASM-KR-TP1-22` 보드에서 레퍼런스가 매핑한 것 중 둘을 보류했습니다.
+
+| 리소스 | 보류 이유 |
+|---|---|
+| `/dnd/vs/0` | 시작/종료 시각 쌍. Homey에 대응하는 시각 capability 타입이 없어 표현 방법부터 정해야 합니다 |
+| `/airqualitystandard/vs/0` | 기준 이름 문자열(`x.com.samsung.da.standard`). 값 도메인이 확인되지 않았습니다 |
+
+배터리 충전 여부(`x.com.samsung.da.charging`)도 뺐습니다 — Homey에 대응하는 시스템
+capability가 없고, 커스텀으로 만들 만큼 확인된 값이 아닙니다. 실기기가 없는 종류입니다.
+
+### 정수기 잠금 리소스 불일치
+
+우리 정수기 레지스트리는 `/lock/vs/0`의 `status`를 차일드락으로 쓰기까지 합니다. 그런데
+레퍼런스 현재 버전의 정수기 잠금은 `/status/lock/vs/0`의 `x.com.samsung.da.hotwaterLock`
+이고 이름도 **온수 잠금**입니다. 둘 중 어느 쪽이 맞는지 실기기 없이는 알 수 없어 기존
+매핑을 그대로 뒀습니다. 정수기 덤프가 생기면 확정합니다.
+
 ### 정수기 진단 리소스 (`#196`)
 
 레퍼런스가 AILITE 보드(RWP70F15ANW)에서 새로 매핑한 것 중 셋을 보류했습니다.

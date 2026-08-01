@@ -1,7 +1,7 @@
 {
   "_comment": "This file is generated. Please edit .homeycompose/app.json instead.",
   "id": "com.lomohome.localthings",
-  "version": "0.5.3",
+  "version": "0.5.4",
   "compatibility": ">=13.0.0",
   "sdk": 3,
   "runtime": "python",
@@ -1234,6 +1234,28 @@
       },
       {
         "title": {
+          "en": "Child lock !{{is|is not}} on",
+          "ko": "차일드락 !{{켜짐|꺼짐}}"
+        },
+        "titleFormatted": {
+          "en": "Child lock !{{is|is not}} on",
+          "ko": "차일드락 !{{켜짐|꺼짐}}"
+        },
+        "hint": {
+          "en": "Checks the value as the appliance last reported it.",
+          "ko": "가전이 마지막으로 보고한 값을 확인합니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_child_lock_state"
+          }
+        ],
+        "id": "child_lock_state_is"
+      },
+      {
+        "title": {
           "en": "Convenient mode !{{is|is not}} [[value]]",
           "ko": "쾌적 모드 [[value]] !{{임|아님}}"
         },
@@ -1880,6 +1902,56 @@
           }
         ],
         "id": "mute_once_is"
+      },
+      {
+        "title": {
+          "en": "Smart Cool Clean !{{is|is not}} on",
+          "ko": "스마트 쿨 클린 !{{켜짐|꺼짐}}"
+        },
+        "titleFormatted": {
+          "en": "Smart Cool Clean !{{is|is not}} on",
+          "ko": "스마트 쿨 클린 !{{켜짐|꺼짐}}"
+        },
+        "hint": {
+          "en": "Checks the value as the appliance last reported it.",
+          "ko": "가전이 마지막으로 보고한 값을 확인합니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_odor_controller"
+          }
+        ],
+        "id": "odor_controller_is"
+      },
+      {
+        "title": {
+          "en": "Smart Cool Clean progress !{{is|is not}} at least [[value]] %",
+          "ko": "스마트 쿨 클린 진행률 [[value]] % !{{이상|미만}}"
+        },
+        "titleFormatted": {
+          "en": "Smart Cool Clean progress !{{is|is not}} at least [[value]] %",
+          "ko": "스마트 쿨 클린 진행률 [[value]] % !{{이상|미만}}"
+        },
+        "hint": {
+          "en": "Checks the value as the appliance last reported it.",
+          "ko": "가전이 마지막으로 보고한 값을 확인합니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_odor_progress"
+          },
+          {
+            "name": "value",
+            "type": "number",
+            "min": 0,
+            "max": 100
+          }
+        ],
+        "id": "odor_progress_is"
       },
       {
         "title": {
@@ -4292,6 +4364,17 @@
       "uiComponent": "toggle",
       "icon": "/assets/capabilities/mdi-lock.svg"
     },
+    "localthings_child_lock_state": {
+      "type": "boolean",
+      "title": {
+        "en": "Child lock",
+        "ko": "차일드락"
+      },
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "icon": "/assets/capabilities/mdi-lock.svg"
+    },
     "localthings_convenient_mode": {
       "type": "enum",
       "title": {
@@ -4662,6 +4745,34 @@
       "setable": true,
       "uiComponent": "toggle",
       "icon": "/assets/capabilities/mdi-volume-mute.svg"
+    },
+    "localthings_odor_controller": {
+      "type": "boolean",
+      "title": {
+        "en": "Smart Cool Clean",
+        "ko": "스마트 쿨 클린"
+      },
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "icon": "/assets/capabilities/mdi-air-filter.svg"
+    },
+    "localthings_odor_progress": {
+      "type": "number",
+      "title": {
+        "en": "Smart Cool Clean progress",
+        "ko": "스마트 쿨 클린 진행률"
+      },
+      "getable": true,
+      "setable": false,
+      "units": {
+        "en": "%"
+      },
+      "min": 0,
+      "max": 100,
+      "decimals": 0,
+      "uiComponent": "sensor",
+      "icon": "/assets/capabilities/mdi-progress-clock.svg"
     },
     "localthings_operation_state": {
       "type": "string",

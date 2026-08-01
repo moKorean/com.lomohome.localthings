@@ -750,6 +750,40 @@ RANGE_HOOD = Registry(
     ),
 )
 
+# --- air quality monitor ---------------------------------------------------
+
+# Reference #210 (ASM-KR-TP1-22 board): a battery-powered air-quality puck with
+# no controllable state at all, so this is sensors only. No POWER — the board has
+# no /power/* resource, only /energy/battery/vs/0.
+#
+# Built entirely from readings this app already maps for the air purifier, so it
+# adds no capability definitions of its own. Two of the reference's resources are
+# left out rather than guessed at: /dnd/vs/0 is a start/end time pair with no
+# matching Homey capability type, and /airqualitystandard/vs/0 is a free-text
+# standard name. Neither is verifiable here — see docs/BACKLOG.md.
+
+AIR_MONITOR = Registry(
+    name="air_monitor",
+    device_class="sensor",
+    titles={"en": "Samsung Air Monitor", "ko": "삼성 에어모니터"},
+    specs=(
+        *shared.UNIVERSAL,
+        Spec("localthings_air_quality", "/sensors/vs/0",
+             lambda rep, _r: _sensor(rep, "CleanLevel")),
+        Spec("measure_pm25", "/sensors/vs/0", lambda rep, _r: _sensor(rep, "FineDust")),
+        Spec("localthings_dust_pm10", "/sensors/vs/0",
+             lambda rep, _r: _sensor(rep, "Dust")),
+        Spec("localthings_dust_pm1", "/sensors/vs/0",
+             lambda rep, _r: _sensor(rep, "SuperFineDust")),
+        Spec("measure_co2", "/sensors/vs/0", lambda rep, _r: _sensor(rep, "CO2")),
+        Spec("measure_humidity", "/humidity/vs/0",
+             lambda rep, _r: as_float(rep.get("x.com.samsung.da.humidity"))),
+        Spec("measure_battery", "/energy/battery/vs/0",
+             lambda rep, _r: as_float(rep.get("x.com.samsung.da.battery"))),
+    ),
+)
+
+
 # --- water purifier -------------------------------------------------------
 
 WATER_PURIFIER = Registry(
@@ -843,6 +877,7 @@ BOARD_TOKENS = {
     # regional board. Two tokens, one family.
     "VSWW": VACUUM_STATION,
     "DF": AIR_DRESSER,
+    "ASM": AIR_MONITOR,             # reference #210 — Air Monitor Plus
 }
 
 # Consumer-model prefixes, matched against the *start* of a '_'-delimited segment of
