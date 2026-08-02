@@ -216,11 +216,54 @@ class ApplianceDriver(driver.Driver):
         # may be five minutes old.
         await device.refresh_now()
 
-        for name, capability, value in wanted:
+        for _name, capability, value in wanted:
+            await self._apply_step(device, capability, value)
+
+    # A write the appliance accepts and then undoes needs re-sending, and the only
+    # way to know is to look. Measured on the reporting unit: turn it on and set the
+    # mode about three seconds later, and the write is acknowledged and then
+    # overwritten by the mode the appliance restores for itself as it starts. That is
+    # the setting the reported Flow lost — it is the one that runs first after
+    # "turn on".
+    _AC_SETTLE_S = 2.5
+    _AC_ATTEMPTS = 3
+
+    async def _apply_step(self, device, capability: str, value) -> None:
+        """Write one setting and confirm the appliance kept it, re-sending if not.
+
+        Preferred over waiting a fixed time after powering on: how long a unit takes
+        to finish restoring itself is not something this app can know, and a delay
+        long enough to be safe would be charged to every Flow that does not need it.
+        """
+        language = await compat.ui_language(self.homey)
+        for attempt in range(self._AC_ATTEMPTS):
             await device.trigger_capability_listener(capability, value)
-            # Re-read before the next step, so it sees what this one actually did
-            # rather than what it asked for.
+            await asyncio.sleep(self._AC_SETTLE_S)
+            # Re-read before deciding, and before the next step: both need to see
+            # what the appliance actually holds, not what was asked for.
             await device.refresh_now()
+            if self._value_matches(device.get_capability_value(capability), value):
+                return
+            self.log(
+                f"{capability}={value!r} did not stick "
+                f"(attempt {attempt + 1}/{self._AC_ATTEMPTS}); re-sending"
+            )
+        raise RuntimeError(i18n.translate(
+            "error.setting_not_applied", language,
+            capability=capability, value=value))
+
+    @staticmethod
+    def _value_matches(current, wanted) -> bool:
+        if current is None:
+            return False
+        if isinstance(wanted, bool) or isinstance(current, bool):
+            return bool(current) == bool(wanted)
+        if isinstance(wanted, (int, float)):
+            try:
+                return abs(float(current) - float(wanted)) < 0.01
+            except (TypeError, ValueError):
+                return False
+        return str(current) == str(wanted)
 
     # --- pairing ----------------------------------------------------------
 

@@ -44,7 +44,7 @@
     "ko": "복구 기능을 고쳤습니다. 검색이나 직접 입력으로 새 주소를 지정하면 즉시 반영됩니다 — 저장은 되지만 앱을 재시작할 때까지 이전 주소로 계속 연결하면서 복구는 성공이라고 표시했습니다. 연결 확인도 정상 동작 중인 가전을 방해하지 않습니다. 새 연결을 하나 더 여는 대신 기기가 이미 쓰는 연결로 확인합니다 — 기존 방식은 가전이 이를 교체로 처리해 실시간 업데이트가 조용히 멈췄습니다."
   },
   "0.5.6": {
-    "en": "New Flow card: Apply air conditioner settings — power, mode, temperature, air purify and comfort mode in one card, re-reading the appliance before it starts and after every step so each decides from what the appliance holds now. Also fixes the current temperature and the setpoint's range disappearing from the tile straight after a temperature change, until the next refresh.",
-    "ko": "새 플로우 카드: 에어컨 설정 한 번에 적용 — 전원·운전 모드·희망 온도·공기청정·쾌적 모드를 카드 한 장에서 받고, 시작 전과 각 단계 후에 기기를 다시 읽어 매 단계가 현재 상태를 보고 판단합니다. 온도를 바꾼 직후 현재 온도와 설정 범위가 다음 갱신까지 사라지던 문제도 함께 고쳤습니다."
+    "en": "New Flow card: Apply air conditioner settings — power, mode, temperature, air purify and comfort mode in one card. It confirms each setting on the appliance and re-sends any the appliance takes back, which is what was going wrong: an air conditioner switched on by a Flow restores its own mode as it starts, so a mode set a few seconds later was acknowledged and then silently undone. Also fixes the current temperature and the setpoint's range vanishing from the tile right after a temperature change.",
+    "ko": "새 플로우 카드: 에어컨 설정 한 번에 적용 — 전원·운전 모드·희망 온도·공기청정·쾌적 모드를 카드 한 장에서 받습니다. 각 설정이 기기에 실제로 남았는지 확인하고, 기기가 되돌린 설정은 다시 보냅니다. 이것이 원인이었습니다: 플로우로 켠 에어컨은 시작하면서 자기 운전 모드를 복원하기 때문에, 몇 초 뒤 지정한 모드가 수락된 뒤 조용히 사라졌습니다. 온도를 바꾼 직후 현재 온도와 설정 범위가 사라지던 문제도 함께 고쳤습니다."
   }
 }

@@ -495,39 +495,45 @@ def test_the_steps_are_ordered_so_the_appliance_accepts_them(driver_instance):
     assert order.index("mode") < order.index("temperature")
 
 
-def test_it_refreshes_between_steps(driver_instance):
-    """The whole point: a step must see what the previous one actually did."""
+def test_it_refreshes_before_starting_and_after_every_step(driver_instance):
+    """A step must see what the previous one actually did, and the confirmation
+    below is only meaningful if it reads the appliance rather than the cache."""
     import ast
-    source = DRIVER.read_text()
-    function = next(
-        node for node in ast.walk(ast.parse(source))
-        if isinstance(node, ast.AsyncFunctionDef) and node.name == "_on_set_ac_settings"
-    )
-    body = ast.unparse(function)
-    assert body.count("refresh_now") >= 2, (
-        "one refresh only — a later step still decides from a stale cache"
-    )
+    tree = ast.parse(DRIVER.read_text())
+    bodies = {
+        name: ast.unparse(next(
+            node for node in ast.walk(tree)
+            if isinstance(node, ast.AsyncFunctionDef) and node.name == name))
+        for name in ("_on_set_ac_settings", "_apply_step")
+    }
+    assert "refresh_now" in bodies["_on_set_ac_settings"], "no refresh before the first step"
+    assert "refresh_now" in bodies["_apply_step"], "no refresh before confirming"
 
 
 def test_it_applies_every_requested_setting_in_order(driver_instance):
     """Skipped fields stay skipped, and the rest arrive in the declared order."""
     import asyncio
 
-    class _Cool:
+    class _Obedient:
+        """An appliance that keeps what it is given, which is the normal case."""
+
         def __init__(self):
             self.written = []
+            self.state = {}
 
         def get_capability_value(self, capability):
-            return "Cool" if capability == "localthings_ac_mode" else None
+            return self.state.get(capability)
 
         async def refresh_now(self):
             pass
 
         async def trigger_capability_listener(self, capability, value):
             self.written.append((capability, value))
+            self.state[capability] = value
 
-    device = _Cool()
+    device = _Obedient()
     driver_instance.homey = _StubHomey()
+    driver_instance._AC_SETTLE_S = 0
     asyncio.run(driver_instance._on_set_ac_settings({
         "device": device, "power": "on", "mode": "keep",
         "temperature": 28.0, "air_purify": "keep", "convenient": "Nano",
@@ -544,3 +550,62 @@ class _StubHomey:
         @staticmethod
         def get(key):
             return None
+
+
+def test_a_setting_the_appliance_reverts_is_sent_again(driver_instance):
+    """Measured on real hardware: turn the unit on, set the mode about three
+    seconds later, and the appliance acknowledges the write and then restores the
+    mode it starts with. That is the setting the reported Flow lost — it is the one
+    that runs first after "turn on". Acknowledgement is not evidence, so the card
+    reads the appliance back and re-sends."""
+    import asyncio
+
+    class _RevertsOnce:
+        def __init__(self):
+            self.writes = 0
+            self.state = {}
+
+        def get_capability_value(self, capability):
+            return self.state.get(capability)
+
+        async def refresh_now(self):
+            pass
+
+        async def trigger_capability_listener(self, capability, value):
+            self.writes += 1
+            # Accepts, then undoes it — exactly once, as a booting unit does.
+            self.state[capability] = "Cool" if self.writes == 1 else value
+
+    device = _RevertsOnce()
+    driver_instance.homey = _StubHomey()
+    driver_instance._AC_SETTLE_S = 0
+    asyncio.run(driver_instance._on_set_ac_settings({
+        "device": device, "power": "keep", "mode": "AIComfort",
+        "temperature": 0, "air_purify": "keep", "convenient": "keep",
+    }))
+    assert device.writes == 2, "a reverted write was not re-sent"
+    assert device.state["localthings_ac_mode"] == "AIComfort"
+
+
+def test_a_setting_that_never_sticks_fails_the_card(driver_instance):
+    """Silently giving up would put the Flow back where it started: reporting a
+    success it did not get."""
+    import asyncio
+
+    class _Stubborn:
+        def get_capability_value(self, capability):
+            return "Cool"
+
+        async def refresh_now(self):
+            pass
+
+        async def trigger_capability_listener(self, capability, value):
+            pass
+
+    driver_instance.homey = _StubHomey()
+    driver_instance._AC_SETTLE_S = 0
+    with pytest.raises(RuntimeError):
+        asyncio.run(driver_instance._on_set_ac_settings({
+            "device": _Stubborn(), "power": "keep", "mode": "AIComfort",
+            "temperature": 0, "air_purify": "keep", "convenient": "keep",
+        }))

@@ -12,6 +12,7 @@
     "repair_no_device": "Could not tell which device is being repaired.",
     "already_paired": "This appliance is already added to Homey ({model} at {host}). Open it from your device list instead.",
     "handshake_refused": "The appliance is refusing new connections. This usually clears itself within a few minutes; the app keeps retrying.",
-    "unreachable": "Could not reach the appliance at {host}. The app keeps retrying, and searches the network for it by serial number."
+    "unreachable": "Could not reach the appliance at {host}. The app keeps retrying, and searches the network for it by serial number.",
+    "setting_not_applied": "The air conditioner accepted {{capability}} = {{value}} and then changed it back. This usually means it was still starting up — try putting a short delay after turning it on."
   }
 }

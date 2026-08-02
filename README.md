@@ -180,11 +180,16 @@ app's cache of `/device/0`, which polling refreshes — up to five minutes apart
 the device is on push. A card that runs straight after another can therefore act on
 state from before it.
 
+Worse, an acknowledgement is not evidence. Measured on real hardware: switch a
+unit on and set its mode about three seconds later, and the write is accepted and
+then **overwritten by the mode the appliance restores as it starts**. That is the
+setting the reported Flow lost — the one that runs first after "turn on".
+
 **Apply air conditioner settings** takes power, mode, temperature, air purify and
-comfort mode in one card. It re-reads the appliance before it starts and again
-after every step, so each step decides from what the appliance holds now, and
-applies them in an order the appliance accepts. Leave any field on "leave
-unchanged" (or temperature at 0) to skip it.
+comfort mode in one card. It re-reads the appliance after every step, confirms the
+value actually stayed, and re-sends it if the appliance took it back — verified on
+hardware to recover exactly the case above. Leave any field on "leave unchanged"
+(or temperature at 0) to skip it.
 
 ### Homey fires the triggers itself
 
