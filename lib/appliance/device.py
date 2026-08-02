@@ -38,7 +38,6 @@ from lib.const import (
 from lib.resources import read_serial
 from lib.session import Session
 
-
 ITEMS_FIELD = "x.com.samsung.da.items"
 ITEM_ID = "x.com.samsung.da.id"
 
