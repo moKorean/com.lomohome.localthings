@@ -161,7 +161,7 @@ Homey creates Flow cards for **its own built-in capabilities only**. The 73 this
 defines had none, so you could not switch a hood's light from a Flow or raise a
 notification from filter wear.
 
-There are now **126 cards** — 28 actions, 74 conditions, 24 triggers.
+There are now **127 cards** — 29 actions, 74 conditions, 24 triggers.
 
 | Kind | Scope |
 |---|---|
@@ -172,6 +172,25 @@ There are now **126 cards** — 28 actions, 74 conditions, 24 triggers.
 That total never lands on one user at once. Every card's device argument carries a
 `capabilities=` filter, so **a card is only offered for appliances that have that
 capability** — a hood owner sees 21.
+
+### One card for a whole air-conditioner scene
+
+Chaining the single-setting cards races the appliance rather than the other cards.
+Each decides what to send from this app's cache of `/device/0`, which polling
+refreshes — up to five minutes apart once the device is on push — so a card that
+runs straight after another can act on state from before it.
+
+Measured on a reporting unit: in **AI Comfort the appliance reports no setpoint at
+all**, where in Cool it reports the current value, the target and the increment. So
+"set mode to AI Comfort" followed by "set temperature to 28" sends a setpoint the
+appliance no longer accepts, and the reply carries no rejection flag — the Flow
+reports a success it did not get.
+
+**Apply air conditioner settings** takes power, mode, temperature, air purify and
+comfort mode in one card. It re-reads the appliance before it starts and again
+after every step, applies them in an order the appliance accepts, and where a
+combination cannot work it says so instead of pretending. Leave any field on
+"leave unchanged" (or temperature at 0) to skip it.
 
 ### Homey fires the triggers itself
 
@@ -469,7 +488,7 @@ python3 -m venv .venv
 ## Languages
 
 Korean and English are supported, and **any language not declared falls back to
-English** — app name, description, 73 capabilities, 126 Flow cards, settings labels,
+English** — app name, description, 73 capabilities, 127 Flow cards, settings labels,
 three webviews and device names alike. `tests/test_i18n.py` enforces it, because adding
 a Korean string and forgetting the English one is invisible to whoever wrote it.
 

@@ -64,6 +64,7 @@ class ApplianceDriver(driver.Driver):
         yield ("condition", "is_pushing", self._on_is_pushing)
         yield ("condition", "light_is_on", self._on_light_is_on)
         yield ("action", "set_light", self._on_set_light)
+        yield ("action", "set_ac_settings", self._on_set_ac_settings)
 
         for capability in self._custom_capabilities():
             stem = capability[len("localthings_"):]
@@ -157,6 +158,81 @@ class ApplianceDriver(driver.Driver):
             raise ValueError(_REPAIR_NO_DEVICE)
         wanted = str(args.get("state") or "").strip().lower() == "on"
         await device.trigger_capability_listener(CAPABILITY_LIGHT, wanted)
+
+    # The order settings are applied in. Power first, because the rest of the
+    # appliance's surface only means anything once it is on. Mode next, because it
+    # decides whether the others are even accepted. Temperature after mode for the
+    # same reason. Air purify and the comfort mode last: both are independent of
+    # the rest and neither disturbs it.
+    _AC_STEPS = (
+        ("power", "onoff", lambda v: v == "on"),
+        ("mode", "localthings_ac_mode", str),
+        ("temperature", "target_temperature", float),
+        ("air_purify", "localthings_air_purify", lambda v: v == "on"),
+        ("convenient", "localthings_convenient_mode", str),
+    )
+
+    async def _on_set_ac_settings(self, card_arguments, **_) -> None:
+        """Apply several air-conditioner settings in one card.
+
+        Chaining the separate cards is what this replaces, and the reason it is
+        needed is that they race with the appliance rather than with each other.
+        Each card decides what to send from this app's cached copy of
+        `/device/0`, which is refreshed by polling — up to five minutes apart once
+        the device is on push. A card that runs right after another therefore acts
+        on the state from *before* the previous one, and Samsung units change what
+        they report as they go.
+
+        The measured case, on the unit this was reported from: in `AIComfort` the
+        appliance stops reporting a setpoint at all — `/temperatures/vs/0` carries
+        no `desired`, `current` or `increment`, where in `Cool` it carries all
+        three. So "set mode to AI Comfort" followed by "set temperature to 28"
+        sends a setpoint the appliance no longer accepts. Nothing errors: the reply
+        has no `controlResponse` flag, which counts as accepted, so the Flow reports
+        success it did not get.
+
+        This card refreshes the state first, applies in a fixed order, re-reads
+        after every step, and confirms the value actually took. Where a combination
+        cannot work it says so instead of pretending.
+        """
+        args = card_arguments or {}
+        device = args.get("device")
+        if device is None:
+            raise ValueError(_REPAIR_NO_DEVICE)
+        language = await compat.ui_language(self.homey)
+
+        wanted = []
+        for name, capability, convert in self._AC_STEPS:
+            raw = args.get(name)
+            if raw in (None, "", "keep"):
+                continue
+            if name == "temperature" and not float(raw):
+                # There is no "unset" for a number argument — Homey always sends
+                # one — so zero is the skip, which the argument title states.
+                continue
+            wanted.append((name, capability, convert(raw)))
+        if not wanted:
+            return
+
+        # One refresh up front, so the first step is not deciding from a cache that
+        # may be five minutes old.
+        await device.refresh_now()
+
+        for name, capability, value in wanted:
+            if name == "temperature" and self._ac_mode_of(device) == "AIComfort":
+                raise RuntimeError(i18n.translate(
+                    "error.ac_setpoint_unavailable", language))
+            await device.trigger_capability_listener(capability, value)
+            # Re-read before the next step, so it sees what this one actually did
+            # rather than what it asked for.
+            await device.refresh_now()
+
+    @staticmethod
+    def _ac_mode_of(device) -> str:
+        try:
+            return str(device.get_capability_value("localthings_ac_mode") or "")
+        except Exception:
+            return ""
 
     # --- pairing ----------------------------------------------------------
 

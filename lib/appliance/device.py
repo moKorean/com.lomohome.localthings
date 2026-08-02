@@ -296,6 +296,17 @@ class ApplianceDevice(device.Device):
         """
         return bool(self._serial) and ":" not in self._serial
 
+    async def refresh_now(self) -> None:
+        """Re-read the appliance and apply what it reports, without waiting for the
+        next poll.
+
+        For a Flow card that applies several settings in sequence: each step has to
+        decide from what the appliance holds *now*, not from a cache that is up to
+        OBSERVE_SWEEP_INTERVAL_S old once the device is on push. Raises what the
+        poll would have raised, so a card fails rather than acting on nothing.
+        """
+        await self._poll_once()
+
     async def check_now(self) -> dict:
         """Read `/device/0` over this device's own session, for Repair to test with.
 

@@ -1,7 +1,7 @@
 {
   "_comment": "This file is generated. Please edit .homeycompose/app.json instead.",
   "id": "com.lomohome.localthings",
-  "version": "0.5.5",
+  "version": "0.5.6",
   "compatibility": ">=13.0.0",
   "sdk": 3,
   "runtime": "python",
@@ -2890,6 +2890,226 @@
           }
         ],
         "id": "set_ac_mode"
+      },
+      {
+        "title": {
+          "en": "Apply air conditioner settings",
+          "ko": "에어컨 설정 한 번에 적용"
+        },
+        "titleFormatted": {
+          "en": "Apply settings: power [[power]], mode [[mode]], [[temperature]]°C, air purify [[air_purify]], comfort [[convenient]]",
+          "ko": "설정 적용: 전원 [[power]], 운전 모드 [[mode]], [[temperature]]°C, 공기청정 [[air_purify]], 쾌적 모드 [[convenient]]"
+        },
+        "hint": {
+          "en": "Applies several settings in one card, in an order the appliance accepts, re-reading its state between each and confirming it took. Set a field to \"leave unchanged\" to skip it, and temperature to 0 to skip that. Separate cards can race: the appliance changes what it reports as it goes, so a later card can act on state that is already out of date.",
+          "ko": "여러 설정을 카드 하나로, 기기가 받아들이는 순서대로 적용합니다. 단계마다 상태를 다시 읽고 실제로 반영됐는지 확인합니다. 바꾸지 않을 항목은 \"변경 안 함\"으로, 온도는 0으로 두면 건너뜁니다. 카드를 여러 장 이어 붙이면 서로 경합합니다 — 기기가 보고하는 내용이 중간에 바뀌므로 뒤 카드가 이미 낡은 상태를 보고 동작할 수 있습니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_ac_mode"
+          },
+          {
+            "name": "power",
+            "type": "dropdown",
+            "title": {
+              "en": "Power",
+              "ko": "전원"
+            },
+            "values": [
+              {
+                "id": "keep",
+                "title": {
+                  "en": "leave unchanged",
+                  "ko": "변경 안 함"
+                }
+              },
+              {
+                "id": "on",
+                "title": {
+                  "en": "on",
+                  "ko": "켜기"
+                }
+              },
+              {
+                "id": "off",
+                "title": {
+                  "en": "off",
+                  "ko": "끄기"
+                }
+              }
+            ]
+          },
+          {
+            "name": "mode",
+            "type": "dropdown",
+            "title": {
+              "en": "Mode",
+              "ko": "운전 모드"
+            },
+            "values": [
+              {
+                "id": "keep",
+                "title": {
+                  "en": "leave unchanged",
+                  "ko": "변경 안 함"
+                }
+              },
+              {
+                "id": "AIComfort",
+                "title": {
+                  "en": "AI Comfort",
+                  "ko": "AI 쾌적"
+                }
+              },
+              {
+                "id": "Auto",
+                "title": {
+                  "en": "Auto",
+                  "ko": "자동"
+                }
+              },
+              {
+                "id": "Cool",
+                "title": {
+                  "en": "Cool",
+                  "ko": "냉방"
+                }
+              },
+              {
+                "id": "Dry",
+                "title": {
+                  "en": "Dry",
+                  "ko": "제습"
+                }
+              },
+              {
+                "id": "Fan",
+                "title": {
+                  "en": "Fan",
+                  "ko": "송풍"
+                }
+              },
+              {
+                "id": "Heat",
+                "title": {
+                  "en": "Heat",
+                  "ko": "난방"
+                }
+              },
+              {
+                "id": "Wind",
+                "title": {
+                  "en": "Wind",
+                  "ko": "바람"
+                }
+              }
+            ]
+          },
+          {
+            "name": "temperature",
+            "type": "number",
+            "title": {
+              "en": "Target temperature (0 to skip)",
+              "ko": "희망 온도 (0이면 건너뜀)"
+            },
+            "min": 0,
+            "max": 30,
+            "step": 0.5
+          },
+          {
+            "name": "air_purify",
+            "type": "dropdown",
+            "title": {
+              "en": "Air purify",
+              "ko": "공기청정"
+            },
+            "values": [
+              {
+                "id": "keep",
+                "title": {
+                  "en": "leave unchanged",
+                  "ko": "변경 안 함"
+                }
+              },
+              {
+                "id": "on",
+                "title": {
+                  "en": "on",
+                  "ko": "켜기"
+                }
+              },
+              {
+                "id": "off",
+                "title": {
+                  "en": "off",
+                  "ko": "끄기"
+                }
+              }
+            ]
+          },
+          {
+            "name": "convenient",
+            "type": "dropdown",
+            "title": {
+              "en": "Comfort mode",
+              "ko": "쾌적 모드"
+            },
+            "values": [
+              {
+                "id": "keep",
+                "title": {
+                  "en": "leave unchanged",
+                  "ko": "변경 안 함"
+                }
+              },
+              {
+                "id": "Off",
+                "title": {
+                  "en": "Off",
+                  "ko": "꺼짐"
+                }
+              },
+              {
+                "id": "Nano",
+                "title": {
+                  "en": "Wind-Free",
+                  "ko": "무풍"
+                }
+              },
+              {
+                "id": "LongWind",
+                "title": {
+                  "en": "Long wind",
+                  "ko": "롱바람"
+                }
+              },
+              {
+                "id": "Speed",
+                "title": {
+                  "en": "Speed",
+                  "ko": "스피드운전"
+                }
+              },
+              {
+                "id": "Sleep",
+                "title": {
+                  "en": "Sleep",
+                  "ko": "취침"
+                }
+              },
+              {
+                "id": "NanoSleep",
+                "title": {
+                  "en": "Wind-Free sleep",
+                  "ko": "무풍 취침"
+                }
+              }
+            ]
+          }
+        ],
+        "id": "set_ac_settings"
       },
       {
         "title": {

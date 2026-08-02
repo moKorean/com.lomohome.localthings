@@ -446,3 +446,139 @@ def test_the_light_condition_reflects_the_capability(driver_instance):
     device.get_capability_value = lambda capability: False
     assert asyncio.run(driver_instance._on_light_is_on({"device": device},
                                                        **TRIGGER_KWARGS)) is False
+
+
+# --- the combined air-conditioner card -------------------------------------
+#
+# Chaining the per-capability cards races the appliance, not the other cards: each
+# decides what to send from this app's cache of /device/0, refreshed by polling and
+# up to OBSERVE_SWEEP_INTERVAL_S old on push. Measured on the reporting unit: in
+# AIComfort the appliance reports no `desired`, `current` or `increment` at all,
+# where in Cool it reports all three — so "mode = AI Comfort" then "temperature =
+# 28" sends a setpoint it no longer accepts, and the reply carries no
+# controlResponse flag, which counts as accepted. The Flow reports a success it did
+# not get.
+
+
+def _ac_card():
+    return json.loads((FLOW / "actions" / "set_ac_settings.json").read_text())
+
+
+def test_the_combined_card_offers_a_way_to_skip_each_setting():
+    """Homey always sends every argument — there is no optional — so "unchanged"
+    has to be a value. Without it the card could only ever set all five."""
+    args = {a["name"]: a for a in _ac_card()["args"]}
+    for name in ("power", "mode", "air_purify", "convenient"):
+        ids = [v["id"] for v in args[name]["values"]]
+        assert ids[0] == "keep", f"{name} has no skip option first"
+    assert args["temperature"]["min"] == 0, "temperature has no skip value"
+
+
+def test_the_combined_card_is_offered_only_for_air_conditioners():
+    device = next(a for a in _ac_card()["args"] if a["type"] == "device")
+    assert "localthings_ac_mode" in device["filter"]
+
+
+def test_its_dropdowns_match_the_single_setting_cards():
+    """Two places listing the same appliance values is how one comes to offer a
+    value the other does not."""
+    combined = {a["name"]: a for a in _ac_card()["args"]}
+    for arg_name, card in (("mode", "set_ac_mode"), ("convenient", "set_convenient_mode")):
+        single = json.loads((FLOW / "actions" / f"{card}.json").read_text())
+        expected = [v["id"] for a in single["args"]
+                    if a.get("type") == "dropdown" for v in a["values"]]
+        got = [v["id"] for v in combined[arg_name]["values"] if v["id"] != "keep"]
+        assert got == expected, f"{arg_name} drifted from {card}"
+
+
+def test_the_steps_are_ordered_so_the_appliance_accepts_them(driver_instance):
+    """Mode decides whether a setpoint is accepted at all, so it has to be applied
+    before the temperature — the ordering is the fix, not a preference."""
+    order = [name for name, _capability, _convert in driver_instance._AC_STEPS]
+    assert order.index("power") < order.index("mode")
+    assert order.index("mode") < order.index("temperature")
+
+
+def test_it_refreshes_between_steps(driver_instance):
+    """The whole point: a step must see what the previous one actually did."""
+    import ast
+    source = DRIVER.read_text()
+    function = next(
+        node for node in ast.walk(ast.parse(source))
+        if isinstance(node, ast.AsyncFunctionDef) and node.name == "_on_set_ac_settings"
+    )
+    body = ast.unparse(function)
+    assert body.count("refresh_now") >= 2, (
+        "one refresh only — a later step still decides from a stale cache"
+    )
+
+
+def test_it_refuses_a_setpoint_the_appliance_cannot_take(driver_instance):
+    """Measured, not assumed: AIComfort units report no setpoint fields. Sending one
+    anyway is the silent no-op this card exists to stop."""
+    import asyncio
+
+    class _AC:
+        def __init__(self):
+            self.written = []
+            self.refreshed = 0
+
+        def get_capability_value(self, capability):
+            return "AIComfort" if capability == "localthings_ac_mode" else None
+
+        async def refresh_now(self):
+            self.refreshed += 1
+
+        async def trigger_capability_listener(self, capability, value):
+            self.written.append((capability, value))
+
+    device = _AC()
+    # A real-enough homey, so the failure can only come from the check under test —
+    # with `homey = None` an AttributeError from resolving the language would have
+    # satisfied a bare pytest.raises and the test would pass for the wrong reason.
+    driver_instance.homey = _StubHomey()
+    with pytest.raises(RuntimeError) as raised:
+        asyncio.run(driver_instance._on_set_ac_settings({
+            "device": device, "power": "keep", "mode": "keep",
+            "temperature": 28.0, "air_purify": "keep", "convenient": "keep",
+        }))
+    assert "AI Comfort" in str(raised.value), str(raised.value)
+    assert ("target_temperature", 28.0) not in device.written
+    assert device.refreshed >= 1, "it decided without reading the appliance first"
+
+
+def test_it_still_applies_the_setpoint_in_a_mode_that_takes_one(driver_instance):
+    """The refusal must be specific to AIComfort, not a blanket block."""
+    import asyncio
+
+    class _Cool:
+        def __init__(self):
+            self.written = []
+
+        def get_capability_value(self, capability):
+            return "Cool" if capability == "localthings_ac_mode" else None
+
+        async def refresh_now(self):
+            pass
+
+        async def trigger_capability_listener(self, capability, value):
+            self.written.append((capability, value))
+
+    device = _Cool()
+    driver_instance.homey = _StubHomey()
+    asyncio.run(driver_instance._on_set_ac_settings({
+        "device": device, "power": "on", "mode": "keep",
+        "temperature": 28.0, "air_purify": "keep", "convenient": "Nano",
+    }))
+    assert device.written == [
+        ("onoff", True),
+        ("target_temperature", 28.0),
+        ("localthings_convenient_mode", "Nano"),
+    ], device.written
+
+
+class _StubHomey:
+    class settings:
+        @staticmethod
+        def get(key):
+            return None
