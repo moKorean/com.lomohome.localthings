@@ -19,6 +19,7 @@ from lib.const import (
     STORE_PORT,
     STORE_SERIAL,
 )
+from lib.registry import ac_mode_matrix
 from lib.resources import read_identity
 
 # _repair_target is synchronous and raises before the handler can await anything, so
@@ -168,6 +169,8 @@ class ApplianceDriver(driver.Driver):
         ("power", "onoff", lambda v: v == "on"),
         ("mode", "localthings_ac_mode", str),
         ("temperature", "target_temperature", float),
+        ("fan", "localthings_fan_mode", str),
+        ("direction", "localthings_wind_direction", str),
         ("air_purify", "localthings_air_purify", lambda v: v == "on"),
         ("convenient", "localthings_convenient_mode", str),
     )
@@ -215,7 +218,7 @@ class ApplianceDriver(driver.Driver):
         # One refresh up front, so nothing below decides from a cache that may be
         # five minutes old — including the operating mode consulted next.
         await device.refresh_now()
-        wanted = self._without_impossible_comfort(device, wanted)
+        wanted = self._drop_what_the_mode_will_not_take(device, wanted)
 
         for _name, capability, value in wanted:
             await self._apply_step(device, capability, value)
@@ -236,34 +239,38 @@ class ApplianceDriver(driver.Driver):
         # than being handed a state they did not ask for.
         await self._reconcile(device, wanted)
 
-    # The comfort mode cannot be set while the unit is in AI Comfort. Measured on
-    # this hardware, with the unit on and settled and the mode confirmed AIComfort:
-    # applying Wind-Free put it into Cool within seconds, and setting AI Comfort
-    # again cleared the comfort mode back to Off. The two are mutually exclusive,
-    # which stands to reason — AI Comfort manages the fan itself.
+    # Each operating mode honours only some of the other settings, and the ones it
+    # does not are still accepted on the wire and answered without a rejection flag
+    # — which is how a Flow could ask for something and be told it worked. The
+    # matrix is in registry/ac_mode_matrix.py, reported by the owner from the
+    # appliance's own interface mode by mode.
     #
-    # The operating mode wins, and the comfort mode is dropped. Not attempted and
-    # not an error: attempting it silently changes the mode the user asked for,
-    # which is the bug this card exists to stop, and reconciliation would then push
-    # the two back and forth and visibly switch the appliance between modes.
-    _AC_EXCLUSIVE_MODE = "AIComfort"
+    # The operating mode wins and anything it will not honour is dropped. Not
+    # attempted, because attempting it either does nothing or, for the comfort
+    # mode, silently changes the mode the user asked for — the bug this card exists
+    # to stop. Not an error either: an action card cannot report a partial success,
+    # and failing the Flow over a step the appliance was never going to honour is
+    # worse than not taking it.
 
-    def _without_impossible_comfort(self, device, wanted):
+    def _drop_what_the_mode_will_not_take(self, device, wanted):
         requested = {name: value for name, _capability, value in wanted}
-        comfort = requested.get("convenient")
-        if comfort in (None, "Off"):
-            return wanted
         # The mode this run ends in: the one being set, or the one already on the
-        # appliance when the card leaves it alone.
+        # appliance when the card leaves it alone. Read after the refresh above, so
+        # it is what the appliance holds rather than a cache up to five minutes old.
         mode = requested.get("mode") or device.get_capability_value(
             "localthings_ac_mode")
-        if mode != self._AC_EXCLUSIVE_MODE:
-            return wanted
-        self.log(
-            f"comfort mode {comfort!r} skipped: the appliance cannot hold it "
-            f"together with {self._AC_EXCLUSIVE_MODE}, and the operating mode wins"
-        )
-        return [step for step in wanted if step[0] != "convenient"]
+
+        kept = []
+        for step in wanted:
+            name, _capability, value = step
+            if name in ("power", "mode") or ac_mode_matrix.accepts(mode, name, value):
+                kept.append(step)
+                continue
+            self.log(
+                f"{name}={value!r} skipped: {mode} does not accept it "
+                f"(see registry/ac_mode_matrix.py); the operating mode wins"
+            )
+        return kept
 
     _AC_RECONCILE_ROUNDS = 2
 

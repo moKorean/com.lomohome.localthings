@@ -4,12 +4,12 @@
     "ko": "에어컨 설정 한 번에 적용"
   },
   "titleFormatted": {
-    "en": "Apply settings: power [[power]], mode [[mode]], [[temperature]]°C, air purify [[air_purify]], comfort [[convenient]]",
-    "ko": "설정 적용: 전원 [[power]], 운전 모드 [[mode]], [[temperature]]°C, 공기청정 [[air_purify]], 쾌적 모드 [[convenient]]"
+    "en": "Apply settings: power [[power]], mode [[mode]], [[temperature]]°C, fan [[fan]], direction [[direction]], air purify [[air_purify]], comfort [[convenient]]",
+    "ko": "설정 적용: 전원 [[power]], 운전 모드 [[mode]], [[temperature]]°C, 바람 세기 [[fan]], 바람 방향 [[direction]], 공기청정 [[air_purify]], 쾌적 모드 [[convenient]]"
   },
   "hint": {
-    "en": "Applies several settings in one card, re-reading the appliance before it starts and after every step so each one decides from what the appliance holds now. Set a field to \"leave unchanged\" to skip it, and temperature to 0 to skip that. The operating mode takes priority: these appliances cannot hold AI Comfort together with a comfort mode, so under AI Comfort the comfort mode is left alone rather than changing the mode you asked for.",
-    "ko": "여러 설정을 카드 한 장으로 적용합니다. 시작 전과 각 단계 후에 기기를 다시 읽어, 매 단계가 현재 상태를 보고 판단합니다. 바꾸지 않을 항목은 \"변경 안 함\"으로, 온도는 0으로 두면 건너뜁니다. 운전 모드가 우선입니다 — 이 가전은 AI 쾌적과 쾌적 모드를 함께 유지하지 못하므로, AI 쾌적일 때는 요청하신 운전 모드를 바꾸지 않기 위해 쾌적 모드를 건너뜁니다."
+    "en": "Applies several settings in one card, re-reading the appliance before it starts and after every step so each decides from what the appliance holds now. Set a field to \"leave unchanged\" to skip it, and temperature to 0 to skip that. The operating mode takes priority: each mode only honours some of the others — AI Comfort takes no fan speed, air purify or comfort mode, Fan takes no target temperature — and anything the chosen mode will not accept is left alone rather than written and silently ignored.",
+    "ko": "여러 설정을 카드 한 장으로 적용합니다. 시작 전과 각 단계 후에 기기를 다시 읽어 매 단계가 현재 상태를 보고 판단합니다. 바꾸지 않을 항목은 \"변경 안 함\"으로, 온도는 0으로 두면 건너뜁니다. 운전 모드가 우선입니다 — 모드마다 받아들이는 설정이 다릅니다(AI 쾌적은 바람 세기·공기청정·쾌적 모드를 받지 않고, 송풍은 희망 온도를 받지 않습니다). 선택한 모드가 받지 않는 항목은 쓰지 않고 그대로 둡니다. 써도 조용히 무시되기 때문입니다."
   },
   "args": [
     {
@@ -124,6 +124,89 @@
       "min": 0,
       "max": 30,
       "step": 0.5
+    },
+    {
+      "name": "fan",
+      "type": "dropdown",
+      "title": {
+        "en": "Fan speed",
+        "ko": "바람 세기"
+      },
+      "values": [
+        {
+          "id": "keep",
+          "title": {
+            "en": "leave unchanged",
+            "ko": "변경 안 함"
+          }
+        },
+        {
+          "id": "auto",
+          "title": {
+            "en": "Auto",
+            "ko": "자동"
+          }
+        },
+        {
+          "id": "low",
+          "title": {
+            "en": "Low",
+            "ko": "약"
+          }
+        },
+        {
+          "id": "mid",
+          "title": {
+            "en": "Mid",
+            "ko": "중"
+          }
+        },
+        {
+          "id": "high",
+          "title": {
+            "en": "High",
+            "ko": "강"
+          }
+        }
+      ]
+    },
+    {
+      "name": "direction",
+      "type": "dropdown",
+      "title": {
+        "en": "Airflow direction",
+        "ko": "바람 방향"
+      },
+      "values": [
+        {
+          "id": "keep",
+          "title": {
+            "en": "leave unchanged",
+            "ko": "변경 안 함"
+          }
+        },
+        {
+          "id": "Fix",
+          "title": {
+            "en": "Fixed",
+            "ko": "고정"
+          }
+        },
+        {
+          "id": "Left_And_Right",
+          "title": {
+            "en": "Left and right",
+            "ko": "좌우"
+          }
+        },
+        {
+          "id": "All",
+          "title": {
+            "en": "All",
+            "ko": "전체"
+          }
+        }
+      ]
     },
     {
       "name": "air_purify",

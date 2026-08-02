@@ -58,5 +58,9 @@
   "0.5.9": {
     "en": "In the combined air conditioner card the operating mode now takes priority. These appliances cannot hold AI Comfort together with a comfort mode, so under AI Comfort the comfort mode is left alone instead of changing the mode you asked for. Everything else in the card still applies.",
     "ko": "통합 에어컨 카드에서 운전 모드가 우선합니다. 이 가전은 AI 쾌적과 쾌적 모드를 함께 유지하지 못하므로, AI 쾌적일 때는 요청하신 운전 모드를 지키기 위해 쾌적 모드를 건드리지 않습니다. 카드의 나머지 설정은 그대로 적용됩니다."
+  },
+  "0.6.0": {
+    "en": "The combined air conditioner card now also sets fan speed and airflow direction, and it knows which settings each operating mode actually honours. AI Comfort takes a temperature and a direction; Fan takes no temperature; only Cool takes all of them. Anything the chosen mode will not accept is left alone instead of being written and silently ignored, and the operating mode always wins.",
+    "ko": "통합 에어컨 카드에 바람 세기와 바람 방향이 추가됐고, 운전 모드별로 실제 적용되는 설정을 구분합니다. AI 쾌적은 희망 온도와 바람 방향만, 송풍은 희망 온도를 받지 않으며, 전부 받는 것은 냉방뿐입니다. 선택한 모드가 받지 않는 항목은 쓰지 않고 그대로 두며, 운전 모드가 항상 우선합니다."
   }
 }

@@ -738,15 +738,10 @@ def test_neither_cycle_capability_binds_where_the_field_is_absent():
         assert spec.exists({"x.com.samsung.da.settingStatus": "On"}, {}) is False
 
 
-def test_a_comfort_mode_is_skipped_under_ai_comfort_and_the_mode_wins(driver_instance):
-    """The two cannot both hold — measured: with the unit settled and the mode
-    confirmed AI Comfort, applying Wind-Free put it into Cool, and setting AI
-    Comfort again cleared the comfort mode back to Off.
-
-    The operating mode wins and the comfort mode is dropped. Attempting it would
-    silently change the mode the user asked for, which is the bug this card exists
-    to stop.
-    """
+def test_ai_comfort_takes_only_what_it_honours(driver_instance):
+    """AI Comfort accepts a target temperature and an airflow direction, and
+    nothing else. The rest is written on the wire and ignored — or, for the comfort
+    mode, silently changes the mode the user asked for."""
     import asyncio
 
     class _AC:
@@ -769,14 +764,13 @@ def test_a_comfort_mode_is_skipped_under_ai_comfort_and_the_mode_wins(driver_ins
     driver_instance._AC_SETTLE_S = 0
     asyncio.run(driver_instance._on_set_ac_settings({
         "device": device, "power": "on", "mode": "AIComfort",
-        "temperature": 26.5, "air_purify": "on", "convenient": "Nano",
+        "temperature": 26.5, "fan": "high", "direction": "All",
+        "air_purify": "on", "convenient": "Nano",
     }))
-    assert "localthings_convenient_mode" not in device.writes, (
-        "the comfort mode was attempted and would have knocked the mode out"
-    )
-    assert device.state["localthings_ac_mode"] == "AIComfort"
-    assert device.state["target_temperature"] == 26.5
-    assert device.state["localthings_air_purify"] is True
+    assert device.writes == [
+        "onoff", "localthings_ac_mode", "target_temperature",
+        "localthings_wind_direction",
+    ], device.writes
 
 
 def test_the_skip_also_applies_when_the_mode_is_left_unchanged(driver_instance):
@@ -839,3 +833,122 @@ def test_the_refusal_is_narrow(driver_instance, mode, comfort):
         "device": _Accepts(), "power": "keep", "mode": mode,
         "temperature": 0, "air_purify": "keep", "convenient": comfort,
     }))
+
+
+# --- the operating-mode matrix ---------------------------------------------
+
+
+_MATRIX_ARGS = {
+    "temperature": 26.0, "fan": "high", "direction": "All",
+    "air_purify": "on", "convenient": "Nano",
+}
+
+# The owner's table, transcribed independently of the module so a change to one
+# has to be a deliberate change to both.
+_EXPECTED = {
+    "AIComfort": {"temperature", "direction"},
+    "Auto": {"temperature", "direction", "air_purify"},
+    "Cool": {"temperature", "fan", "direction", "air_purify", "convenient"},
+    "Dry": {"temperature", "direction", "air_purify", "convenient"},
+    "Fan": {"fan", "direction", "air_purify", "convenient"},
+}
+
+_CAPABILITY = {
+    "temperature": "target_temperature",
+    "fan": "localthings_fan_mode",
+    "direction": "localthings_wind_direction",
+    "air_purify": "localthings_air_purify",
+    "convenient": "localthings_convenient_mode",
+}
+
+
+@pytest.mark.parametrize("mode", sorted(_EXPECTED))
+def test_each_mode_applies_exactly_what_it_honours(driver_instance, mode):
+    import asyncio
+
+    class _AC:
+        """Keeps whatever it is given, so each step confirms and the test is only
+        measuring which steps were attempted."""
+
+        def __init__(self):
+            self.writes = []
+            self.state = {}
+
+        def get_capability_value(self, capability):
+            return self.state.get(capability)
+
+        async def refresh_now(self):
+            pass
+
+        async def trigger_capability_listener(self, capability, value):
+            self.writes.append(capability)
+            self.state[capability] = value
+
+    device = _AC()
+    driver_instance.homey = _StubHomey()
+    driver_instance._AC_SETTLE_S = 0
+    asyncio.run(driver_instance._on_set_ac_settings({
+        "device": device, "power": "keep", "mode": mode, **_MATRIX_ARGS,
+    }))
+    applied = {name for name, capability in _CAPABILITY.items()
+               if capability in device.writes}
+    assert applied == _EXPECTED[mode], (
+        f"{mode}: applied {sorted(applied)}, table says {sorted(_EXPECTED[mode])}"
+    )
+
+
+@pytest.mark.parametrize("mode,comfort,allowed", [
+    ("Dry", "Nano", True),        # Dry takes Wind-Free and Long wind...
+    ("Dry", "LongWind", True),
+    ("Dry", "Speed", False),      # ...but not Speed
+    ("Fan", "Speed", False),
+    ("Cool", "Speed", True),      # only Cool takes all three
+])
+def test_the_comfort_restriction_is_per_value_not_per_setting(mode, comfort, allowed):
+    """Dry accepts two of the three comfort modes, so blocking the setting whole
+    would take away two that work."""
+    from lib.registry import ac_mode_matrix
+    assert ac_mode_matrix.accepts(mode, "convenient", comfort) is allowed
+
+
+@pytest.mark.parametrize("mode", ["AIComfort", "Auto", "Dry", "Fan"])
+def test_turning_the_comfort_mode_off_is_never_blocked(mode):
+    """Off is the appliance's resting state, not a contradiction with any mode."""
+    from lib.registry import ac_mode_matrix
+    assert ac_mode_matrix.accepts(mode, "convenient", "Off") is True
+
+
+@pytest.mark.parametrize("mode", ["Heat", "Wind", "", None, "SomethingNew"])
+def test_a_mode_the_table_does_not_cover_constrains_nothing(mode):
+    """These units are cooling-only, so Heat and Wind were never checked. Blocking
+    on a guess would drop a setting that works on hardware nobody here has."""
+    from lib.registry import ac_mode_matrix
+    for setting in ("temperature", "fan", "direction", "air_purify"):
+        assert ac_mode_matrix.accepts(mode, setting) is True
+    assert ac_mode_matrix.accepts(mode, "convenient", "Nano") is True
+
+
+@pytest.mark.parametrize("comfort", ["Sleep", "NanoSleep"])
+def test_a_comfort_mode_the_table_does_not_name_is_allowed(comfort):
+    """Only Wind-Free, Long wind and Speed were checked. The bias is uniform:
+    block only what is confirmed impossible."""
+    from lib.registry import ac_mode_matrix
+    for mode in ac_mode_matrix.known_modes():
+        assert ac_mode_matrix.accepts(mode, "convenient", comfort) is True
+
+
+def test_the_card_offers_every_setting_the_table_talks_about():
+    """A rule about a setting the card cannot set would never fire."""
+    from lib.registry import ac_mode_matrix
+    args = {a["name"] for a in _ac_card()["args"]}
+    for setting in (ac_mode_matrix.TARGET_TEMPERATURE, ac_mode_matrix.FAN_SPEED,
+                    ac_mode_matrix.WIND_DIRECTION, ac_mode_matrix.AIR_PURIFY,
+                    ac_mode_matrix.COMFORT):
+        assert setting in args, f"the table constrains {setting} but no argument sets it"
+
+
+def test_every_mode_in_the_table_is_offered_by_the_card():
+    from lib.registry import ac_mode_matrix
+    modes = {a for arg in _ac_card()["args"] if arg["name"] == "mode"
+             for a in [v["id"] for v in arg["values"]]}
+    assert ac_mode_matrix.known_modes() <= modes

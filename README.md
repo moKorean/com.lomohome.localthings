@@ -191,13 +191,26 @@ value actually stayed, and re-sends it if the appliance took it back — verifie
 hardware to recover exactly the case above. Leave any field on "leave unchanged"
 (or temperature at 0) to skip it.
 
-The operating mode takes priority over the comfort mode, because the two are
-mutually exclusive on this hardware: applying Wind-Free drops a unit out of AI
-Comfort, and setting AI Comfort clears the comfort mode back to Off. That is what
-the original report turned out to be — the comfort-mode card at the end of the
-Flow was undoing the mode set earlier, so the setting that ran first looked like
-the one that failed. Under AI Comfort the card leaves the comfort mode alone
-rather than changing the mode you asked for.
+**The operating mode takes priority**, because each mode honours only some of the
+other settings — and the ones it does not are still accepted on the wire and
+answered without a rejection flag. That is what the original report turned out to
+be: the comfort-mode card at the end of the Flow was undoing the mode set earlier,
+so the setting that ran first looked like the one that failed.
+
+| Mode | Target temp | Fan speed | Direction | Air purify | Wind-Free | Long wind | Speed |
+|---|---|---|---|---|---|---|---|
+| AI Comfort | ✓ | | ✓ | | | | |
+| Auto | ✓ | | ✓ | ✓ | | | |
+| Cool | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Dry | ✓ | | ✓ | ✓ | ✓ | ✓ | |
+| Fan | | ✓ | ✓ | ✓ | ✓ | ✓ | |
+
+Checked mode by mode against the appliance's own interface. The card leaves
+anything the chosen mode will not take alone rather than writing it and having it
+ignored. `Heat` and `Wind` are absent because these units are cooling-only, and an
+unknown mode constrains nothing — the rule is to block only what is confirmed
+impossible. The table lives in
+[`lib/registry/ac_mode_matrix.py`](lib/registry/ac_mode_matrix.py).
 
 ### Homey fires the triggers itself
 
