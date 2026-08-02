@@ -136,3 +136,49 @@ def test_undeclared_languages_get_english_not_the_registry_key():
             title = reg.title(language)
             assert title != name, f"{name}: {language!r} falls through to the key"
             assert title == reg.titles["en"], f"{name}: {language!r} gave {title!r}"
+
+
+def test_no_message_leaves_a_placeholder_unsubstituted():
+    """`i18n.translate` formats with single braces. Doubled ones survive formatting
+    and reach the user as literal `{capability}` — which shipped in 0.5.6 before
+    this test existed."""
+    import json
+    from pathlib import Path
+    root = Path(__file__).parent.parent
+    for locale in ("en", "ko"):
+        strings = json.loads((root / "locales" / f"{locale}.json").read_text())
+        stack = [("", strings)]
+        while stack:
+            prefix, node = stack.pop()
+            if isinstance(node, dict):
+                stack.extend((f"{prefix}.{k}" if prefix else k, v) for k, v in node.items())
+            elif isinstance(node, str):
+                assert "{{" not in node and "}}" not in node, (
+                    f"{locale}:{prefix} uses doubled braces, which render literally"
+                )
+
+
+def test_every_placeholder_a_message_declares_is_actually_filled():
+    """A message naming a parameter the caller never passes raises KeyError at the
+    moment it is needed — which is always while reporting another failure."""
+    import json
+    import re
+    from pathlib import Path
+
+    from lib import i18n
+    root = Path(__file__).parent.parent
+    strings = json.loads((root / "locales" / "en.json").read_text())
+    source = "\n".join(
+        (root / rel).read_text()
+        for rel in ("lib/appliance/driver.py", "lib/appliance/device.py")
+    )
+    for key, template in (strings.get("error") or {}).items():
+        if f'"error.{key}"' not in source:
+            continue
+        for name in set(re.findall(r"\{(\w+)\}", template)):
+            assert f"{name}=" in source, (
+                f"error.{key} expects {{{name}}} but no caller passes it"
+            )
+        # And it must format without raising when given what the callers pass.
+        i18n.translate(f"error.{key}", "en", **{n: "x" for n in
+                                                set(re.findall(r"\{(\w+)\}", template))})

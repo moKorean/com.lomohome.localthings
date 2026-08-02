@@ -38,6 +38,7 @@ HREF_WIND_DIRECTION = "/wind/direction/vs/0"
 HREF_UVLED = "/uvled/vs/0"
 HREF_SMART_COOLING = "/smartsensingcooling/vs/0"
 HREF_ALARMS = "/alarms/vs/0"
+HREF_SELFCHECK = "/selfcheck/vs/0"
 HREF_SENSORS = "/sensors/vs/0"
 
 HREF_ABSENCE_STATE = "/mds/absencestate/vs/0"
@@ -104,6 +105,38 @@ def _fan_name_to_code(rep: dict) -> dict[str, str]:
 #
 # Read-only. The reference ignores both hrefs outright, so there is no confirmed
 # write, and these change how the appliance manages its own compressor.
+
+
+# `/option/autoclean/vs/0` and `/selfcheck/vs/0` share a shape: a `settingStatus`
+# or equivalent that says whether the feature is enabled, plus a `status` naming
+# whether a cycle is running right now and a `progress` counting it out. Only the
+# first was mapped, here and in the reference, so "auto dry" reported that the
+# feature was switched on and never that it was actually drying.
+#
+# `progress` is a percentage: the owner watched the appliance's own display pass
+# 55% during a cycle. `status` is Start/Stop, and the resource advertises exactly
+# those two in `supportedStatus`.
+
+FIELD_STATUS = "x.com.samsung.da.status"
+FIELD_PROGRESS = "x.com.samsung.da.progress"
+
+
+def _read_cycle_running(rep, _resources):
+    value = rep.get(FIELD_STATUS)
+    if value is None:
+        return None
+    # Autoclean says Start/Stop; selfcheck says Ready when idle. Anything that is
+    # not one of the idle words counts as running, rather than listing every word
+    # a board might use for "busy".
+    return str(value) not in ("Stop", "Ready", "Cancel", "None")
+
+
+def _read_cycle_progress(rep, _resources):
+    return as_int(rep.get(FIELD_PROGRESS))
+
+
+def _has_field(field):
+    return lambda rep, _resources: field in rep
 
 
 def _option_token(rep, name: str):
@@ -485,6 +518,19 @@ REGISTRY = Registry(
              _read_flag("x.com.samsung.da.settingStatus"),
              _write_flag(["option", "autoclean", "vs", "0"],
                          "x.com.samsung.da.settingStatus")),
+        # The cycle itself, as opposed to whether the feature is enabled above.
+        Spec("localthings_auto_clean_active", HREF_AUTOCLEAN, _read_cycle_running,
+             exists=_has_field(FIELD_STATUS)),
+        Spec("localthings_auto_clean_progress", HREF_AUTOCLEAN, _read_cycle_progress,
+             exists=_has_field(FIELD_PROGRESS)),
+        # Self check has the same shape and was not bound on this type at all —
+        # /selfcheck/vs/0 sat in the unbound list while other appliance types read it.
+        Spec("localthings_selfcheck", HREF_SELFCHECK,
+             shared.text("x.com.samsung.da.status")),
+        Spec("localthings_selfcheck_active", HREF_SELFCHECK, _read_cycle_running,
+             exists=_has_field(FIELD_STATUS)),
+        Spec("localthings_selfcheck_progress", HREF_SELFCHECK, _read_cycle_progress,
+             exists=_has_field(FIELD_PROGRESS)),
         Spec("localthings_mute_once", HREF_MUTEONCE, _read_flag("muteonce"),
              _write_flag(["option", "muteonce", "vs", "0"], "muteonce")),
         Spec("localthings_display_light", HREF_LIGHT, _read_flag("status"),

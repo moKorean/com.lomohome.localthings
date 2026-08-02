@@ -46,5 +46,9 @@
   "0.5.6": {
     "en": "New Flow card: Apply air conditioner settings — power, mode, temperature, air purify and comfort mode in one card. It confirms each setting on the appliance and re-sends any the appliance takes back, which is what was going wrong: an air conditioner switched on by a Flow restores its own mode as it starts, so a mode set a few seconds later was acknowledged and then silently undone. Also fixes the current temperature and the setpoint's range vanishing from the tile right after a temperature change.",
     "ko": "새 플로우 카드: 에어컨 설정 한 번에 적용 — 전원·운전 모드·희망 온도·공기청정·쾌적 모드를 카드 한 장에서 받습니다. 각 설정이 기기에 실제로 남았는지 확인하고, 기기가 되돌린 설정은 다시 보냅니다. 이것이 원인이었습니다: 플로우로 켠 에어컨은 시작하면서 자기 운전 모드를 복원하기 때문에, 몇 초 뒤 지정한 모드가 수락된 뒤 조용히 사라졌습니다. 온도를 바꾼 직후 현재 온도와 설정 범위가 사라지던 문제도 함께 고쳤습니다."
+  },
+  "0.5.7": {
+    "en": "Air conditioners now show whether auto dry is actually running and how far through it is, and the same for the self check — until now \"auto dry\" only told you the feature was switched on. The combined settings card also re-checks everything at the end and puts back any setting a later one undid: choosing a comfort mode was dropping the unit out of AI Comfort. Two error messages were showing raw placeholders instead of the appliance and value.",
+    "ko": "에어컨에서 자동 건조가 실제로 돌고 있는지와 진행률을 표시합니다. 자가진단도 같습니다 — 지금까지 '자동 건조'는 기능을 켜 뒀는지만 알려줬습니다. 통합 설정 카드는 마지막에 전체를 다시 확인해, 뒤 설정이 되돌린 항목을 되살립니다: 쾌적 모드를 고르면 AI 쾌적이 풀리고 있었습니다. 오류 메시지 두 개가 기기·값 대신 자리표시자를 그대로 보여주던 것도 고쳤습니다."
   }
 }

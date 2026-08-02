@@ -609,3 +609,131 @@ def test_a_setting_that_never_sticks_fails_the_card(driver_instance):
             "device": _Stubborn(), "power": "keep", "mode": "AIComfort",
             "temperature": 0, "air_purify": "keep", "convenient": "keep",
         }))
+
+
+def test_a_setting_undone_by_a_later_one_is_put_back(driver_instance):
+    """Ordering is not enough: a later setting can undo an earlier one.
+
+    Reported on this hardware — with the mode confirmed as AI Comfort, selecting
+    the Wind-Free comfort mode afterwards put the unit back into Cool. Each step
+    passed its own check, so only re-reading everything at the end catches it.
+    """
+    import asyncio
+
+    class _ComfortResetsMode:
+        def __init__(self):
+            self.state = {}
+            self.reset_once = True
+
+        def get_capability_value(self, capability):
+            return self.state.get(capability)
+
+        async def refresh_now(self):
+            pass
+
+        async def trigger_capability_listener(self, capability, value):
+            self.state[capability] = value
+            if capability == "localthings_convenient_mode" and self.reset_once:
+                # What the appliance does: taking a comfort mode drops it out of
+                # AI Comfort, because that mode manages the fan itself.
+                self.state["localthings_ac_mode"] = "Cool"
+                self.reset_once = False
+
+    device = _ComfortResetsMode()
+    driver_instance.homey = _StubHomey()
+    driver_instance._AC_SETTLE_S = 0
+    asyncio.run(driver_instance._on_set_ac_settings({
+        "device": device, "power": "keep", "mode": "AIComfort",
+        "temperature": 0, "air_purify": "keep", "convenient": "Nano",
+    }))
+    assert device.state["localthings_ac_mode"] == "AIComfort", (
+        "the comfort mode knocked the operating mode out and it was left that way"
+    )
+    assert device.state["localthings_convenient_mode"] == "Nano"
+
+
+def test_two_settings_that_cannot_hold_together_fail_the_card(driver_instance):
+    """Bounded on purpose. Pushing an impossible pair back and forth forever would
+    be worse than saying which one would not stay."""
+    import asyncio
+
+    class _MutuallyExclusive:
+        """An appliance that will not hold AI Comfort while a comfort mode is set.
+
+        Not the same as the case above: there, re-applying the mode was enough to
+        settle it. Here the mode is rejected for as long as the comfort mode stands,
+        so no number of rounds can satisfy both — which is what the bound is for.
+        """
+
+        def __init__(self):
+            self.state = {}
+
+        def get_capability_value(self, capability):
+            return self.state.get(capability)
+
+        async def refresh_now(self):
+            pass
+
+        async def trigger_capability_listener(self, capability, value):
+            self.state[capability] = value
+            if capability == "localthings_convenient_mode" and value != "Off":
+                self.state["localthings_ac_mode"] = "Cool"
+            if (capability == "localthings_ac_mode"
+                    and self.state.get("localthings_convenient_mode") not in (None, "Off")):
+                self.state["localthings_ac_mode"] = "Cool"
+
+    driver_instance.homey = _StubHomey()
+    driver_instance._AC_SETTLE_S = 0
+    with pytest.raises(RuntimeError) as raised:
+        asyncio.run(driver_instance._on_set_ac_settings({
+            "device": _MutuallyExclusive(), "power": "keep", "mode": "AIComfort",
+            "temperature": 0, "air_purify": "keep", "convenient": "Nano",
+        }))
+    assert "mode" in str(raised.value)
+
+
+def test_the_cycle_state_is_read_apart_from_the_feature_switch():
+    """"Auto dry" used to report only whether the feature was switched on. Whether a
+    cycle is running, and how far through, are separate fields on the same resource
+    that nothing read."""
+    from lib.registry import airconditioner
+    specs = {s.capability: s for s in airconditioner.REGISTRY.specs
+             if s.href == "/option/autoclean/vs/0"}
+    assert set(specs) == {"localthings_auto_clean", "localthings_auto_clean_active",
+                          "localthings_auto_clean_progress"}
+    running = {"x.com.samsung.da.settingStatus": "On",
+               "x.com.samsung.da.status": "Start",
+               "x.com.samsung.da.progress": "55"}
+    idle = {"x.com.samsung.da.settingStatus": "On",
+            "x.com.samsung.da.status": "Stop",
+            "x.com.samsung.da.progress": "0"}
+    assert specs["localthings_auto_clean"].read(running, {}) is True
+    assert specs["localthings_auto_clean"].read(idle, {}) is True, (
+        "the feature is still enabled when no cycle is running"
+    )
+    assert specs["localthings_auto_clean_active"].read(running, {}) is True
+    assert specs["localthings_auto_clean_active"].read(idle, {}) is False
+    assert specs["localthings_auto_clean_progress"].read(running, {}) == 55
+
+
+def test_self_check_reads_the_same_shape_and_is_bound_on_the_air_conditioner():
+    """/selfcheck/vs/0 was in the air conditioner's unbound list while other
+    appliance types read it."""
+    from lib.registry import airconditioner
+    specs = {s.capability: s for s in airconditioner.REGISTRY.specs
+             if s.href == "/selfcheck/vs/0"}
+    assert "localthings_selfcheck" in specs
+    running = {"x.com.samsung.da.status": "Start", "x.com.samsung.da.progress": "40"}
+    idle = {"x.com.samsung.da.status": "Ready", "x.com.samsung.da.progress": "0"}
+    assert specs["localthings_selfcheck_active"].read(running, {}) is True
+    assert specs["localthings_selfcheck_active"].read(idle, {}) is False
+    assert specs["localthings_selfcheck_progress"].read(running, {}) == 40
+
+
+def test_neither_cycle_capability_binds_where_the_field_is_absent():
+    """A board that reports no status must not get a sensor that reads nothing."""
+    from lib.registry import airconditioner
+    for capability in ("localthings_auto_clean_active", "localthings_auto_clean_progress"):
+        spec = next(s for s in airconditioner.REGISTRY.specs
+                    if s.capability == capability)
+        assert spec.exists({"x.com.samsung.da.settingStatus": "On"}, {}) is False

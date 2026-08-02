@@ -219,6 +219,48 @@ class ApplianceDriver(driver.Driver):
         for _name, capability, value in wanted:
             await self._apply_step(device, capability, value)
 
+        # Applying settings in order is not enough on its own: a later one can undo
+        # an earlier one. Reported on this hardware — with the operating mode
+        # confirmed as AI Comfort, selecting the Wind-Free comfort mode afterwards
+        # put the unit back into Cool. The appliance is entitled to do that (AI
+        # Comfort manages the fan itself, so asking for a specific comfort mode is a
+        # contradiction it resolves its own way), but the Flow should not report
+        # success for a setting that is no longer in effect.
+        #
+        # So everything requested is re-checked once all of it has been applied, and
+        # anything that drifted is re-applied. Bounded, because two settings that
+        # genuinely cannot hold together would otherwise be pushed back and forth
+        # forever; when the rounds run out the card fails and names what would not
+        # stay, which is how the user learns the combination is impossible rather
+        # than being handed a state they did not ask for.
+        await self._reconcile(device, wanted)
+
+    _AC_RECONCILE_ROUNDS = 2
+
+    async def _reconcile(self, device, wanted) -> None:
+        for _round in range(self._AC_RECONCILE_ROUNDS):
+            await device.refresh_now()
+            drifted = [
+                (name, capability, value) for name, capability, value in wanted
+                if not self._value_matches(
+                    device.get_capability_value(capability), value)
+            ]
+            if not drifted:
+                return
+            for _name, capability, value in drifted:
+                self.log(f"{capability} drifted after a later setting; re-applying")
+                await self._apply_step(device, capability, value, strict=False)
+
+        await device.refresh_now()
+        still = [
+            name for name, capability, value in wanted
+            if not self._value_matches(device.get_capability_value(capability), value)
+        ]
+        if still:
+            raise RuntimeError(i18n.translate(
+                "error.settings_conflict", await compat.ui_language(self.homey),
+                settings=", ".join(still)))
+
     # A write the appliance accepts and then undoes needs re-sending, and the only
     # way to know is to look. Measured on the reporting unit: turn it on and set the
     # mode about three seconds later, and the write is acknowledged and then
@@ -228,7 +270,7 @@ class ApplianceDriver(driver.Driver):
     _AC_SETTLE_S = 2.5
     _AC_ATTEMPTS = 3
 
-    async def _apply_step(self, device, capability: str, value) -> None:
+    async def _apply_step(self, device, capability: str, value, strict=True) -> bool:
         """Write one setting and confirm the appliance kept it, re-sending if not.
 
         Preferred over waiting a fixed time after powering on: how long a unit takes
@@ -243,11 +285,16 @@ class ApplianceDriver(driver.Driver):
             # what the appliance actually holds, not what was asked for.
             await device.refresh_now()
             if self._value_matches(device.get_capability_value(capability), value):
-                return
+                return True
             self.log(
                 f"{capability}={value!r} did not stick "
                 f"(attempt {attempt + 1}/{self._AC_ATTEMPTS}); re-sending"
             )
+        if not strict:
+            # Reconciliation calls it this way: a setting that will not stay there
+            # is a conflict with another setting, not a unit that is still booting,
+            # and that is what the caller reports.
+            return False
         raise RuntimeError(i18n.translate(
             "error.setting_not_applied", language,
             capability=capability, value=value))

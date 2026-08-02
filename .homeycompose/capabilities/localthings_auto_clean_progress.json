@@ -1,0 +1,15 @@
+{
+  "type": "number",
+  "title": {
+    "en": "Auto dry progress",
+    "ko": "자동 건조 진행률"
+  },
+  "getable": true,
+  "setable": false,
+  "uiComponent": "sensor",
+  "decimals": 0,
+  "units": { "en": "%" },
+  "min": 0,
+  "max": 100,
+  "icon": "/assets/capabilities/mdi-progress-clock.svg"
+}

@@ -1,7 +1,7 @@
 {
   "_comment": "This file is generated. Please edit .homeycompose/app.json instead.",
   "id": "com.lomohome.localthings",
-  "version": "0.5.6",
+  "version": "0.5.7",
   "compatibility": ">=13.0.0",
   "sdk": 3,
   "runtime": "python",
@@ -1050,6 +1050,28 @@
       },
       {
         "title": {
+          "en": "Auto dry running !{{is|is not}} on",
+          "ko": "자동 건조 동작 중 !{{켜짐|꺼짐}}"
+        },
+        "titleFormatted": {
+          "en": "Auto dry running !{{is|is not}} on",
+          "ko": "자동 건조 동작 중 !{{켜짐|꺼짐}}"
+        },
+        "hint": {
+          "en": "Checks the value as the appliance last reported it.",
+          "ko": "가전이 마지막으로 보고한 값을 확인합니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_auto_clean_active"
+          }
+        ],
+        "id": "auto_clean_active_is"
+      },
+      {
+        "title": {
           "en": "Auto clean !{{is|is not}} on",
           "ko": "자동 건조 !{{켜짐|꺼짐}}"
         },
@@ -1069,6 +1091,34 @@
           }
         ],
         "id": "auto_clean_is"
+      },
+      {
+        "title": {
+          "en": "Auto dry progress !{{is|is not}} at least [[value]] %",
+          "ko": "자동 건조 진행률 [[value]] % !{{이상|미만}}"
+        },
+        "titleFormatted": {
+          "en": "Auto dry progress !{{is|is not}} at least [[value]] %",
+          "ko": "자동 건조 진행률 [[value]] % !{{이상|미만}}"
+        },
+        "hint": {
+          "en": "Checks the value as the appliance last reported it.",
+          "ko": "가전이 마지막으로 보고한 값을 확인합니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_auto_clean_progress"
+          },
+          {
+            "name": "value",
+            "type": "number",
+            "min": 0,
+            "max": 100
+          }
+        ],
+        "id": "auto_clean_progress_is"
       },
       {
         "title": {
@@ -2316,6 +2366,28 @@
       },
       {
         "title": {
+          "en": "Self check running !{{is|is not}} on",
+          "ko": "자가진단 동작 중 !{{켜짐|꺼짐}}"
+        },
+        "titleFormatted": {
+          "en": "Self check running !{{is|is not}} on",
+          "ko": "자가진단 동작 중 !{{켜짐|꺼짐}}"
+        },
+        "hint": {
+          "en": "Checks the value as the appliance last reported it.",
+          "ko": "가전이 마지막으로 보고한 값을 확인합니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_selfcheck_active"
+          }
+        ],
+        "id": "selfcheck_active_is"
+      },
+      {
+        "title": {
           "en": "Self check !{{is|is not}} [[value]]",
           "ko": "자가 진단 [[value]] !{{임|아님}}"
         },
@@ -2339,6 +2411,34 @@
           }
         ],
         "id": "selfcheck_is"
+      },
+      {
+        "title": {
+          "en": "Self check progress !{{is|is not}} at least [[value]] %",
+          "ko": "자가진단 진행률 [[value]] % !{{이상|미만}}"
+        },
+        "titleFormatted": {
+          "en": "Self check progress !{{is|is not}} at least [[value]] %",
+          "ko": "자가진단 진행률 [[value]] % !{{이상|미만}}"
+        },
+        "hint": {
+          "en": "Checks the value as the appliance last reported it.",
+          "ko": "가전이 마지막으로 보고한 값을 확인합니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_selfcheck_progress"
+          },
+          {
+            "name": "value",
+            "type": "number",
+            "min": 0,
+            "max": 100
+          }
+        ],
+        "id": "selfcheck_progress_is"
       },
       {
         "title": {
@@ -4503,6 +4603,34 @@
       "uiComponent": "toggle",
       "icon": "/assets/capabilities/mdi-spray-bottle.svg"
     },
+    "localthings_auto_clean_active": {
+      "type": "boolean",
+      "title": {
+        "en": "Auto dry running",
+        "ko": "자동 건조 동작 중"
+      },
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "icon": "/assets/capabilities/mdi-spray-bottle.svg"
+    },
+    "localthings_auto_clean_progress": {
+      "type": "number",
+      "title": {
+        "en": "Auto dry progress",
+        "ko": "자동 건조 진행률"
+      },
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "decimals": 0,
+      "units": {
+        "en": "%"
+      },
+      "min": 0,
+      "max": 100,
+      "icon": "/assets/capabilities/mdi-progress-clock.svg"
+    },
     "localthings_auto_ventilation": {
       "type": "boolean",
       "getable": true,
@@ -5196,6 +5324,34 @@
       "setable": false,
       "uiComponent": "sensor",
       "icon": "/assets/capabilities/mdi-stethoscope.svg"
+    },
+    "localthings_selfcheck_active": {
+      "type": "boolean",
+      "title": {
+        "en": "Self check running",
+        "ko": "자가진단 동작 중"
+      },
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "icon": "/assets/capabilities/mdi-shield-check.svg"
+    },
+    "localthings_selfcheck_progress": {
+      "type": "number",
+      "title": {
+        "en": "Self check progress",
+        "ko": "자가진단 진행률"
+      },
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "decimals": 0,
+      "units": {
+        "en": "%"
+      },
+      "min": 0,
+      "max": 100,
+      "icon": "/assets/capabilities/mdi-progress-clock.svg"
     },
     "localthings_smart_control": {
       "type": "boolean",
