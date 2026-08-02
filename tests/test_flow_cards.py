@@ -738,44 +738,75 @@ def test_neither_cycle_capability_binds_where_the_field_is_absent():
         assert spec.exists({"x.com.samsung.da.settingStatus": "On"}, {}) is False
 
 
-def test_ai_comfort_with_a_comfort_mode_is_refused_without_touching_the_appliance():
-    """Measured: with the unit settled and the mode confirmed as AI Comfort,
-    applying Wind-Free put it into Cool within seconds. The two cannot both hold.
+def test_a_comfort_mode_is_skipped_under_ai_comfort_and_the_mode_wins(driver_instance):
+    """The two cannot both hold — measured: with the unit settled and the mode
+    confirmed AI Comfort, applying Wind-Free put it into Cool, and setting AI
+    Comfort again cleared the comfort mode back to Off.
 
-    Refused before anything is written, not discovered afterwards — reconciliation
-    would notice the same thing only after the fact and then push the pair back and
-    forth, visibly switching the appliance's mode two or three times before giving
-    up. The owner watched that happen.
+    The operating mode wins and the comfort mode is dropped. Attempting it would
+    silently change the mode the user asked for, which is the bug this card exists
+    to stop.
     """
     import asyncio
 
-    class _Untouched:
+    class _AC:
         def __init__(self):
+            self.state = {}
             self.writes = []
-            self.refreshes = 0
 
         def get_capability_value(self, capability):
-            return None
+            return self.state.get(capability)
 
         async def refresh_now(self):
-            self.refreshes += 1
+            pass
 
         async def trigger_capability_listener(self, capability, value):
-            self.writes.append((capability, value))
+            self.writes.append(capability)
+            self.state[capability] = value
 
-    from lib.appliance.driver import ApplianceDriver
-    driver = object.__new__(ApplianceDriver)
-    driver.log = lambda *a: None
-    driver.homey = _StubHomey()
-    device = _Untouched()
-    with pytest.raises(RuntimeError) as raised:
-        asyncio.run(driver._on_set_ac_settings({
-            "device": device, "power": "on", "mode": "AIComfort",
-            "temperature": 26.5, "air_purify": "on", "convenient": "Nano",
-        }))
-    assert "AI Comfort" in str(raised.value) or "AI 쾌적" in str(raised.value)
-    assert device.writes == [], "the appliance was changed before the refusal"
-    assert device.refreshes == 0, "it even polled the appliance first"
+    device = _AC()
+    driver_instance.homey = _StubHomey()
+    driver_instance._AC_SETTLE_S = 0
+    asyncio.run(driver_instance._on_set_ac_settings({
+        "device": device, "power": "on", "mode": "AIComfort",
+        "temperature": 26.5, "air_purify": "on", "convenient": "Nano",
+    }))
+    assert "localthings_convenient_mode" not in device.writes, (
+        "the comfort mode was attempted and would have knocked the mode out"
+    )
+    assert device.state["localthings_ac_mode"] == "AIComfort"
+    assert device.state["target_temperature"] == 26.5
+    assert device.state["localthings_air_purify"] is True
+
+
+def test_the_skip_also_applies_when_the_mode_is_left_unchanged(driver_instance):
+    """The unit is already in AI Comfort and the card is not touching the mode.
+    Applying the comfort mode would change it anyway, so the same rule holds."""
+    import asyncio
+
+    class _AlreadyAI:
+        def __init__(self):
+            self.writes = []
+
+        def get_capability_value(self, capability):
+            return "AIComfort" if capability == "localthings_ac_mode" else None
+
+        async def refresh_now(self):
+            pass
+
+        async def trigger_capability_listener(self, capability, value):
+            self.writes.append(capability)
+
+    device = _AlreadyAI()
+    driver_instance.homey = _StubHomey()
+    driver_instance._AC_SETTLE_S = 0
+    driver_instance._AC_ATTEMPTS = 1
+    driver_instance._AC_RECONCILE_ROUNDS = 0
+    asyncio.run(driver_instance._on_set_ac_settings({
+        "device": device, "power": "keep", "mode": "keep",
+        "temperature": 0, "air_purify": "keep", "convenient": "Nano",
+    }))
+    assert device.writes == [], "the comfort mode was applied under AI Comfort"
 
 
 @pytest.mark.parametrize("mode,comfort", [

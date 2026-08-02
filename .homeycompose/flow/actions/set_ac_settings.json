@@ -8,8 +8,8 @@
     "ko": "설정 적용: 전원 [[power]], 운전 모드 [[mode]], [[temperature]]°C, 공기청정 [[air_purify]], 쾌적 모드 [[convenient]]"
   },
   "hint": {
-    "en": "Applies several settings in one card, re-reading the appliance before it starts and after every step so each one decides from what the appliance holds now. Set a field to \"leave unchanged\" to skip it, and temperature to 0 to skip that.",
-    "ko": "여러 설정을 카드 한 장으로 적용합니다. 시작 전과 각 단계 후에 기기를 다시 읽어, 매 단계가 현재 상태를 보고 판단합니다. 바꾸지 않을 항목은 \"변경 안 함\"으로, 온도는 0으로 두면 건너뜁니다."
+    "en": "Applies several settings in one card, re-reading the appliance before it starts and after every step so each one decides from what the appliance holds now. Set a field to \"leave unchanged\" to skip it, and temperature to 0 to skip that. The operating mode takes priority: these appliances cannot hold AI Comfort together with a comfort mode, so under AI Comfort the comfort mode is left alone rather than changing the mode you asked for.",
+    "ko": "여러 설정을 카드 한 장으로 적용합니다. 시작 전과 각 단계 후에 기기를 다시 읽어, 매 단계가 현재 상태를 보고 판단합니다. 바꾸지 않을 항목은 \"변경 안 함\"으로, 온도는 0으로 두면 건너뜁니다. 운전 모드가 우선입니다 — 이 가전은 AI 쾌적과 쾌적 모드를 함께 유지하지 못하므로, AI 쾌적일 때는 요청하신 운전 모드를 바꾸지 않기 위해 쾌적 모드를 건너뜁니다."
   },
   "args": [
     {

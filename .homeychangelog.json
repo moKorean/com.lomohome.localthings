@@ -54,5 +54,9 @@
   "0.5.8": {
     "en": "The combined air conditioner card now refuses AI Comfort together with a comfort mode instead of trying it. These appliances cannot hold both — setting a comfort mode drops the unit into Cool, because AI Comfort manages the fan itself — and attempting it was switching the mode back and forth before giving up. The card now says so and changes nothing.",
     "ko": "통합 에어컨 카드가 AI 쾌적과 쾌적 모드를 함께 요청하면 시도하지 않고 거절합니다. 이 가전은 둘을 동시에 유지하지 못합니다 — 쾌적 모드를 걸면 냉방으로 바뀌며, AI 쾌적이 바람을 스스로 관리하기 때문입니다. 기존에는 시도하다가 운전 모드를 오가게 만들었습니다. 이제 이유를 알려주고 아무것도 바꾸지 않습니다."
+  },
+  "0.5.9": {
+    "en": "In the combined air conditioner card the operating mode now takes priority. These appliances cannot hold AI Comfort together with a comfort mode, so under AI Comfort the comfort mode is left alone instead of changing the mode you asked for. Everything else in the card still applies.",
+    "ko": "통합 에어컨 카드에서 운전 모드가 우선합니다. 이 가전은 AI 쾌적과 쾌적 모드를 함께 유지하지 못하므로, AI 쾌적일 때는 요청하신 운전 모드를 지키기 위해 쾌적 모드를 건드리지 않습니다. 카드의 나머지 설정은 그대로 적용됩니다."
   }
 }

@@ -191,6 +191,14 @@ value actually stayed, and re-sends it if the appliance took it back — verifie
 hardware to recover exactly the case above. Leave any field on "leave unchanged"
 (or temperature at 0) to skip it.
 
+The operating mode takes priority over the comfort mode, because the two are
+mutually exclusive on this hardware: applying Wind-Free drops a unit out of AI
+Comfort, and setting AI Comfort clears the comfort mode back to Off. That is what
+the original report turned out to be — the comfort-mode card at the end of the
+Flow was undoing the mode set earlier, so the setting that ran first looked like
+the one that failed. Under AI Comfort the card leaves the comfort mode alone
+rather than changing the mode you asked for.
+
 ### Homey fires the triggers itself
 
 Homey has a convention for custom capabilities: when `set_capability_value` changes one,
