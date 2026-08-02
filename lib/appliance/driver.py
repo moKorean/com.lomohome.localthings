@@ -476,20 +476,31 @@ class ApplianceDriver(driver.Driver):
     # was simply unreachable when Homey last tried.
 
     async def on_repair(self, session, device=None) -> None:
-        self._repair_device = device
-        session.set_handler("repair_state", self._on_repair_state)
-        session.set_handler("repair_test", self._on_repair_test)
-        session.set_handler("repair_find", self._on_repair_find)
-        session.set_handler("repair_host", self._on_repair_host)
+        # The device is bound to *this* session rather than parked on the driver.
+        # It used to live in self._repair_device, which two repair sessions open at
+        # once would share: the second to open would win, and the first webview's
+        # "set the address by hand" would then move the second appliance to it.
+        for name, handler in (
+            ("repair_state", self._on_repair_state),
+            ("repair_test", self._on_repair_test),
+            ("repair_find", self._on_repair_find),
+            ("repair_host", self._on_repair_host),
+        ):
+            session.set_handler(name, self._for_session(handler, device))
 
-    def _repair_target(self, data=None):
+    def _for_session(self, handler, device):
+        async def run(data=None, **_):
+            return await handler(self._repair_target(data, device), data)
+
+        return run
+
+    def _repair_target(self, data=None, device=None):
         """The device being repaired.
 
         Taken from on_repair where the SDK provides it, and from the handler payload
         otherwise — the argument's presence is not something this app can rely on
         across SDK versions.
         """
-        device = getattr(self, "_repair_device", None)
         if device is not None:
             return device
         device_id = (data or {}).get("device_id")
@@ -502,8 +513,7 @@ class ApplianceDriver(driver.Driver):
                     continue
         raise ValueError(_REPAIR_NO_DEVICE)
 
-    async def _on_repair_state(self, data=None, **_) -> dict:
-        device = self._repair_target(data)
+    async def _on_repair_state(self, device, data=None) -> dict:
         await self._language(data)
         store = device.get_store() or {}
         cert_pem, key_pem = await self._credentials()
@@ -524,21 +534,20 @@ class ApplianceDriver(driver.Driver):
             "certificate": certificate,
         }
 
-    async def _on_repair_test(self, data=None, **_) -> dict:
+    async def _on_repair_test(self, device, data=None) -> dict:
         """Read /device/0 at the stored address and confirm it is still this unit.
 
         Reporting a serial mismatch matters as much as reporting a failure: it is the
         case where everything looks connected but the device is driving a different
         appliance.
         """
-        device = self._repair_target(data)
         store = device.get_store() or {}
         host = store.get(STORE_HOST)
         cert_pem, key_pem = await self._credentials()
         if not cert_pem or not key_pem:
             return {"ok": False, "reason": "no_credentials"}
         try:
-            result = await self._run(probe.probe, host, cert_pem, key_pem)
+            result = await device.check_now()
         except Exception as exc:
             return {"ok": False, "reason": "unreachable", "detail": str(exc)[:200]}
 
@@ -549,9 +558,8 @@ class ApplianceDriver(driver.Driver):
                     "expected": expected, "found": found, "host": host}
         return {"ok": True, "host": host, "port": result["port"], "serial": found}
 
-    async def _on_repair_find(self, data=None, **_) -> dict:
+    async def _on_repair_find(self, device, data=None) -> dict:
         """Sweep for this appliance by serial and re-point the device at it."""
-        device = self._repair_target(data)
         store = device.get_store() or {}
         serial = str(store.get(STORE_SERIAL) or "")
         if not serial or ":" in serial:
@@ -571,9 +579,8 @@ class ApplianceDriver(driver.Driver):
             return {"ok": True, "host": host, "port": result["port"]}
         return {"ok": False, "reason": "not_found"}
 
-    async def _on_repair_host(self, data=None, **_) -> dict:
+    async def _on_repair_host(self, device, data=None) -> dict:
         """Re-point at an address the user supplies, after checking it is this unit."""
-        device = self._repair_target(data)
         host = ((data or {}).get("host") or "").strip()
         if not host:
             raise ValueError(i18n.translate(
@@ -597,15 +604,19 @@ class ApplianceDriver(driver.Driver):
         return {"ok": True, "host": host, "port": result["port"]}
 
     async def _repoint(self, device, host: str, port: int) -> None:
-        for key, value in ((STORE_HOST, host), (STORE_PORT, port)):
-            setter = getattr(device, "set_store_value", None)
-            if callable(setter):
-                try:
-                    result = setter(key, value)
-                    if hasattr(result, "__await__"):
-                        await result
-                except Exception as exc:
-                    self.log(f"repair: storing {key} failed: {exc}")
+        """Move the device, session and all, not just its stored address.
+
+        This used to write the two store keys directly and report success. Nothing
+        re-reads the store — the SDK has no store-change hook and `Device.on_init`
+        reads it once — so the running device kept polling the old address and kept
+        showing it in the advanced settings, and the repair only took effect on the
+        next app restart. `Device.move_to` is what the automatic relocation already
+        used; both paths now go through it.
+
+        Failures are raised rather than logged. A repair that could not move the
+        device but said it had is worse than one that says it failed.
+        """
+        await device.move_to(host, port)
         self.log(f"repair: {device.get_name()} re-pointed at {host}:{port}")
 
     async def _on_report_env(self, data=None, **_) -> dict:

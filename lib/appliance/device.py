@@ -12,6 +12,7 @@ invisible.
 """
 
 import asyncio
+import contextlib
 import time
 
 from homey import device
@@ -295,6 +296,62 @@ class ApplianceDevice(device.Device):
         """
         return bool(self._serial) and ":" not in self._serial
 
+    async def check_now(self) -> dict:
+        """Read `/device/0` over this device's own session, for Repair to test with.
+
+        Deliberately not a fresh `probe.probe` at the stored address. This app pins
+        one UDP source port per appliance so that a reconnect reuses the same
+        5-tuple and the appliance evicts any orphaned association (RFC 6347 §4.2.8)
+        — which is exactly what a second session to the same address would trigger
+        against the *live* one. Testing a healthy device would then destroy its
+        subscriptions, and nothing would tell it: `_observing` stays True, so
+        `_try_observe` does not resubscribe until OBSERVE_REFRESH_S (six hours) has
+        passed, leaving it silently degraded to the five-minute sweep.
+
+        Using the live session also tests the path the device actually uses, and it
+        reconnects on its own if the session had dropped.
+        """
+        resources = await self._session.read_device0()
+        return {
+            "host": self._host,
+            "port": self._port,
+            "serial": read_serial(resources, self._host, self._port),
+        }
+
+    async def move_to(self, host: str, port: int) -> None:
+        """Point this device at a new address, taking the live session with it.
+
+        The single entry point for relocation, called both by the automatic sweep
+        below and by Repair in the driver. Repair used to write only the store,
+        which looks equivalent and is not: nothing re-reads the store. There is no
+        store-change hook in the SDK — `on_init` reads it once — so the running
+        device kept its old address, kept polling it, and kept showing it in the
+        advanced settings, while Repair reported success. The change took effect
+        only on the next app restart.
+
+        Every step here matters. The old session is closed first so its socket and
+        the appliance's association go away rather than lingering — this app pins a
+        source port per device, so a session left open holds the port the new one
+        needs. The observe flags are cleared because the subscriptions belonged to
+        the session that just closed.
+        """
+        cert_pem = await compat.setting_get(self.homey, SETTING_LEAF_CERT)
+        key_pem = await compat.setting_get(self.homey, SETTING_LEAF_KEY)
+        if not cert_pem or not key_pem:
+            raise RuntimeError(i18n.translate("error.no_credentials", self._language))
+
+        with contextlib.suppress(Exception):
+            await self._session.close()
+        await self._remember_location(host, port)
+        self._session = Session(
+            self._host, self._port, cert_pem, key_pem,
+            log=self.log, on_notification=self._on_notification,
+        )
+        self._observing = False
+        self._observe_pending = False
+        self._observe_attempted_at = 0.0
+        await self._sync_settings()
+
     async def _remember_location(self, host: str, port: int) -> None:
         """Persist a new address and reflect it in the settings the user sees."""
         self._host, self._port = host, port
@@ -377,17 +434,7 @@ class ApplianceDevice(device.Device):
             if str(result["serial"]) != self._serial:
                 continue
             self.log(f"found at {host}:{result['port']}; updating")
-            await self._session.close()
-            await self._remember_location(host, result["port"])
-            self._session = Session(
-                self._host, self._port, cert_pem, key_pem,
-                log=self.log, on_notification=self._on_notification,
-            )
-            # Subscriptions belonged to the old session.
-            self._observing = False
-            self._observe_pending = False
-            self._observe_attempted_at = 0.0
-            await self._sync_settings()
+            await self.move_to(host, result["port"])
             return True
 
         self.log(f"{self._serial} not found on the network")
