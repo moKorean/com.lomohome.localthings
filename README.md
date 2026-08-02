@@ -199,7 +199,7 @@ so the setting that ran first looked like the one that failed.
 
 | Mode | Target temp | Fan speed | Direction | Air purify | Wind-Free | Long wind | Speed |
 |---|---|---|---|---|---|---|---|
-| AI Comfort | ✓ | | ✓ | | | | |
+| AI Comfort | ✓ | | ✓ | ✓ | | | |
 | Auto | ✓ | | ✓ | ✓ | | | |
 | Cool | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
 | Dry | ✓ | | ✓ | ✓ | ✓ | ✓ | |

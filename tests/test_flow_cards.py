@@ -739,9 +739,9 @@ def test_neither_cycle_capability_binds_where_the_field_is_absent():
 
 
 def test_ai_comfort_takes_only_what_it_honours(driver_instance):
-    """AI Comfort accepts a target temperature and an airflow direction, and
-    nothing else. The rest is written on the wire and ignored — or, for the comfort
-    mode, silently changes the mode the user asked for."""
+    """AI Comfort accepts a target temperature, an airflow direction and air
+    purify. Fan speed and the comfort modes it does not — the latter silently
+    change the mode the user asked for."""
     import asyncio
 
     class _AC:
@@ -769,7 +769,7 @@ def test_ai_comfort_takes_only_what_it_honours(driver_instance):
     }))
     assert device.writes == [
         "onoff", "localthings_ac_mode", "target_temperature",
-        "localthings_wind_direction",
+        "localthings_wind_direction", "localthings_air_purify",
     ], device.writes
 
 
@@ -846,7 +846,7 @@ _MATRIX_ARGS = {
 # The owner's table, transcribed independently of the module so a change to one
 # has to be a deliberate change to both.
 _EXPECTED = {
-    "AIComfort": {"temperature", "direction"},
+    "AIComfort": {"temperature", "direction", "air_purify"},
     "Auto": {"temperature", "direction", "air_purify"},
     "Cool": {"temperature", "fan", "direction", "air_purify", "convenient"},
     "Dry": {"temperature", "direction", "air_purify", "convenient"},

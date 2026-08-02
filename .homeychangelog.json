@@ -60,7 +60,7 @@
     "ko": "통합 에어컨 카드에서 운전 모드가 우선합니다. 이 가전은 AI 쾌적과 쾌적 모드를 함께 유지하지 못하므로, AI 쾌적일 때는 요청하신 운전 모드를 지키기 위해 쾌적 모드를 건드리지 않습니다. 카드의 나머지 설정은 그대로 적용됩니다."
   },
   "0.6.0": {
-    "en": "The combined air conditioner card now also sets fan speed and airflow direction, and it knows which settings each operating mode actually honours. AI Comfort takes a temperature and a direction; Fan takes no temperature; only Cool takes all of them. Anything the chosen mode will not accept is left alone instead of being written and silently ignored, and the operating mode always wins.",
-    "ko": "통합 에어컨 카드에 바람 세기와 바람 방향이 추가됐고, 운전 모드별로 실제 적용되는 설정을 구분합니다. AI 쾌적은 희망 온도와 바람 방향만, 송풍은 희망 온도를 받지 않으며, 전부 받는 것은 냉방뿐입니다. 선택한 모드가 받지 않는 항목은 쓰지 않고 그대로 두며, 운전 모드가 항상 우선합니다."
+    "en": "New Flow card: Apply air conditioner settings. Power, mode, target temperature, fan speed, airflow direction, air purify and comfort mode in one card, instead of chaining seven. It reads the appliance between steps, confirms each setting stayed and re-sends any the appliance took back — a unit switched on by a Flow restores its own mode as it starts, which was quietly undoing the mode set a moment later. The operating mode takes priority: each mode only honours some of the rest, so AI Comfort ignores fan speed and the comfort modes and Fan ignores the target temperature, and the card leaves those alone rather than writing settings the appliance discards. Air conditioners also now show whether auto dry is running and how far through, and the same for the self check.",
+    "ko": "새 플로우 카드: 에어컨 설정 한 번에 적용. 전원·운전 모드·희망 온도·바람 세기·바람 방향·공기청정·쾌적 모드를 카드 한 장에서 설정합니다. 카드 일곱 장을 이어 붙일 필요가 없습니다. 단계마다 기기를 다시 읽어 설정이 실제로 남았는지 확인하고, 기기가 되돌린 설정은 다시 보냅니다 — 플로우로 켠 에어컨은 시작하면서 자기 운전 모드를 복원하기 때문에, 곧이어 지정한 모드가 조용히 사라지고 있었습니다. 운전 모드가 우선입니다: 모드마다 받아들이는 설정이 달라서 AI 쾌적은 바람 세기와 쾌적 모드를, 송풍은 희망 온도를 무시합니다. 이런 항목은 쓰지 않고 그대로 둡니다. 에어컨에 자동 건조가 실제로 돌고 있는지와 진행률도 표시되며, 자가진단도 같습니다."
   }
 }

@@ -7,7 +7,7 @@ answers without a rejection flag, which is exactly why a Flow could ask for
 something and be told it succeeded.
 
     mode        target temp   fan speed   direction   air purify   Wind-Free   Long wind   Speed
-    AI Comfort      yes           no         yes          no          no          no        no
+    AI Comfort      yes           no         yes          yes         no          no        no
     Auto            yes           no         yes          yes         no          no        no
     Cool            yes           yes        yes          yes         yes         yes       yes
     Dry             yes           no         yes          yes         yes         yes       no
@@ -37,7 +37,11 @@ COMFORT = "convenient"
 # value, because the restriction is per comfort mode rather than per setting: Dry
 # takes Wind-Free and Long wind but not Speed.
 _BLOCKED: dict[str, frozenset] = {
-    "AIComfort": frozenset({FAN_SPEED, AIR_PURIFY, "Nano", "LongWind", "Speed"}),
+    # Air purify is *not* blocked here. It was, on a first reading of the table,
+    # and the owner corrected it: it does work under AI Comfort. That matches what
+    # was measured during a Flow run — /option/airpurify/vs/0 read On with the mode
+    # AIComfort and stayed On across samples.
+    "AIComfort": frozenset({FAN_SPEED, "Nano", "LongWind", "Speed"}),
     "Auto": frozenset({FAN_SPEED, "Nano", "LongWind", "Speed"}),
     "Cool": frozenset(),
     "Dry": frozenset({FAN_SPEED, "Speed"}),

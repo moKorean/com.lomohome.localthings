@@ -3001,8 +3001,8 @@
           "ko": "설정 적용: 전원 [[power]], 운전 모드 [[mode]], [[temperature]]°C, 바람 세기 [[fan]], 바람 방향 [[direction]], 공기청정 [[air_purify]], 쾌적 모드 [[convenient]]"
         },
         "hint": {
-          "en": "Applies several settings in one card, re-reading the appliance before it starts and after every step so each decides from what the appliance holds now. Set a field to \"leave unchanged\" to skip it, and temperature to 0 to skip that. The operating mode takes priority: each mode only honours some of the others — AI Comfort takes no fan speed, air purify or comfort mode, Fan takes no target temperature — and anything the chosen mode will not accept is left alone rather than written and silently ignored.",
-          "ko": "여러 설정을 카드 한 장으로 적용합니다. 시작 전과 각 단계 후에 기기를 다시 읽어 매 단계가 현재 상태를 보고 판단합니다. 바꾸지 않을 항목은 \"변경 안 함\"으로, 온도는 0으로 두면 건너뜁니다. 운전 모드가 우선입니다 — 모드마다 받아들이는 설정이 다릅니다(AI 쾌적은 바람 세기·공기청정·쾌적 모드를 받지 않고, 송풍은 희망 온도를 받지 않습니다). 선택한 모드가 받지 않는 항목은 쓰지 않고 그대로 둡니다. 써도 조용히 무시되기 때문입니다."
+          "en": "Applies several settings in one card, re-reading the appliance before it starts and after every step so each decides from what the appliance holds now. Set a field to \"leave unchanged\" to skip it, and temperature to 0 to skip that. The operating mode takes priority: each mode only honours some of the others — AI Comfort takes no fan speed or comfort mode, Fan takes no target temperature — and anything the chosen mode will not accept is left alone rather than written and silently ignored.",
+          "ko": "여러 설정을 카드 한 장으로 적용합니다. 시작 전과 각 단계 후에 기기를 다시 읽어 매 단계가 현재 상태를 보고 판단합니다. 바꾸지 않을 항목은 \"변경 안 함\"으로, 온도는 0으로 두면 건너뜁니다. 운전 모드가 우선입니다 — 모드마다 받아들이는 설정이 다릅니다(AI 쾌적은 바람 세기·쾌적 모드를 받지 않고, 송풍은 희망 온도를 받지 않습니다). 선택한 모드가 받지 않는 항목은 쓰지 않고 그대로 둡니다. 써도 조용히 무시되기 때문입니다."
         },
         "args": [
           {
