@@ -2901,8 +2901,8 @@
           "ko": "설정 적용: 전원 [[power]], 운전 모드 [[mode]], [[temperature]]°C, 공기청정 [[air_purify]], 쾌적 모드 [[convenient]]"
         },
         "hint": {
-          "en": "Applies several settings in one card, in an order the appliance accepts, re-reading its state between each and confirming it took. Set a field to \"leave unchanged\" to skip it, and temperature to 0 to skip that. Separate cards can race: the appliance changes what it reports as it goes, so a later card can act on state that is already out of date.",
-          "ko": "여러 설정을 카드 하나로, 기기가 받아들이는 순서대로 적용합니다. 단계마다 상태를 다시 읽고 실제로 반영됐는지 확인합니다. 바꾸지 않을 항목은 \"변경 안 함\"으로, 온도는 0으로 두면 건너뜁니다. 카드를 여러 장 이어 붙이면 서로 경합합니다 — 기기가 보고하는 내용이 중간에 바뀌므로 뒤 카드가 이미 낡은 상태를 보고 동작할 수 있습니다."
+          "en": "Applies several settings in one card, re-reading the appliance before it starts and after every step so each one decides from what the appliance holds now. Set a field to \"leave unchanged\" to skip it, and temperature to 0 to skip that.",
+          "ko": "여러 설정을 카드 한 장으로 적용합니다. 시작 전과 각 단계 후에 기기를 다시 읽어, 매 단계가 현재 상태를 보고 판단합니다. 바꾸지 않을 항목은 \"변경 안 함\"으로, 온도는 0으로 두면 건너뜁니다."
         },
         "args": [
           {

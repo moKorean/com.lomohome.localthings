@@ -39,6 +39,55 @@ from lib.resources import read_serial
 from lib.session import Session
 
 
+ITEMS_FIELD = "x.com.samsung.da.items"
+ITEM_ID = "x.com.samsung.da.id"
+
+
+def _fold_write_into(cached: dict, body: dict) -> None:
+    """Apply a write payload to the cached representation, in place, without
+    discarding the fields the payload did not mention.
+
+    A plain `dict.update` looks right and silently truncates. Samsung's
+    list-shaped resources are written by sending one entry carrying only the id
+    and the field being changed — a setpoint write sends
+
+        {"...items": [{"...id": "0", "...desired": "28.0"}]}
+
+    and `update` replaces the whole list with that, so until the next poll the
+    cached entry has lost `current`, `minimum`, `maximum` and `increment`.
+    Measured consequences on the air conditioner: `measure_temperature` reads
+    None so the current-temperature tile goes blank, and the setpoint's options
+    collapse to `{}` so the slider loses its range and step. A second write in the
+    same Flow is then formatted with no increment to snap to.
+
+    Entries are matched on their id rather than by position: nothing guarantees a
+    write payload lists them in the order the device reports them.
+    """
+    for key, value in body.items():
+        current = cached.get(key)
+        if key == ITEMS_FIELD and isinstance(value, list) and isinstance(current, list):
+            cached[key] = _fold_items(current, value)
+        else:
+            cached[key] = value
+
+
+def _fold_items(cached: list, written: list) -> list:
+    merged = [dict(item) if isinstance(item, dict) else item for item in cached]
+    for patch in written:
+        if not isinstance(patch, dict):
+            continue
+        target = next(
+            (item for item in merged
+             if isinstance(item, dict) and item.get(ITEM_ID) == patch.get(ITEM_ID)),
+            None,
+        )
+        if target is None:
+            merged.append(dict(patch))
+        else:
+            target.update(patch)
+    return merged
+
+
 class ApplianceDevice(device.Device):
 
     async def on_init(self) -> None:
@@ -788,7 +837,7 @@ class ApplianceDevice(device.Device):
         # shows what the device received rather than what was requested — the two
         # differ whenever the value had to be snapped to the increment.
         merged = self._resources.setdefault(spec.href, {})
-        merged.update(body)
+        _fold_write_into(merged, body)
         try:
             applied = spec.read(merged, self._resources)
         except Exception:

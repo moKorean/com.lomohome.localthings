@@ -450,14 +450,10 @@ def test_the_light_condition_reflects_the_capability(driver_instance):
 
 # --- the combined air-conditioner card -------------------------------------
 #
-# Chaining the per-capability cards races the appliance, not the other cards: each
-# decides what to send from this app's cache of /device/0, refreshed by polling and
-# up to OBSERVE_SWEEP_INTERVAL_S old on push. Measured on the reporting unit: in
-# AIComfort the appliance reports no `desired`, `current` or `increment` at all,
-# where in Cool it reports all three — so "mode = AI Comfort" then "temperature =
-# 28" sends a setpoint it no longer accepts, and the reply carries no
-# controlResponse flag, which counts as accepted. The Flow reports a success it did
-# not get.
+# Chaining the per-capability cards makes each decide what to send from this app's
+# cache of /device/0, refreshed by polling and up to OBSERVE_SWEEP_INTERVAL_S old on
+# push, so one running straight after another can act on state from before it. The
+# combined card re-reads between steps instead.
 
 
 def _ac_card():
@@ -513,42 +509,8 @@ def test_it_refreshes_between_steps(driver_instance):
     )
 
 
-def test_it_refuses_a_setpoint_the_appliance_cannot_take(driver_instance):
-    """Measured, not assumed: AIComfort units report no setpoint fields. Sending one
-    anyway is the silent no-op this card exists to stop."""
-    import asyncio
-
-    class _AC:
-        def __init__(self):
-            self.written = []
-            self.refreshed = 0
-
-        def get_capability_value(self, capability):
-            return "AIComfort" if capability == "localthings_ac_mode" else None
-
-        async def refresh_now(self):
-            self.refreshed += 1
-
-        async def trigger_capability_listener(self, capability, value):
-            self.written.append((capability, value))
-
-    device = _AC()
-    # A real-enough homey, so the failure can only come from the check under test —
-    # with `homey = None` an AttributeError from resolving the language would have
-    # satisfied a bare pytest.raises and the test would pass for the wrong reason.
-    driver_instance.homey = _StubHomey()
-    with pytest.raises(RuntimeError) as raised:
-        asyncio.run(driver_instance._on_set_ac_settings({
-            "device": device, "power": "keep", "mode": "keep",
-            "temperature": 28.0, "air_purify": "keep", "convenient": "keep",
-        }))
-    assert "AI Comfort" in str(raised.value), str(raised.value)
-    assert ("target_temperature", 28.0) not in device.written
-    assert device.refreshed >= 1, "it decided without reading the appliance first"
-
-
-def test_it_still_applies_the_setpoint_in_a_mode_that_takes_one(driver_instance):
-    """The refusal must be specific to AIComfort, not a blanket block."""
+def test_it_applies_every_requested_setting_in_order(driver_instance):
+    """Skipped fields stay skipped, and the rest arrive in the declared order."""
     import asyncio
 
     class _Cool:

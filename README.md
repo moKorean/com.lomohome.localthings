@@ -175,22 +175,16 @@ capability** — a hood owner sees 21.
 
 ### One card for a whole air-conditioner scene
 
-Chaining the single-setting cards races the appliance rather than the other cards.
-Each decides what to send from this app's cache of `/device/0`, which polling
-refreshes — up to five minutes apart once the device is on push — so a card that
-runs straight after another can act on state from before it.
-
-Measured on a reporting unit: in **AI Comfort the appliance reports no setpoint at
-all**, where in Cool it reports the current value, the target and the increment. So
-"set mode to AI Comfort" followed by "set temperature to 28" sends a setpoint the
-appliance no longer accepts, and the reply carries no rejection flag — the Flow
-reports a success it did not get.
+Chaining the single-setting cards makes each one decide what to send from this
+app's cache of `/device/0`, which polling refreshes — up to five minutes apart once
+the device is on push. A card that runs straight after another can therefore act on
+state from before it.
 
 **Apply air conditioner settings** takes power, mode, temperature, air purify and
 comfort mode in one card. It re-reads the appliance before it starts and again
-after every step, applies them in an order the appliance accepts, and where a
-combination cannot work it says so instead of pretending. Leave any field on
-"leave unchanged" (or temperature at 0) to skip it.
+after every step, so each step decides from what the appliance holds now, and
+applies them in an order the appliance accepts. Leave any field on "leave
+unchanged" (or temperature at 0) to skip it.
 
 ### Homey fires the triggers itself
 

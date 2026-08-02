@@ -44,7 +44,7 @@
     "ko": "복구 기능을 고쳤습니다. 검색이나 직접 입력으로 새 주소를 지정하면 즉시 반영됩니다 — 저장은 되지만 앱을 재시작할 때까지 이전 주소로 계속 연결하면서 복구는 성공이라고 표시했습니다. 연결 확인도 정상 동작 중인 가전을 방해하지 않습니다. 새 연결을 하나 더 여는 대신 기기가 이미 쓰는 연결로 확인합니다 — 기존 방식은 가전이 이를 교체로 처리해 실시간 업데이트가 조용히 멈췄습니다."
   },
   "0.5.6": {
-    "en": "New Flow card: Apply air conditioner settings. Power, mode, temperature, air purify and comfort mode in one card, applied in an order the appliance accepts and confirmed after each step. Chaining the single-setting cards could silently drop some of them — most visibly a target temperature set after AI Comfort, which that mode does not accept at all. The new card says so instead.",
-    "ko": "새 플로우 카드: 에어컨 설정 한 번에 적용. 전원·운전 모드·희망 온도·공기청정·쾌적 모드를 카드 한 장에서 받아, 가전이 받아들이는 순서로 적용하고 단계마다 반영을 확인합니다. 설정 카드를 여러 장 이어 붙이면 일부가 조용히 무시될 수 있었습니다 — 특히 AI 쾌적 모드 뒤의 희망 온도는 그 모드에서 아예 받지 않습니다. 새 카드는 이를 알려줍니다."
+    "en": "New Flow card: Apply air conditioner settings — power, mode, temperature, air purify and comfort mode in one card, re-reading the appliance before it starts and after every step so each decides from what the appliance holds now. Also fixes the current temperature and the setpoint's range disappearing from the tile straight after a temperature change, until the next refresh.",
+    "ko": "새 플로우 카드: 에어컨 설정 한 번에 적용 — 전원·운전 모드·희망 온도·공기청정·쾌적 모드를 카드 한 장에서 받고, 시작 전과 각 단계 후에 기기를 다시 읽어 매 단계가 현재 상태를 보고 판단합니다. 온도를 바꾼 직후 현재 온도와 설정 범위가 다음 갱신까지 사라지던 문제도 함께 고쳤습니다."
   }
 }

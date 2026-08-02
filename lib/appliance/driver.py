@@ -183,23 +183,21 @@ class ApplianceDriver(driver.Driver):
         on the state from *before* the previous one, and Samsung units change what
         they report as they go.
 
-        The measured case, on the unit this was reported from: in `AIComfort` the
-        appliance stops reporting a setpoint at all — `/temperatures/vs/0` carries
-        no `desired`, `current` or `increment`, where in `Cool` it carries all
-        three. So "set mode to AI Comfort" followed by "set temperature to 28"
-        sends a setpoint the appliance no longer accepts. Nothing errors: the reply
-        has no `controlResponse` flag, which counts as accepted, so the Flow reports
-        success it did not get.
+        One measured contributor: a write payload for a list-shaped resource sends
+        only the entry id and the field being changed, and folding that into the
+        cache used to replace the whole list — so straight after a setpoint write
+        the cached entry had lost `current`, `minimum`, `maximum` and `increment`.
+        That is fixed in `_fold_write_into`, but it is why a step deciding from the
+        cache left by the previous one could misbehave.
 
-        This card refreshes the state first, applies in a fixed order, re-reads
-        after every step, and confirms the value actually took. Where a combination
-        cannot work it says so instead of pretending.
+        This card refreshes the appliance before it starts and again after every
+        step, so each decides from what the appliance holds now, and applies them in
+        an order the appliance accepts.
         """
         args = card_arguments or {}
         device = args.get("device")
         if device is None:
             raise ValueError(_REPAIR_NO_DEVICE)
-        language = await compat.ui_language(self.homey)
 
         wanted = []
         for name, capability, convert in self._AC_STEPS:
@@ -219,20 +217,10 @@ class ApplianceDriver(driver.Driver):
         await device.refresh_now()
 
         for name, capability, value in wanted:
-            if name == "temperature" and self._ac_mode_of(device) == "AIComfort":
-                raise RuntimeError(i18n.translate(
-                    "error.ac_setpoint_unavailable", language))
             await device.trigger_capability_listener(capability, value)
             # Re-read before the next step, so it sees what this one actually did
             # rather than what it asked for.
             await device.refresh_now()
-
-    @staticmethod
-    def _ac_mode_of(device) -> str:
-        try:
-            return str(device.get_capability_value("localthings_ac_mode") or "")
-        except Exception:
-            return ""
 
     # --- pairing ----------------------------------------------------------
 

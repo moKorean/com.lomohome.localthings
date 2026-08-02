@@ -620,3 +620,97 @@ def test_the_air_monitor_has_no_power_control():
     reg = registry._REGISTRY_BY_KEY["air_monitor"]
     assert not [s for s in reg.specs if s.capability == "onoff"]
     assert [s for s in reg.specs if s.capability == "measure_battery"]
+
+
+# --- a write must not truncate the cached representation -------------------
+
+
+def _device_module():
+    """lib.appliance.device with the runtime-provided `homey` module stubbed."""
+    import sys
+    import types
+    stub = types.ModuleType("homey")
+    module = types.ModuleType("homey.device")
+
+    class Device:
+        pass
+
+    module.Device = Device
+    stub.device = module
+    saved = {name: sys.modules.get(name) for name in ("homey", "homey.device")}
+    sys.modules["homey"], sys.modules["homey.device"] = stub, module
+    try:
+        import importlib
+        return importlib.import_module("lib.appliance.device")
+    finally:
+        for name, module_ in saved.items():
+            if module_ is not None:
+                sys.modules[name] = module_
+
+
+def _ac_temperature_rep() -> dict:
+    """A real /temperatures/vs/0, as all four units here report it."""
+    return {"x.com.samsung.da.items": [{
+        "x.com.samsung.da.id": "0",
+        "x.com.samsung.da.description": "Temperature",
+        "x.com.samsung.da.current": "30.0",
+        "x.com.samsung.da.desired": "26.5",
+        "x.com.samsung.da.minimum": "18",
+        "x.com.samsung.da.maximum": "30",
+        "x.com.samsung.da.increment": "0.5",
+        "x.com.samsung.da.unit": "Celsius",
+    }]}
+
+
+def test_a_setpoint_write_keeps_the_rest_of_the_entry():
+    """The write sends only the id and the new setpoint. Folding that in with a
+    plain dict.update replaced the whole list, so until the next poll the cached
+    entry had lost everything else — `measure_temperature` read None and the
+    setpoint's options collapsed to {}."""
+    module = _device_module()
+    spec = next(s for s in airconditioner.REGISTRY.specs
+                if s.capability == "target_temperature")
+    current = next(s for s in airconditioner.REGISTRY.specs
+                   if s.capability == "measure_temperature")
+
+    rep = _ac_temperature_rep()
+    _path, body = spec.write(28.0, rep)
+    module._fold_write_into(rep, body)
+
+    assert spec.read(rep, {}) == 28.0, "the written value did not land"
+    assert current.read(rep, {}) == 30.0, "the current temperature was lost"
+    assert spec.options(rep, {}) == {"min": 18.0, "max": 30.0, "step": 0.5,
+                                     "decimals": 1}, "the slider lost its range"
+
+
+def test_folding_matches_entries_by_id_not_position():
+    """Nothing guarantees a write payload lists entries in the order the device
+    reports them, and a fridge writes one compartment at a time."""
+    module = _device_module()
+    cached = {"x.com.samsung.da.items": [
+        {"x.com.samsung.da.id": "0", "x.com.samsung.da.desired": "1", "keep": "a"},
+        {"x.com.samsung.da.id": "1", "x.com.samsung.da.desired": "2", "keep": "b"},
+    ]}
+    module._fold_write_into(cached, {"x.com.samsung.da.items": [
+        {"x.com.samsung.da.id": "1", "x.com.samsung.da.desired": "9"}]})
+    items = {i["x.com.samsung.da.id"]: i for i in cached["x.com.samsung.da.items"]}
+    assert items["1"]["x.com.samsung.da.desired"] == "9"
+    assert items["1"]["keep"] == "b", "the untouched fields of that entry were lost"
+    assert items["0"]["x.com.samsung.da.desired"] == "1", "another entry was disturbed"
+
+
+def test_a_flat_field_write_still_replaces_it():
+    """Only the list-shaped resources need folding; a scalar write is a plain set."""
+    module = _device_module()
+    cached = {"x.com.samsung.da.power": "Off", "other": "keep"}
+    module._fold_write_into(cached, {"x.com.samsung.da.power": "On"})
+    assert cached == {"x.com.samsung.da.power": "On", "other": "keep"}
+
+
+def test_an_entry_the_cache_has_never_seen_is_added():
+    module = _device_module()
+    cached = {"x.com.samsung.da.items": [{"x.com.samsung.da.id": "0"}]}
+    module._fold_write_into(cached, {"x.com.samsung.da.items": [
+        {"x.com.samsung.da.id": "7", "x.com.samsung.da.desired": "3"}]})
+    ids = [i["x.com.samsung.da.id"] for i in cached["x.com.samsung.da.items"]]
+    assert ids == ["0", "7"]

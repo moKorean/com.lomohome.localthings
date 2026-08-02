@@ -12,7 +12,6 @@
     "repair_no_device": "Could not tell which device is being repaired.",
     "already_paired": "This appliance is already added to Homey ({model} at {host}). Open it from your device list instead.",
     "handshake_refused": "The appliance is refusing new connections. This usually clears itself within a few minutes; the app keeps retrying.",
-    "unreachable": "Could not reach the appliance at {host}. The app keeps retrying, and searches the network for it by serial number.",
-    "ac_setpoint_unavailable": "This appliance does not accept a target temperature in AI Comfort mode — it reports no setpoint at all while that mode is on, and manages the temperature itself. Set the mode to Cool, Auto, Dry or Heat if you want to choose the temperature."
+    "unreachable": "Could not reach the appliance at {host}. The app keeps retrying, and searches the network for it by serial number."
   }
 }
