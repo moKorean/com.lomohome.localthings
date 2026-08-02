@@ -50,5 +50,9 @@
   "0.5.7": {
     "en": "Air conditioners now show whether auto dry is actually running and how far through it is, and the same for the self check — until now \"auto dry\" only told you the feature was switched on. The combined settings card also re-checks everything at the end and puts back any setting a later one undid: choosing a comfort mode was dropping the unit out of AI Comfort. Two error messages were showing raw placeholders instead of the appliance and value.",
     "ko": "에어컨에서 자동 건조가 실제로 돌고 있는지와 진행률을 표시합니다. 자가진단도 같습니다 — 지금까지 '자동 건조'는 기능을 켜 뒀는지만 알려줬습니다. 통합 설정 카드는 마지막에 전체를 다시 확인해, 뒤 설정이 되돌린 항목을 되살립니다: 쾌적 모드를 고르면 AI 쾌적이 풀리고 있었습니다. 오류 메시지 두 개가 기기·값 대신 자리표시자를 그대로 보여주던 것도 고쳤습니다."
+  },
+  "0.5.8": {
+    "en": "The combined air conditioner card now refuses AI Comfort together with a comfort mode instead of trying it. These appliances cannot hold both — setting a comfort mode drops the unit into Cool, because AI Comfort manages the fan itself — and attempting it was switching the mode back and forth before giving up. The card now says so and changes nothing.",
+    "ko": "통합 에어컨 카드가 AI 쾌적과 쾌적 모드를 함께 요청하면 시도하지 않고 거절합니다. 이 가전은 둘을 동시에 유지하지 못합니다 — 쾌적 모드를 걸면 냉방으로 바뀌며, AI 쾌적이 바람을 스스로 관리하기 때문입니다. 기존에는 시도하다가 운전 모드를 오가게 만들었습니다. 이제 이유를 알려주고 아무것도 바꾸지 않습니다."
   }
 }

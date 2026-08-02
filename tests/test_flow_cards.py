@@ -612,15 +612,16 @@ def test_a_setting_that_never_sticks_fails_the_card(driver_instance):
 
 
 def test_a_setting_undone_by_a_later_one_is_put_back(driver_instance):
-    """Ordering is not enough: a later setting can undo an earlier one.
+    """Ordering is not enough: a later setting can undo an earlier one, and each
+    step passes its own check because each was true when it ran. Only re-reading
+    everything at the end catches it.
 
-    Reported on this hardware — with the mode confirmed as AI Comfort, selecting
-    the Wind-Free comfort mode afterwards put the unit back into Cool. Each step
-    passed its own check, so only re-reading everything at the end catches it.
+    Uses a pair the card does not refuse outright — the AI Comfort and comfort-mode
+    contradiction is caught before any write, so it cannot exercise this path.
     """
     import asyncio
 
-    class _ComfortResetsMode:
+    class _ComfortResetsTemperature:
         def __init__(self):
             self.state = {}
             self.reset_once = True
@@ -634,20 +635,18 @@ def test_a_setting_undone_by_a_later_one_is_put_back(driver_instance):
         async def trigger_capability_listener(self, capability, value):
             self.state[capability] = value
             if capability == "localthings_convenient_mode" and self.reset_once:
-                # What the appliance does: taking a comfort mode drops it out of
-                # AI Comfort, because that mode manages the fan itself.
-                self.state["localthings_ac_mode"] = "Cool"
+                self.state["target_temperature"] = 18.0
                 self.reset_once = False
 
-    device = _ComfortResetsMode()
+    device = _ComfortResetsTemperature()
     driver_instance.homey = _StubHomey()
     driver_instance._AC_SETTLE_S = 0
     asyncio.run(driver_instance._on_set_ac_settings({
-        "device": device, "power": "keep", "mode": "AIComfort",
-        "temperature": 0, "air_purify": "keep", "convenient": "Nano",
+        "device": device, "power": "keep", "mode": "Cool",
+        "temperature": 26.0, "air_purify": "keep", "convenient": "Nano",
     }))
-    assert device.state["localthings_ac_mode"] == "AIComfort", (
-        "the comfort mode knocked the operating mode out and it was left that way"
+    assert device.state["target_temperature"] == 26.0, (
+        "the comfort mode moved the setpoint and it was left that way"
     )
     assert device.state["localthings_convenient_mode"] == "Nano"
 
@@ -677,16 +676,16 @@ def test_two_settings_that_cannot_hold_together_fail_the_card(driver_instance):
         async def trigger_capability_listener(self, capability, value):
             self.state[capability] = value
             if capability == "localthings_convenient_mode" and value != "Off":
-                self.state["localthings_ac_mode"] = "Cool"
+                self.state["localthings_ac_mode"] = "Dry"
             if (capability == "localthings_ac_mode"
                     and self.state.get("localthings_convenient_mode") not in (None, "Off")):
-                self.state["localthings_ac_mode"] = "Cool"
+                self.state["localthings_ac_mode"] = "Dry"
 
     driver_instance.homey = _StubHomey()
     driver_instance._AC_SETTLE_S = 0
     with pytest.raises(RuntimeError) as raised:
         asyncio.run(driver_instance._on_set_ac_settings({
-            "device": _MutuallyExclusive(), "power": "keep", "mode": "AIComfort",
+            "device": _MutuallyExclusive(), "power": "keep", "mode": "Cool",
             "temperature": 0, "air_purify": "keep", "convenient": "Nano",
         }))
     assert "mode" in str(raised.value)
@@ -737,3 +736,75 @@ def test_neither_cycle_capability_binds_where_the_field_is_absent():
         spec = next(s for s in airconditioner.REGISTRY.specs
                     if s.capability == capability)
         assert spec.exists({"x.com.samsung.da.settingStatus": "On"}, {}) is False
+
+
+def test_ai_comfort_with_a_comfort_mode_is_refused_without_touching_the_appliance():
+    """Measured: with the unit settled and the mode confirmed as AI Comfort,
+    applying Wind-Free put it into Cool within seconds. The two cannot both hold.
+
+    Refused before anything is written, not discovered afterwards — reconciliation
+    would notice the same thing only after the fact and then push the pair back and
+    forth, visibly switching the appliance's mode two or three times before giving
+    up. The owner watched that happen.
+    """
+    import asyncio
+
+    class _Untouched:
+        def __init__(self):
+            self.writes = []
+            self.refreshes = 0
+
+        def get_capability_value(self, capability):
+            return None
+
+        async def refresh_now(self):
+            self.refreshes += 1
+
+        async def trigger_capability_listener(self, capability, value):
+            self.writes.append((capability, value))
+
+    from lib.appliance.driver import ApplianceDriver
+    driver = object.__new__(ApplianceDriver)
+    driver.log = lambda *a: None
+    driver.homey = _StubHomey()
+    device = _Untouched()
+    with pytest.raises(RuntimeError) as raised:
+        asyncio.run(driver._on_set_ac_settings({
+            "device": device, "power": "on", "mode": "AIComfort",
+            "temperature": 26.5, "air_purify": "on", "convenient": "Nano",
+        }))
+    assert "AI Comfort" in str(raised.value) or "AI 쾌적" in str(raised.value)
+    assert device.writes == [], "the appliance was changed before the refusal"
+    assert device.refreshes == 0, "it even polled the appliance first"
+
+
+@pytest.mark.parametrize("mode,comfort", [
+    ("AIComfort", "Off"),      # turning the comfort mode off is not a contradiction
+    ("AIComfort", "keep"),     # leaving it alone is the way to keep AI Comfort
+    ("Cool", "Nano"),          # Wind-Free is exactly what Cool is for
+    ("keep", "Nano"),
+])
+def test_the_refusal_is_narrow(driver_instance, mode, comfort):
+    """Only the one measured contradiction. Blocking more than that would take away
+    combinations the appliance accepts."""
+    import asyncio
+
+    class _Accepts:
+        def __init__(self):
+            self.state = {}
+
+        def get_capability_value(self, capability):
+            return self.state.get(capability)
+
+        async def refresh_now(self):
+            pass
+
+        async def trigger_capability_listener(self, capability, value):
+            self.state[capability] = value
+
+    driver_instance.homey = _StubHomey()
+    driver_instance._AC_SETTLE_S = 0
+    asyncio.run(driver_instance._on_set_ac_settings({
+        "device": _Accepts(), "power": "keep", "mode": mode,
+        "temperature": 0, "air_purify": "keep", "convenient": comfort,
+    }))

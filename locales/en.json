@@ -14,6 +14,7 @@
     "handshake_refused": "The appliance is refusing new connections. This usually clears itself within a few minutes; the app keeps retrying.",
     "unreachable": "Could not reach the appliance at {host}. The app keeps retrying, and searches the network for it by serial number.",
     "setting_not_applied": "The air conditioner accepted {capability} = {value} and then changed it back. This usually means it was still starting up — try putting a short delay after turning it on.",
-    "settings_conflict": "The air conditioner would not hold these together: {settings}. Each was applied and then changed back by the appliance, which usually means the combination is one it does not allow — AI Comfort and a specific comfort mode, for instance. Pick one of them."
+    "settings_conflict": "The air conditioner would not hold these together: {settings}. Each was applied and then changed back by the appliance, which usually means the combination is one it does not allow — AI Comfort and a specific comfort mode, for instance. Pick one of them.",
+    "ac_mode_conflict": "This appliance will not hold AI Comfort together with the {comfort} comfort mode — setting the comfort mode puts it into Cool, because AI Comfort manages the fan itself. Nothing was changed. Choose one: leave the comfort mode unchanged to keep AI Comfort, or pick a different operating mode."
   }
 }

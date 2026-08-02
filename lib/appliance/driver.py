@@ -212,6 +212,24 @@ class ApplianceDriver(driver.Driver):
         if not wanted:
             return
 
+        # Refuse a combination the appliance cannot hold, before touching it.
+        #
+        # Measured on this hardware, with the unit already on and settled and the
+        # mode confirmed as AIComfort: applying the Wind-Free comfort mode put it
+        # into Cool within seconds. AI Comfort manages the fan itself, so naming a
+        # comfort mode contradicts it and the appliance resolves that its own way.
+        #
+        # Caught here rather than by the reconciliation below, which would notice
+        # the same thing only after the fact and then push the two settings back and
+        # forth — visibly switching the appliance's mode two or three times before
+        # giving up. Refusing up front changes nothing on the appliance at all.
+        requested = {name: value for name, _capability, value in wanted}
+        if (requested.get("mode") == "AIComfort"
+                and requested.get("convenient") not in (None, "Off")):
+            raise RuntimeError(i18n.translate(
+                "error.ac_mode_conflict", await compat.ui_language(self.homey),
+                mode="AI Comfort", comfort=requested["convenient"]))
+
         # One refresh up front, so the first step is not deciding from a cache that
         # may be five minutes old.
         await device.refresh_now()
