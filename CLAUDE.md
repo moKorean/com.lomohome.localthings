@@ -69,6 +69,21 @@ rejection flag. Three separate bugs have come from trusting that reply:
 
 Confirm by reading back, and re-send when the appliance takes it back.
 
+### Check what a counter counts before tuning it
+
+`_notified` is named for notifications and was tuned three times as if it measured
+the health of the push channel. It measures state changes since the last
+re-subscribe. A switched-off air conditioner answers 0 of 27 registrations while all
+27 are live, so an idle appliance fails any quorum — and the three refrigerators that
+pass do so only because they are always running. Every contradiction chased on
+2026-08-03 came from comparing devices at different points in a six-hour cycle.
+
+Two habits would have caught it a day earlier. Instrument the *identity* of what is
+missing, not only how many (`observe_silent_hrefs` exists for this now). And when a
+metric behaves oddly, change the world and watch it move — switching one unit on took
+it 0 → 7 in 70s with the retry window untouched, which no amount of reading the
+counter would have shown. `docs/BACKLOG.md` has the full record.
+
 ## Verified hardware
 
 Four air conditioners (`TP1X_DA-AC-CAC-01001`), one induction cooktop, one range

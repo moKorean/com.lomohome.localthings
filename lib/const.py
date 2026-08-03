@@ -81,27 +81,46 @@ POLL_INTERVAL_S = 30.0
 # poll, so waiting longer costs nothing and a device subscribing 22 resources needs
 # well over 15s for its initial notifications to all land.
 OBSERVE_GRACE_S = 45.0
-# What share of the subscribed resources must deliver their initial notification
-# for push to be considered working. A registration's response *is* its first
-# notification — the transport library's own `subscribe` docstring says so — so a
-# healthy channel should deliver one per href whatever the appliance is doing.
+# What share of the subscribed resources must have notified for push to be
+# considered working.
+#
+# Be aware of what this actually measures before tuning it. The transport library's
+# `subscribe` docstring says a registration's response *is* its first notification,
+# and this constant was reasoned about on that basis — but the appliances do not
+# behave that way. A switched-off air conditioner answers **0 of 27** registrations,
+# and switching it on produced 7 within 70s with no re-subscribe (`silent_rounds`
+# and `retry` unchanged), so those 27 observations were live the whole time with
+# nothing to report.
+#
+# So the counter tracks *state changes since the last re-subscribe* — `_notified` is
+# only cleared there — and not the health of the channel. An idle appliance cannot
+# reach any quorum, and the value of this fraction is close to irrelevant next to
+# that. Every contradiction chased on 2026-08-03 came from comparing devices at
+# different points in their re-subscribe cycle: three running refrigerators read
+# 7-8/9 while five switched-off units read 0-17/27, and readings of 27/27 for an
+# off unit were hours of accumulation, not a healthy burst.
+#
+# Left as it is on purpose. `_observing` only selects the poll interval (30s vs the
+# 300s sweep), so failing this test costs polling and never correctness — the safe
+# direction. Replacing it needs the miss-detection metric in docs/BACKLOG.md, which
+# holds for idle appliances too.
 OBSERVE_SUCCESS_FRACTION = 0.8
 
 # Gap between OBSERVE registrations. The transport library's `subscribe()` is
 # fire-and-forget and unpaced — its `pace()` has a single call site, inside the
-# Block2 loop — so 27 registrations left in microseconds and the appliance dropped
-# the initial notifications they should each have answered with.
+# Block2 loop — so 27 registrations otherwise leave in microseconds.
 #
-# Measured on the guest-room air conditioner: 0 of 27 initial notifications after a
-# subscribe round, then 6 within 25 s of switching the unit on and 7 within a
-# minute, every value landing on the right capability. So the channel works and only
-# the burst is lost. The other three units read 27, 27 and 24 of 27 — a lossy burst,
-# not a broken channel.
+# This was added to fix "the registration burst loses the initial notifications each
+# one should answer with". That diagnosis was wrong: with this spacing in place a
+# switched-off air conditioner still answers 0 of 27, so there are no initial
+# notifications to lose. The 26/27 that appeared to vindicate it was measured while
+# the unit was being operated for the experiment — 26 real state changes.
 #
-# 0.05 s is the library's own figure, from `refresh_observes()`, its paced bulk
-# path. Deliberately not the 0.2 s that `pace()` would impose: this app subscribes
-# nine appliances at once, and 27 x 0.2 s each would occupy the shared executor for
-# five seconds per device at every start.
+# Kept anyway, on the narrower grounds that it costs 1.35 s per device and matches
+# what the library itself does in `refresh_observes()`, its own paced bulk path. Not
+# claimed to have fixed anything. Deliberately not the 0.2 s that `pace()` would
+# impose: this app subscribes nine appliances at once, and 27 x 0.2 s each would
+# occupy the shared executor for five seconds per device at every start.
 OBSERVE_SUBSCRIBE_SPACING_S = 0.05
 
 OBSERVE_RETRY_S = 600.0

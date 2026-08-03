@@ -273,20 +273,25 @@ answers none is a different case, and the living-room air conditioner here
 
         hrefs = self._observe_hrefs
         got = len(self._notified & hrefs)
-        # A registration's response *is* its first notification — the transport
-        # library's `subscribe` docstring states it, and it keeps a comment
-        # explaining the race it had to win to make that 2.05 survive. So a healthy
-        # channel delivers one notification per subscribed href regardless of what
-        # the appliance is doing, and a quorum is a fair test of the channel.
+        # `got` is not a measure of channel health, whatever this quorum implies.
+        # The transport library documents a registration's response as its first
+        # notification, but these appliances do not send one: a switched-off air
+        # conditioner answers 0 of 27, and switching it on produced 7 within 70s
+        # while `_observe_silent_rounds` and the retry window never moved — so those
+        # 27 observations were live throughout, with nothing to report.
         #
-        # This briefly required only one, on the reasoning that an idle appliance is
-        # silent while healthy. That reasoning was wrong: the four air conditioners
-        # here read 27, 26, 3 and 6 of 27 while *all four* were switched off, which
-        # idleness cannot explain — two idle units at ~100% and two at ~13% is a
-        # story about the channel, not about activity. Worse, one notification was
-        # enough to set `_observing`, which moves the poll to the five-minute sweep,
-        # so a device with 24 dead registrations was both asserted healthy and read
-        # ten times less often.
+        # What `got` counts is state changes since the last re-subscribe, because
+        # `_notified` is only cleared there. An idle appliance therefore fails every
+        # quorum, and both earlier attempts to tune this were reading noise:
+        # requiring one notification, then restoring 0.8 on the strength of four
+        # switched-off units reading 27, 26, 3 and 6 of 27. Those four were simply at
+        # different points in a six-hour re-subscribe cycle — the high pairs had
+        # accumulated a day of real changes, the low pair had just re-subscribed.
+        #
+        # Left alone deliberately: failing here costs polling, never correctness. The
+        # metric that would be honest — a poll finding a changed value that no
+        # notification announced — is in docs/BACKLOG.md, and it holds for idle
+        # appliances, which is the whole point.
         needed = max(1, int(len(hrefs) * OBSERVE_SUCCESS_FRACTION))
         self._observe_pending = False
 
