@@ -22,9 +22,9 @@ from lib.const import (
     OBSERVE_GRACE_S,
     OBSERVE_REFRESH_S,
     OBSERVE_RETRY_S,
+    OBSERVE_SUCCESS_FRACTION,
     OBSERVE_SWEEP_INTERVAL_S,
     POLL_INTERVAL_S,
-    PUSH_HEALTH_WINDOW_S,
     RELOCATE_AFTER_FAILURES,
     SETTING_LEAF_CERT,
     SETTING_LEAF_KEY,
@@ -189,12 +189,17 @@ class ApplianceDevice(device.Device):
     async def _try_observe(self) -> None:
         """Subscribe, then let a later poll judge whether push actually works.
 
-        The judgment is deliberately not made here. Subscribing 22 resources takes
-        over four seconds on its own — the library paces CON sends at 5/s — and the
-        initial notifications keep arriving after that, so deciding from inside a
-        fixed sleep both blocks the poll loop and reaches its verdict before the
-        evidence is in. That is what made a device with 21 of 22 resources notifying
-        get recorded as push-unavailable.
+The judgment is deliberately not made here. The initial notifications keep
+        arriving after the subscribes are sent, so deciding from inside a fixed sleep
+        reaches a verdict before the evidence is in. That is what made a device with
+        21 of 22 resources notifying get recorded as push-unavailable.
+
+        This used to add that the subscribes themselves take over four seconds
+        because "the library paces CON sends at 5/s". They do not: `subscribe()` is
+        fire-and-forget and the library's `pace()` has a single call site, inside the
+        Block2 loop for block index > 0. Twenty-seven subscribes leave in
+        microseconds — which is its own problem, since they arrive back-to-back at an
+        appliance with a minimum send interval, but it is not a delay here.
         """
         now = time.monotonic()
         if self._observe_pending:
@@ -230,13 +235,18 @@ class ApplianceDevice(device.Device):
 
         A device that answers *some* notifications is worth retrying on the normal
         cadence — the channel works and only fell under the threshold. One that
-        answers none is a different case, and the living-room air conditioner here
+answers none is a different case, and the living-room air conditioner here
         is it: 27 resources subscribed, not one notification, ever. Retrying that
-        every ten minutes costs 27 CON subscribes each time, over five seconds of
-        exclusive session time while polls queue behind it, and leaves another 27
+        every ten minutes costs 27 CON subscribes each time and leaves another 27
         observer registrations on an appliance the library already warns remembers
         them across sessions. Left alone that is roughly 3,900 pointless requests a
         day.
+
+        The cost used to be described as "over five seconds of exclusive session time
+        while polls queue behind it". That was wrong — `Session.subscribe` takes the
+        lock per href and the library does not pace subscribes at all, so nothing
+        queues for seconds. The waste is the requests and the registrations, not a
+        held lock.
 
         So silence doubles the wait, up to the refresh interval. Any notification
         at all resets it, as does a rebuilt session.
@@ -255,23 +265,21 @@ class ApplianceDevice(device.Device):
 
         hrefs = self._observe_hrefs
         got = len(self._notified & hrefs)
-        # One notification is the whole test. The concern this verdict exists for is
-        # an appliance that accepts a subscription and then never notifies — and a
-        # single notification disproves exactly that.
+        # A registration's response *is* its first notification — the transport
+        # library's `subscribe` docstring states it, and it keeps a comment
+        # explaining the race it had to win to make that 2.05 survive. So a healthy
+        # channel delivers one notification per subscribed href regardless of what
+        # the appliance is doing, and a quorum is a fair test of the channel.
         #
-        # It used to require OBSERVE_SUCCESS_FRACTION of the subscribed resources
-        # inside the grace window, which measures how busy the appliance was rather
-        # than whether push works. Measured on the four air conditioners here, all
-        # switched off and idle: two sat at 27 and 26 of 27 because they happened to
-        # be running when they were last judged, and two at 3 and 6 because they were
-        # not. An idle appliance sends almost nothing, so under the old rule it could
-        # never earn push, and re-subscribed 27 resources every ten minutes forever
-        # while polling at the short interval.
-        #
-        # A resource that never changes is not a fault, and the five-minute summary
-        # sweep is already the safety net for anything push misses — that is what it
-        # is for.
-        needed = 1
+        # This briefly required only one, on the reasoning that an idle appliance is
+        # silent while healthy. That reasoning was wrong: the four air conditioners
+        # here read 27, 26, 3 and 6 of 27 while *all four* were switched off, which
+        # idleness cannot explain — two idle units at ~100% and two at ~13% is a
+        # story about the channel, not about activity. Worse, one notification was
+        # enough to set `_observing`, which moves the poll to the five-minute sweep,
+        # so a device with 24 dead registrations was both asserted healthy and read
+        # ten times less often.
+        needed = max(1, int(len(hrefs) * OBSERVE_SUCCESS_FRACTION))
         self._observe_pending = False
 
         if got >= needed:
@@ -292,20 +300,15 @@ class ApplianceDevice(device.Device):
                 )
             self._observing = False
 
-        if got:
+        # Keyed on the verdict, not on "anything at all". `if got:` was truthy for a
+        # round that delivered 3 of 27, so the backoff reset every time and the retry
+        # stayed at OBSERVE_RETRY_S forever — which is the re-subscribe churn that
+        # was mistakenly attributed to the threshold and then fixed at the wrong end.
+        # A round that misses the quorum is not evidence the channel works.
+        if got >= needed:
             self._observe_silent_rounds = 0
         else:
             self._observe_silent_rounds += 1
-
-    def _push_is_healthy(self) -> bool:
-        """Whether anything has been pushed recently enough to trust the channel.
-
-        A resource that simply never changes sends nothing, so silence across the
-        whole device — not per resource — is the signal worth acting on.
-        """
-        if not self._last_notify_at:
-            return False
-        return time.monotonic() - self._last_notify_at < PUSH_HEALTH_WINDOW_S
 
     def _on_notification(self, href: str, rep: dict) -> None:
         """A pushed resource update. Called on the event loop by Session."""
@@ -399,8 +402,11 @@ class ApplianceDevice(device.Device):
         decide from what the appliance holds *now*, not from a cache that is up to
         OBSERVE_SWEEP_INTERVAL_S old once the device is on push. Raises what the
         poll would have raised, so a card fails rather than acting on nothing.
+
+        Deliberately not `_poll_once`: that also advances the push lifecycle, which a
+        Flow card has no business doing. See `_poll_once`.
         """
-        await self._poll_once()
+        await self._read_and_apply()
 
     async def check_now(self) -> dict:
         """Read `/device/0` over this device's own session, for Repair to test with.
@@ -550,6 +556,31 @@ class ApplianceDevice(device.Device):
         return False
 
     async def _poll_once(self) -> None:
+        """One scheduled poll: read the appliance, then advance the push lifecycle."""
+        await self._read_and_apply()
+        # The lifecycle belongs to the poll loop and to nothing else. It used to sit
+        # in the same method the Flow card calls through `refresh_now`, so applying a
+        # setting could fire a 27-resource subscribe round and flip the device between
+        # push and polling **in the middle of the card** — `_try_observe` is only
+        # time-gated, so it fires mid-card exactly when the retry window has elapsed,
+        # which is the state a device with a struggling channel lives in.
+        self._evaluate_observe()
+        await self._try_observe()
+        await self._sync_settings()
+
+    async def _read_and_apply(self) -> None:
+        """Read `/device/0` and push every value into its capability.
+
+        Shared by the poll loop and by `refresh_now`, rather than duplicated, so the
+        two cannot drift apart — drift is how the observe lifecycle ended up running
+        inside a Flow card in the first place.
+
+        `_sync_capabilities` stays here deliberately. Leaving it to the poll loop
+        would mean a card could ask to write a capability the device has not been
+        given yet and raise, and it is the same call that let an already-paired range
+        hood pick up a corrected mapping without being deleted and re-added. It
+        compares before acting, so a card run costs a comparison.
+        """
         if not await compat.setting_get(self.homey, SETTING_LEAF_CERT):
             # Distinct from a network failure, and fixable in one place, so say
             # where rather than reporting a bare connection error.
@@ -589,9 +620,6 @@ class ApplianceDevice(device.Device):
         await self._sync_capability_options()
         await self._apply(self._resources)
         await self.set_available()
-        self._evaluate_observe()
-        await self._try_observe()
-        await self._sync_settings()
 
     async def _read_device_types(self) -> tuple:
         """`/oic/d`'s `rt`, or an empty tuple if this appliance will not give it.

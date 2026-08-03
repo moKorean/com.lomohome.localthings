@@ -81,6 +81,12 @@ POLL_INTERVAL_S = 30.0
 # poll, so waiting longer costs nothing and a device subscribing 22 resources needs
 # well over 15s for its initial notifications to all land.
 OBSERVE_GRACE_S = 45.0
+# What share of the subscribed resources must deliver their initial notification
+# for push to be considered working. A registration's response *is* its first
+# notification — the transport library's own `subscribe` docstring says so — so a
+# healthy channel should deliver one per href whatever the appliance is doing.
+OBSERVE_SUCCESS_FRACTION = 0.8
+
 OBSERVE_RETRY_S = 600.0
 # Summary sweep interval while push is healthy. Still polled, because a missed
 # notification is invisible otherwise.
@@ -90,10 +96,6 @@ OBSERVE_REFRESH_S = 6 * 3600.0
 # After a write, ignore notifications for that resource this long, so a device that
 # settles slowly doesn't revert the value just set.
 WRITE_SETTLE_S = 4.0
-# Any notification inside this window is proof the push channel is alive, even if
-# nothing else changed. Resources that never change never notify, so device-wide
-# silence is the signal, not per-resource silence.
-PUSH_HEALTH_WINDOW_S = 600.0
 
 # Consecutive poll failures before searching the network for this appliance by
 # serial. Three rather than one: a single timeout is usually the appliance being

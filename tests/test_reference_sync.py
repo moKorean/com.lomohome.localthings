@@ -857,19 +857,6 @@ def test_a_partial_channel_keeps_the_normal_cadence():
     assert d._observe_retry_after() == OBSERVE_RETRY_S
 
 
-def test_the_verdict_resets_the_counter_when_anything_arrived():
-    """One notification is evidence the channel is alive, whatever the total."""
-    import ast
-    source = (Path(__file__).parent.parent / "lib/appliance/device.py").read_text()
-    function = next(
-        node for node in ast.walk(ast.parse(source))
-        if isinstance(node, ast.FunctionDef) and node.name == "_evaluate_observe"
-    )
-    body = ast.unparse(function)
-    assert "if got:" in body and "_observe_silent_rounds = 0" in body
-    assert "_observe_silent_rounds += 1" in body
-
-
 def test_a_rebuilt_session_starts_the_channel_fresh():
     """Whatever was wrong with the old session is not evidence about a new one."""
     import ast
@@ -884,17 +871,29 @@ def test_a_rebuilt_session_starts_the_channel_fresh():
 # --- earning push must judge the channel, not the appliance's activity -----
 
 
-def test_one_notification_is_enough_to_earn_push():
-    """The concern this verdict exists for is an appliance that accepts a
-    subscription and then never notifies. A single notification disproves that.
+def test_push_needs_a_quorum_of_initial_notifications():
+    """A registration's response *is* its first notification — the transport
+    library's `subscribe` docstring says so, and it carries a comment about the race
+    it had to win to make that 2.05 survive. So a healthy channel delivers one per
+    subscribed href whatever the appliance is doing, and a quorum is a fair test.
 
-    It used to need 80% of the subscribed resources inside a 45-second window,
-    which measures how busy the appliance was. Measured on the four air
-    conditioners here, all switched off: 27, 26, 3 and 6 of 27 — the two high ones
-    only because they happened to be running when they were last judged. An idle
-    appliance could never earn push and re-subscribed 27 resources every ten
-    minutes forever.
+    This briefly required only one, reasoned from "an idle appliance is silent while
+    healthy". Four air conditioners read 27, 26, 3 and 6 of 27 while all four were
+    switched off, which idleness cannot explain.
     """
+    from lib.const import OBSERVE_SUCCESS_FRACTION
+    assert 0 < OBSERVE_SUCCESS_FRACTION <= 1
+    for count in (27, 22):
+        assert max(1, int(count * OBSERVE_SUCCESS_FRACTION)) > 1, (
+            "a single notification would qualify a channel again"
+        )
+
+
+def test_a_partial_round_does_not_qualify_and_does_not_reset_the_backoff():
+    """`if got:` was truthy for a round delivering 3 of 27, so the backoff reset
+    every time and the retry stayed at OBSERVE_RETRY_S forever. That is the
+    re-subscribe churn that got attributed to the threshold and fixed at the wrong
+    end."""
     import ast
     source = (Path(__file__).parent.parent / "lib/appliance/device.py").read_text()
     function = next(
@@ -904,14 +903,42 @@ def test_one_notification_is_enough_to_earn_push():
     body = "\n".join(
         line.split("#", 1)[0] for line in ast.unparse(function).splitlines()
     )
-    assert "needed = 1" in body, "the verdict still scales with the appliance's activity"
-    assert "OBSERVE_SUCCESS_FRACTION" not in body
+    assert "if got >= needed:" in body, "the backoff still resets on any notification"
+    assert "needed = max(1, int(len(hrefs) * OBSERVE_SUCCESS_FRACTION))" in body
 
 
-def test_the_activity_threshold_is_gone_entirely():
-    """Left behind, it would read as the rule still being in force."""
+def test_a_quorum_round_clears_the_backoff():
+    import ast
+    source = (Path(__file__).parent.parent / "lib/appliance/device.py").read_text()
+    function = next(
+        node for node in ast.walk(ast.parse(source))
+        if isinstance(node, ast.FunctionDef) and node.name == "_evaluate_observe"
+    )
+    body = ast.unparse(function)
+    assert "_observe_silent_rounds = 0" in body
+    assert "_observe_silent_rounds += 1" in body
+
+
+def test_the_dead_health_check_is_gone():
+    """`_push_is_healthy` was defined and called from nowhere, so nothing re-checked
+    a channel once push was earned. It cannot simply be wired up — it reads silence
+    as failure, and an idle appliance is silent while healthy — so the demotion
+    signal has to come from the sweep finding a change push should have delivered.
+    Recorded in docs/BACKLOG.md; the dead code goes."""
+    source = (Path(__file__).parent.parent / "lib/appliance/device.py").read_text()
+    assert "_push_is_healthy" not in source
     from lib import const
-    assert not hasattr(const, "OBSERVE_SUCCESS_FRACTION")
+    assert not hasattr(const, "PUSH_HEALTH_WINDOW_S"), "its constant outlived it"
+
+
+def test_the_observe_refresh_interval_is_not_left_lowered():
+    """Measuring the observe channel means temporarily lowering this in a dev
+    install. Publishing with it lowered would re-subscribe every appliance in the
+    house forty times an hour."""
+    from lib.const import OBSERVE_REFRESH_S
+    assert OBSERVE_REFRESH_S == 6 * 3600.0, (
+        "left at a measurement value instead of restored"
+    )
 
 
 def test_silence_still_disqualifies():

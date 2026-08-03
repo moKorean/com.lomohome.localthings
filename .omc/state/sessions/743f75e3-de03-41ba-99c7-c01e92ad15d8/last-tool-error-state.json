@@ -1,0 +1,7 @@
+{
+  "tool_name": "Bash",
+  "tool_input_preview": "{\"command\":\"P=$(find /Users/mokorean/IdeaProjects/GitHub/com.lomohome.localthings/python_packages /Users/mokorean/IdeaProjects/GitHub/smartthings-local-reference -name \\\"dtls_session.py\\\" 2>/dev/null ...",
+  "error": "Exit code 1\n/Users/mokorean/IdeaProjects/GitHub/smartthings-local-reference/smartthings_local/protocol/dtls_session.py\n/Users/mokorean/IdeaProjects/GitHub/com.lomohome.localthings/python_packages/amd64/uv_cache/archive-v0/_2Uyt-_Xn-d8RR7siOtM_/smartthings_local/protocol/dtls_session.py\n/Users/mokorean/IdeaProjects/GitHub/com.lomohome.localthings/python_packages/arm64/uv_cache/archive-v0/QgLkG5DU5fCyyacBdvs57/smartthings_local/protocol/dtls_session.py\n== /Users/mokorean/IdeaProjects/GitHub/smartt...",
+  "timestamp": "2026-08-03T07:27:52.151Z",
+  "retry_count": 1
+}
