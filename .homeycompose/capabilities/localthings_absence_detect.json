@@ -11,5 +11,13 @@
     "ko": "모션 센서의 부재 감지 기능이 켜져 있는지 여부입니다."
   },
   "icon": "/assets/capabilities/mdi-motion-sensor.svg",
-  "insights": true
+  "insights": true,
+  "insightsTitleTrue": {
+    "en": "Room empty",
+    "ko": "부재 감지"
+  },
+  "insightsTitleFalse": {
+    "en": "Room occupied",
+    "ko": "재실 감지"
+  }
 }

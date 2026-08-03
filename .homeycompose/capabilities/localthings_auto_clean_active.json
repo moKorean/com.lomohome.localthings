@@ -7,5 +7,14 @@
   "getable": true,
   "setable": false,
   "uiComponent": "sensor",
-  "icon": "/assets/capabilities/mdi-spray-bottle.svg"
+  "icon": "/assets/capabilities/mdi-spray-bottle.svg",
+  "insights": true,
+  "insightsTitleTrue": {
+    "en": "Auto dry started",
+    "ko": "자동 건조 시작"
+  },
+  "insightsTitleFalse": {
+    "en": "Auto dry finished",
+    "ko": "자동 건조 종료"
+  }
 }

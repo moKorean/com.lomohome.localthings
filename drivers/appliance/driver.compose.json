@@ -107,6 +107,28 @@
           "max": 600
         }
       ]
+    },
+    {
+      "type": "group",
+      "label": {
+        "en": "Timeline",
+        "ko": "타임라인"
+      },
+      "children": [
+        {
+          "id": "timeline_changes",
+          "type": "checkbox",
+          "value": false,
+          "label": {
+            "en": "Log setting changes to the timeline",
+            "ko": "설정 변경을 타임라인에 기록"
+          },
+          "hint": {
+            "en": "Writes a line to Homey's timeline when the mode or the target temperature changes. Homey logs on/off and other yes-or-no states by itself, but a number only becomes a chart and a mode nothing at all, so these two need writing explicitly. Off by default — on a house full of appliances it adds up.",
+            "ko": "운전 모드나 희망 온도가 바뀌면 Homey 타임라인에 한 줄 남깁니다. 켜짐/꺼짐 같은 예-아니오 상태는 Homey가 알아서 기록하지만, 숫자는 그래프로만 남고 모드는 아예 남지 않아 이 둘만 직접 기록합니다. 가전이 많으면 줄이 많이 쌓이므로 기본값은 꺼짐입니다."
+          }
+        }
+      ]
     }
   ]
 }

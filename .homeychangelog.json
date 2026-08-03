@@ -62,5 +62,9 @@
   "0.6.0": {
     "en": "New Flow card: Apply air conditioner settings. Power, mode, target temperature, fan speed, airflow direction, air purify and comfort mode in one card, instead of chaining seven. It reads the appliance between steps, confirms each setting stayed and re-sends any the appliance took back — a unit switched on by a Flow restores its own mode as it starts, which was quietly undoing the mode set a moment later. The operating mode takes priority: each mode only honours some of the rest, so AI Comfort ignores fan speed and the comfort modes and Fan ignores the target temperature, and the card leaves those alone rather than writing settings the appliance discards. Air conditioners also now show whether auto dry is running and how far through, and the same for the self check.",
     "ko": "새 플로우 카드: 에어컨 설정 한 번에 적용. 전원·운전 모드·희망 온도·바람 세기·바람 방향·공기청정·쾌적 모드를 카드 한 장에서 설정합니다. 카드 일곱 장을 이어 붙일 필요가 없습니다. 단계마다 기기를 다시 읽어 설정이 실제로 남았는지 확인하고, 기기가 되돌린 설정은 다시 보냅니다 — 플로우로 켠 에어컨은 시작하면서 자기 운전 모드를 복원하기 때문에, 곧이어 지정한 모드가 조용히 사라지고 있었습니다. 운전 모드가 우선입니다: 모드마다 받아들이는 설정이 달라서 AI 쾌적은 바람 세기와 쾌적 모드를, 송풍은 희망 온도를 무시합니다. 이런 항목은 쓰지 않고 그대로 둡니다. 에어컨에 자동 건조가 실제로 돌고 있는지와 진행률도 표시되며, 자가진단도 같습니다."
+  },
+  "0.6.1": {
+    "en": "Auto dry and the self check now appear in the timeline when they start and finish, and the absence sensor's entries say which state it moved to. Both are also usable as Flow conditions. Mode and target-temperature changes can be logged too — Homey cannot do those on its own, so they are opt-in per appliance under Settings, Timeline.",
+    "ko": "자동 건조와 자가진단이 시작·종료 시 타임라인에 남습니다. 부재 감지도 어느 쪽으로 바뀌었는지 표시됩니다. 둘 다 플로우 조건으로도 쓸 수 있습니다. 운전 모드와 희망 온도 변경도 기록할 수 있습니다 — Homey가 스스로 남기지 못하는 항목이라, 기기 설정의 '타임라인'에서 켜면 동작합니다."
   }
 }

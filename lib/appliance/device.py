@@ -701,9 +701,52 @@ class ApplianceDevice(device.Device):
                 continue
             if value is None:
                 continue
-            if self.get_capability_value(spec.capability) != value:
+            previous = self.get_capability_value(spec.capability)
+            if previous != value:
                 await self.set_capability_value(spec.capability, value)
+                await self._note_on_timeline(spec.capability, previous, value)
             await self._maybe_trigger(spec.capability, value)
+
+    # Homey writes its own timeline line whenever a *boolean* capability with
+    # insight titles changes — that is how power and the absence sensor get there,
+    # and why auto dry and the self check now do. It cannot do the same for these
+    # two: a number becomes a chart and nothing else, and no capability of type
+    # string anywhere in Homey's own library sets `insights`, so a mode change
+    # leaves no trace at all. These are written explicitly, and only these.
+    _TIMELINE_CAPABILITIES = ("localthings_ac_mode", "target_temperature")
+
+    async def _note_on_timeline(self, capability: str, previous, value) -> None:
+        """Write a line to Homey's timeline for a change it cannot log itself.
+
+        Off unless the device's `timeline_changes` setting is on. A house with
+        several appliances generates a lot of these, and a timeline nobody wants is
+        worse than no timeline — so the ones Homey handles natively stay native, and
+        this covers only what it cannot express.
+
+        Never raises: a failure here must not interrupt a poll, since the value has
+        already been applied by this point.
+        """
+        if capability not in self._TIMELINE_CAPABILITIES:
+            return
+        if previous is None:
+            # The first reading after a restart is not a change the user made.
+            return
+        try:
+            if not (self.get_settings() or {}).get("timeline_changes"):
+                return
+            message = i18n.translate(
+                f"timeline.{capability}", self._language,
+                name=self.get_name(), value=self._label_value(capability, value),
+                previous=self._label_value(capability, previous))
+            await self.homey.notifications.create_notification(message)
+        except Exception as exc:
+            self.log(f"timeline note for {capability} failed: {exc}")
+
+    def _label_value(self, capability: str, value) -> str:
+        """The value as a user would recognise it, not as the wire spells it."""
+        if capability == "target_temperature":
+            return f"{value}"
+        return str(i18n.translate(f"ac_mode.{value}", self._language) or value)
 
     async def _maybe_trigger(self, capability: str, value) -> None:
         """Fire a trigger for a *sub*-capability. Homey handles the rest itself.

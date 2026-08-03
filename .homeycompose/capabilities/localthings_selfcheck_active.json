@@ -7,5 +7,14 @@
   "getable": true,
   "setable": false,
   "uiComponent": "sensor",
-  "icon": "/assets/capabilities/mdi-shield-check.svg"
+  "icon": "/assets/capabilities/mdi-shield-check.svg",
+  "insights": true,
+  "insightsTitleTrue": {
+    "en": "Self check started",
+    "ko": "자가진단 시작"
+  },
+  "insightsTitleFalse": {
+    "en": "Self check finished",
+    "ko": "자가진단 종료"
+  }
 }
