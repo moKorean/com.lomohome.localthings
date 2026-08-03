@@ -51,7 +51,15 @@ homey api raw -X POST --path /api/app/com.lomohome.localthings/write-resource \
 the run ends — use `homey app install`.
 
 The Homey API rate-limits hard after a burst, and polling to see whether the limit
-has cleared keeps it tripped. Back off in single long waits.
+has cleared keeps it tripped. Back off in single long waits — and mean it: checking
+counts as a request, so three "has it cleared yet?" probes are three more strikes.
+
+It is Athom's **cloud** API that limits, not the Homey on the LAN, so once tripped
+**`homey app install` fails too** — with `Too many requests` from
+`getAuthenticatedUser`, several stack frames deep and easy to misread as a build or
+login problem. `read-resource` and `write-resource` against appliances are the
+expensive calls; a dozen in a few minutes is enough. Space them, and prefer one
+`diagnostics` call that returns every device over one call per device.
 
 ### An acknowledgement is not evidence
 
