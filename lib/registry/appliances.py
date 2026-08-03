@@ -327,15 +327,49 @@ def _write_fridge_setpoint(compartment: str):
 # something to fire blind.
 _MULTIROOM_PREFIX = "MULTIROOM_"
 _MULTIROOM_NAMES = {"COOLER": "Cooler", "FREEZER": "Freezer"}
+_MULTIROOM_TOKENS = {name.lower(): f"{_MULTIROOM_PREFIX}{suffix}"
+                     for suffix, name in _MULTIROOM_NAMES.items()}
 
 
 def _read_convertible_mode(rep, _resources):
+    """Which use the convertible compartment is currently in.
+
+    Only the two values measured on hardware are reported. An unrecognised
+    MULTIROOM_ token reports nothing rather than a name of its own: the capability
+    is an enum, so a value outside its list is refused when set, leaving the tile
+    stuck. Kimchi is the token expected to turn up here — see docs/BACKLOG.md,
+    where the intensity side of it is also still unread.
+
+    Matched by prefix, not by membership in `x.com.samsung.da.supportedOptions` as
+    the reference does. That was checked rather than assumed: a live read of
+    `/mode/vs/0` on both units here returns `modes` and **no supportedOptions
+    field at all**, so the reference's rule would bind nothing.
+    """
     for mode in rep.get("x.com.samsung.da.modes") or ():
         token = str(mode)
         if token.startswith(_MULTIROOM_PREFIX):
-            suffix = token[len(_MULTIROOM_PREFIX):]
-            return _MULTIROOM_NAMES.get(suffix.upper(), suffix.title())
+            return _MULTIROOM_NAMES.get(token[len(_MULTIROOM_PREFIX):].upper())
     return None
+
+
+def _write_convertible_mode(value, rep):
+    """Switch the compartment, keeping every other flag in the list.
+
+    `x.com.samsung.da.modes` holds several orthogonal flags at once — both units
+    here read `["CVN_KIMCHI_STORAGE", "CV_NULL", "MULTIROOM_FREEZER"]` — so a write
+    carrying only the new mode would drop the other two. Replace the MULTIROOM_
+    entry and leave the rest as they came, which is what the reference does for the
+    equivalent resource on its own fridge families.
+    """
+    token = _MULTIROOM_TOKENS.get(str(value).strip().lower())
+    if token is None:
+        return None
+    modes = [
+        str(mode) for mode in (rep.get("x.com.samsung.da.modes") or ())
+        if not str(mode).startswith(_MULTIROOM_PREFIX)
+    ]
+    modes.append(token)
+    return ["mode", "vs", "0"], {"x.com.samsung.da.modes": modes}
 
 
 REFRIGERATOR = Registry(
@@ -420,6 +454,7 @@ REFRIGERATOR = Registry(
              titles={"en": "Fridge", "ko": "냉장실"},
              options=_fridge_setpoint_options("Fridge")),
         Spec("localthings_convertible_mode", "/mode/vs/0", _read_convertible_mode,
+             _write_convertible_mode,
              exists=lambda rep, _r: _read_convertible_mode(rep, _r) is not None),
     ),
 )

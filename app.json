@@ -1,7 +1,7 @@
 {
   "_comment": "This file is generated. Please edit .homeycompose/app.json instead.",
   "id": "com.lomohome.localthings",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "compatibility": ">=13.0.0",
   "sdk": 3,
   "runtime": "python",
@@ -1398,7 +1398,23 @@
           },
           {
             "name": "value",
-            "type": "text"
+            "type": "dropdown",
+            "values": [
+              {
+                "id": "Cooler",
+                "title": {
+                  "en": "Fridge",
+                  "ko": "냉장"
+                }
+              },
+              {
+                "id": "Freezer",
+                "title": {
+                  "en": "Freezer",
+                  "ko": "냉동"
+                }
+              }
+            ]
           }
         ],
         "id": "convertible_mode_is"
@@ -3579,6 +3595,48 @@
       },
       {
         "title": {
+          "en": "Set Convertible compartment",
+          "ko": "변온실 설정"
+        },
+        "titleFormatted": {
+          "en": "Set Convertible compartment to [[value]]",
+          "ko": "변온실 설정: [[value]]"
+        },
+        "hint": {
+          "en": "Fails the Flow if the appliance refuses the change, rather than reporting a success it did not achieve.",
+          "ko": "가전이 변경을 거부하면 플로우를 실패로 처리합니다. 이루지 못한 성공을 보고하지 않습니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_convertible_mode"
+          },
+          {
+            "name": "value",
+            "type": "dropdown",
+            "values": [
+              {
+                "id": "Cooler",
+                "title": {
+                  "en": "Fridge",
+                  "ko": "냉장"
+                }
+              },
+              {
+                "id": "Freezer",
+                "title": {
+                  "en": "Freezer",
+                  "ko": "냉동"
+                }
+              }
+            ]
+          }
+        ],
+        "id": "set_convertible_mode"
+      },
+      {
+        "title": {
           "en": "Turn Edge lighting on or off",
           "ko": "엣지 라이팅 켜기 또는 끄기"
         },
@@ -4904,19 +4962,35 @@
       ]
     },
     "localthings_convertible_mode": {
-      "type": "string",
+      "type": "enum",
       "getable": true,
-      "setable": false,
+      "setable": true,
+      "uiComponent": "picker",
       "title": {
         "en": "Convertible compartment",
         "ko": "변온실"
       },
       "desc": {
-        "en": "What the switchable compartment is currently being used as.",
-        "ko": "변온실이 현재 무엇으로 쓰이고 있는지입니다."
+        "en": "What the switchable compartment is being used as. Changing it takes a while to reach the new temperature.",
+        "ko": "변온실을 무엇으로 쓸지입니다. 바꾸면 새 온도에 도달하는 데 시간이 걸립니다."
       },
       "icon": "/assets/capabilities/mdi-thermometer.svg",
-      "insights": false
+      "values": [
+        {
+          "id": "Cooler",
+          "title": {
+            "en": "Fridge",
+            "ko": "냉장"
+          }
+        },
+        {
+          "id": "Freezer",
+          "title": {
+            "en": "Freezer",
+            "ko": "냉동"
+          }
+        }
+      ]
     },
     "localthings_cycle_active": {
       "type": "boolean",

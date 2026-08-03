@@ -1,15 +1,15 @@
 {
   "title": {
-    "en": "Convertible compartment !{{is|is not}} [[value]]",
-    "ko": "변온실 [[value]] !{{임|아님}}"
+    "en": "Set Convertible compartment",
+    "ko": "변온실 설정"
   },
   "titleFormatted": {
-    "en": "Convertible compartment !{{is|is not}} [[value]]",
-    "ko": "변온실 [[value]] !{{임|아님}}"
+    "en": "Set Convertible compartment to [[value]]",
+    "ko": "변온실 설정: [[value]]"
   },
   "hint": {
-    "en": "Checks the value as the appliance last reported it.",
-    "ko": "가전이 마지막으로 보고한 값을 확인합니다."
+    "en": "Fails the Flow if the appliance refuses the change, rather than reporting a success it did not achieve.",
+    "ko": "가전이 변경을 거부하면 플로우를 실패로 처리합니다. 이루지 못한 성공을 보고하지 않습니다."
   },
   "args": [
     {

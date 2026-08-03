@@ -1,15 +1,31 @@
 {
-  "type": "string",
+  "type": "enum",
   "getable": true,
-  "setable": false,
+  "setable": true,
+  "uiComponent": "picker",
   "title": {
     "en": "Convertible compartment",
     "ko": "변온실"
   },
   "desc": {
-    "en": "What the switchable compartment is currently being used as.",
-    "ko": "변온실이 현재 무엇으로 쓰이고 있는지입니다."
+    "en": "What the switchable compartment is being used as. Changing it takes a while to reach the new temperature.",
+    "ko": "변온실을 무엇으로 쓸지입니다. 바꾸면 새 온도에 도달하는 데 시간이 걸립니다."
   },
   "icon": "/assets/capabilities/mdi-thermometer.svg",
-  "insights": false
+  "values": [
+    {
+      "id": "Cooler",
+      "title": {
+        "en": "Fridge",
+        "ko": "냉장"
+      }
+    },
+    {
+      "id": "Freezer",
+      "title": {
+        "en": "Freezer",
+        "ko": "냉동"
+      }
+    }
+  ]
 }
