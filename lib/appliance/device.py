@@ -273,25 +273,25 @@ answers none is a different case, and the living-room air conditioner here
 
         hrefs = self._observe_hrefs
         got = len(self._notified & hrefs)
-        # `got` is not a measure of channel health, whatever this quorum implies.
-        # The transport library documents a registration's response as its first
-        # notification, but these appliances do not send one: a switched-off air
-        # conditioner answers 0 of 27, and switching it on produced 7 within 70s
-        # while `_observe_silent_rounds` and the retry window never moved — so those
-        # 27 observations were live throughout, with nothing to report.
+        # `got` counts two things at once, and comparing it across devices without
+        # allowing for that has been wrong twice. A registration's response *is* its
+        # first notification — two switched-off units read 27/27 shortly after an
+        # install, which nothing else explains — so on a healthy channel a quorum is
+        # a fair test. But `_notified` is only cleared at re-subscribe, so it also
+        # accumulates real changes: an idle unit went 0 -> 7 in 70s when switched on,
+        # with `_observe_silent_rounds` and the retry window untouched.
         #
-        # What `got` counts is state changes since the last re-subscribe, because
-        # `_notified` is only cleared there. An idle appliance therefore fails every
-        # quorum, and both earlier attempts to tune this were reading noise:
+        # So two devices' counts mean the same thing only at the same offset from
+        # their last re-subscribe. Both earlier attempts to tune this ignored that:
         # requiring one notification, then restoring 0.8 on the strength of four
-        # switched-off units reading 27, 26, 3 and 6 of 27. Those four were simply at
-        # different points in a six-hour re-subscribe cycle — the high pairs had
-        # accumulated a day of real changes, the low pair had just re-subscribed.
+        # switched-off units reading 27, 26, 3 and 6 of 27 — a spread that is about
+        # where each sat in a six-hour cycle, not about the channel.
         #
-        # Left alone deliberately: failing here costs polling, never correctness. The
-        # metric that would be honest — a poll finding a changed value that no
-        # notification announced — is in docs/BACKLOG.md, and it holds for idle
-        # appliances, which is the whole point.
+        # Left alone deliberately. Failing here costs polling, never correctness, and
+        # the fault worth fixing is not this threshold: the initial notifications are
+        # sometimes lost entirely, the same off unit reading 0/27 and later 27/27.
+        # docs/BACKLOG.md records that, and the miss-detection metric that would
+        # judge push honestly in both directions.
         needed = max(1, int(len(hrefs) * OBSERVE_SUCCESS_FRACTION))
         self._observe_pending = False
 

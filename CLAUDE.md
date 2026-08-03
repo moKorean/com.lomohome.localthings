@@ -71,18 +71,25 @@ Confirm by reading back, and re-send when the appliance takes it back.
 
 ### Check what a counter counts before tuning it
 
-`_notified` is named for notifications and was tuned three times as if it measured
-the health of the push channel. It measures state changes since the last
-re-subscribe. A switched-off air conditioner answers 0 of 27 registrations while all
-27 are live, so an idle appliance fails any quorum — and the three refrigerators that
-pass do so only because they are always running. Every contradiction chased on
-2026-08-03 came from comparing devices at different points in a six-hour cycle.
+`_notified` counts initial notifications *and* the state changes that follow, because
+it is only cleared at re-subscribe. Two devices' counts therefore mean the same thing
+only at the same offset from their last re-subscribe. Ignoring that produced a full
+day of wrong conclusions in both directions on 2026-08-03 — first "the registration
+burst loses the initial notifications", then an over-correction to "the appliances
+send none at all", which two switched-off units reading 27/27 promptly refuted.
 
-Two habits would have caught it a day earlier. Instrument the *identity* of what is
-missing, not only how many (`observe_silent_hrefs` exists for this now). And when a
-metric behaves oddly, change the world and watch it move — switching one unit on took
-it 0 → 7 in 70s with the retry window untouched, which no amount of reading the
-counter would have shown. `docs/BACKLOG.md` has the full record.
+Three habits, in order of how much they would have saved:
+
+- **Instrument the identity, not just the count.** "6 of 9" cannot distinguish a
+  resource that never reports from a lossy channel; naming the six can.
+  `observe_silent_hrefs` in `api.py` exists for this.
+- **Perturb and watch.** Switching one unit on took the counter 0 → 7 in 70s with the
+  retry window untouched, settling in one step what hours of reading had not. The
+  standing permission to operate the appliances makes this cheap — use it.
+- **Do not write a conclusion from one reading.** Both of the day's wrong answers were
+  single-timepoint readings stated as settled. Take the second reading first.
+
+`docs/BACKLOG.md` has the full record, including the loss mode that is still open.
 
 ## Verified hardware
 
