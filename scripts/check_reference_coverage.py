@@ -10,8 +10,8 @@ rather than relying on release notes, so a token added quietly still shows up.
 Exits 1 when anything is missing, so it can gate CI if wanted.
 """
 
+import ast
 import importlib
-import re
 import sys
 import types
 from pathlib import Path
@@ -55,17 +55,38 @@ def load_reference_tables():
 
 
 def _parse_dict(source: str, name: str, values: bool = True) -> dict:
-    """Pull `name = { 'a': 'b', ... }` out of source, ignoring comments."""
-    match = re.search(
-        rf"^{re.escape(name)}[^=]*=\s*\{{(.*?)^\}}", source, re.DOTALL | re.MULTILINE
-    )
-    if not match:
-        return {}
-    body = re.sub(r"#[^\n]*", "", match.group(1))
-    pairs = re.findall(r"'([^']+)'\s*:\s*([\w.']+)", body)
-    if not values:
-        return {key: None for key, _ in pairs}
-    return {key: val.strip("'") for key, val in pairs}
+    """Pull a module-level dict literal out of source, with the parser.
+
+    This was a regex over the source text, and it stopped working silently when
+    the reference reformatted with ruff: its string literals went from `'REF'` to
+    `"REF"`, the pattern matched nothing, and every table came back empty — so
+    this script reported full coverage while comparing against nothing. Quoting
+    and line breaks are formatting; the AST does not see them.
+
+    A value that is not a literal (`air_dresser.REGISTRY` in `_REGISTRY_BY_KEY`)
+    keeps its key, since only the keys are wanted there.
+    """
+    tree = ast.parse(source)
+    for node in ast.walk(tree):
+        target = None
+        if isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name):
+            target = node.target.id
+        elif isinstance(node, ast.Assign) and len(node.targets) == 1 \
+                and isinstance(node.targets[0], ast.Name):
+            target = node.targets[0].id
+        if target != name or not isinstance(node.value, ast.Dict):
+            continue
+        found = {}
+        for key, value in zip(node.value.keys, node.value.values, strict=True):
+            if not isinstance(key, ast.Constant):
+                continue
+            found[key.value] = (
+                value.value if isinstance(value, ast.Constant) else None
+            )
+        if not found:
+            raise SystemExit(f"{name} parsed as empty — has it been restructured?")
+        return found if values else {k: None for k in found}
+    raise SystemExit(f"{name} not found in the reference — has it been renamed?")
 
 
 def main() -> int:

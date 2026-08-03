@@ -714,3 +714,87 @@ def test_an_entry_the_cache_has_never_seen_is_added():
         {"x.com.samsung.da.id": "7", "x.com.samsung.da.desired": "3"}]})
     ids = [i["x.com.samsung.da.id"] for i in cached["x.com.samsung.da.items"]]
     assert ids == ["0", "7"]
+
+
+# --- the parity check itself has to keep working ---------------------------
+
+
+def test_the_reference_token_table_is_parsed_at_all():
+    """The reason this exists: the extractor was a regex over the source text, the
+    reference reformatted with ruff, its literals went from 'REF' to "REF", and the
+    pattern matched nothing. `_reference_tokens()` returned {} and the test that
+    walks it passed while checking nothing — for however long it took to notice.
+
+    A parity check that cannot fail is worse than no parity check, because it
+    reads as evidence."""
+    import sys
+    sys.path.insert(0, str(Path(__file__).parent))
+    from test_all_types import _reference_tokens
+    tokens = _reference_tokens()
+    assert len(tokens) >= 20, f"parsed only {len(tokens)} tokens"
+    assert tokens.get("REF") == "refrigerator", "the table parsed but reads wrong"
+
+
+@pytest.mark.parametrize("quoting", ["'", '"'])
+def test_the_extractor_does_not_care_how_the_reference_quotes_things(quoting):
+    """Formatting is not meaning. The AST does not see quoting, line breaks or
+    trailing commas."""
+    import sys
+    sys.path.insert(0, str(Path(__file__).parent))
+    from test_all_types import _parse_str_dict
+    q = quoting
+    source = (
+        "_T: dict[str, str] = {\n"
+        f"    {q}A{q}: {q}one{q},  # a comment\n"
+        f"    {q}B{q}: {q}two{q},\n"
+        "}\n"
+    )
+    assert _parse_str_dict(source, "_T") == {"A": "one", "B": "two"}
+
+
+def test_a_renamed_table_fails_loudly():
+    """Silence is what let the last break go unnoticed."""
+    import sys
+    sys.path.insert(0, str(Path(__file__).parent))
+    from test_all_types import _parse_str_dict
+    with pytest.raises(AssertionError):
+        _parse_str_dict("_SOMETHING_ELSE = {'A': 'one'}\n", "_T")
+
+
+# --- reference: the EHS heat pump ------------------------------------------
+
+
+def test_the_heat_pump_routes():
+    resolved = registry.resolve({"/information/vs/0": {
+        "x.com.samsung.da.modelNum": "TP1X_DA_AC_EHS-01001|1|2"}})
+    assert resolved is not None and resolved.name == "ehs"
+
+
+def test_the_heat_pump_does_not_land_on_the_air_conditioner():
+    """It shares the DA_AC_ board prefix with the room air conditioners and has a
+    completely different resource shape, so a near miss here would bind an AC's
+    mode and fan to a heat pump."""
+    resolved = registry.resolve({"/information/vs/0": {
+        "x.com.samsung.da.modelNum": "TP1X_DA_AC_EHS-01001|1|2"}})
+    assert resolved.name != "airconditioner"
+
+
+def test_the_heat_pump_setpoint_reads_and_writes_its_own_resource():
+    reg = registry._REGISTRY_BY_KEY["ehs"]
+    spec = next(s for s in reg.specs if s.capability == "target_temperature")
+    rep = {"x.com.samsung.da.current": "38.0", "x.com.samsung.da.desired": "40.0"}
+    assert spec.read(rep, {}) == 40.0
+    assert spec.write(42.0, rep) == (
+        ["temperatures", "indoor", "vs", "0"],
+        {"x.com.samsung.da.desired": "42.0"},
+    )
+
+
+def test_the_heat_pump_setpoint_bounds_come_from_the_board_when_it_reports_them():
+    reg = registry._REGISTRY_BY_KEY["ehs"]
+    spec = next(s for s in reg.specs if s.capability == "target_temperature")
+    assert spec.options({}, {})["min"] == 5.0, "no fallback range"
+    reported = spec.options({"x.com.samsung.da.minimum": "25",
+                             "x.com.samsung.da.maximum": "55",
+                             "x.com.samsung.da.increment": "1"}, {})
+    assert (reported["min"], reported["max"], reported["step"]) == (25.0, 55.0, 1.0)

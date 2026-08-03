@@ -8,7 +8,6 @@ retyped-from-the-reference port is most likely to have.
 """
 
 import json
-import re
 from pathlib import Path
 
 import pytest
@@ -45,15 +44,45 @@ def _reference_tokens() -> dict:
     )
     if not source.is_file():
         pytest.skip("reference checkout not present")
-    text = source.read_text()
-    match = re.search(r"^_BOARD_TOKEN_TO_KEY[^=]*=\s*\{(.*?)^\}", text, re.DOTALL | re.MULTILINE)
-    body = re.sub(r"#[^\n]*", "", match.group(1))
-    return dict(re.findall(r"'([^']+)'\s*:\s*'([^']+)'", body))
+    return _parse_str_dict(source.read_text(), "_BOARD_TOKEN_TO_KEY")
+
+
+def _parse_str_dict(text: str, name: str) -> dict:
+    """A `{str: str}` module-level dict, read with the parser rather than a regex.
+
+    This was a regex, and it silently stopped working: the reference reformatted
+    with ruff, its string literals went from `'REF'` to `"REF"`, and the pattern
+    matched nothing. `_reference_tokens()` then returned `{}`, so the test that
+    walks it passed while checking nothing at all — for however long it took to
+    notice. Quoting, line breaks and trailing commas are all formatting, and the
+    AST does not see any of them.
+    """
+    import ast
+    tree = ast.parse(text)
+    for node in ast.walk(tree):
+        target = None
+        if isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name):
+            target = node.target.id
+        elif isinstance(node, ast.Assign) and len(node.targets) == 1 \
+                and isinstance(node.targets[0], ast.Name):
+            target = node.targets[0].id
+        if target != name or not isinstance(node.value, ast.Dict):
+            continue
+        pairs = {}
+        for key, value in zip(node.value.keys, node.value.values, strict=True):
+            if isinstance(key, ast.Constant) and isinstance(value, ast.Constant):
+                pairs[key.value] = value.value
+        return pairs
+    raise AssertionError(f"{name} not found — has the reference restructured it?")
 
 
 def test_every_reference_board_token_routes():
     """A token the reference recognises must not leave a device unsupported here."""
-    for token, expected in _reference_tokens().items():
+    tokens = _reference_tokens()
+    # An empty table is what a broken parser looks like, and it would make every
+    # assertion below vacuous. This has happened once already.
+    assert len(tokens) >= 20, f"only parsed {len(tokens)} tokens from the reference"
+    for token, expected in tokens.items():
         resolved = registry.resolve(_identity(model=f"TP1X_DA-XX-{token}-01001|1|2"))
         assert resolved is not None, f"{token} routes nowhere"
         assert resolved.name == expected, f"{token} -> {resolved.name}, not {expected}"

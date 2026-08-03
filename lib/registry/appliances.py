@@ -750,6 +750,58 @@ RANGE_HOOD = Registry(
     ),
 )
 
+# --- EHS heat pump ---------------------------------------------------------
+
+# Samsung's Eco Heating System, an air-to-water heat pump (TP1X_DA_AC_EHS).
+# Shares the DA_AC_ board prefix with the room air conditioners but not their
+# resource shape: two independent loops, zone1 for space heating and dhw for
+# domestic hot water, each with its own mode and temperature hrefs.
+#
+# Only the parts that map onto capabilities this app already defines are bound.
+# The zone mode, the whole hot-water loop and the away switch need capabilities
+# and icons of their own, and there is no EHS here to check any of it against —
+# see docs/BACKLOG.md rather than guessing at a heat pump's controls.
+#
+# The setpoint is leaving-water temperature, not room temperature, which is why
+# the reference notes its `type=Water` field is not a literal water reading.
+
+HREF_EHS_TEMPERATURES = "/temperatures/indoor/vs/0"
+
+EHS = Registry(
+    name="ehs",
+    device_class="heater",
+    titles={"en": "Samsung Heat Pump", "ko": "삼성 열펌프"},
+    specs=(
+        *shared.POWER,
+        *shared.UNIVERSAL,
+        Spec("measure_temperature", HREF_EHS_TEMPERATURES,
+             lambda rep, _r: as_float(rep.get("x.com.samsung.da.current"))),
+        Spec("target_temperature", HREF_EHS_TEMPERATURES,
+             lambda rep, _r: as_float(rep.get("x.com.samsung.da.desired")),
+             lambda value, _rep: (["temperatures", "indoor", "vs", "0"],
+                                  {"x.com.samsung.da.desired": str(float(value))}),
+             options=lambda rep, _r: _ehs_setpoint_options(rep)),
+    ),
+)
+
+
+def _ehs_setpoint_options(rep) -> dict:
+    """Bounds from the resource, falling back to the range the reference uses.
+
+    Its defaults are 5-30 in half degrees; a board that reports its own minimum,
+    maximum or increment overrides them.
+    """
+    low = as_float(rep.get("x.com.samsung.da.minimum"))
+    high = as_float(rep.get("x.com.samsung.da.maximum"))
+    step = as_float(rep.get("x.com.samsung.da.increment"))
+    return {
+        "min": 5.0 if low is None else low,
+        "max": 30.0 if high is None else high,
+        "step": 0.5 if step is None else step,
+        "decimals": 1,
+    }
+
+
 # --- air quality monitor ---------------------------------------------------
 
 # Reference #210 (ASM-KR-TP1-22 board): a battery-powered air-quality puck with
@@ -878,6 +930,7 @@ BOARD_TOKENS = {
     "VSWW": VACUUM_STATION,
     "DF": AIR_DRESSER,
     "ASM": AIR_MONITOR,             # reference #210 — Air Monitor Plus
+    "EHS": EHS,                     # air-to-water heat pump
 }
 
 # Consumer-model prefixes, matched against the *start* of a '_'-delimited segment of

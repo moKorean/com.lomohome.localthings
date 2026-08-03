@@ -66,5 +66,9 @@
   "0.6.1": {
     "en": "Auto dry and the self check now appear in the timeline when they start and finish, and the absence sensor's entries say which state it moved to. Both are also usable as Flow conditions. Mode and target-temperature changes can be logged too — Homey cannot do those on its own, so they are opt-in per appliance under Settings, Timeline.",
     "ko": "자동 건조와 자가진단이 시작·종료 시 타임라인에 남습니다. 부재 감지도 어느 쪽으로 바뀌었는지 표시됩니다. 둘 다 플로우 조건으로도 쓸 수 있습니다. 운전 모드와 희망 온도 변경도 기록할 수 있습니다 — Homey가 스스로 남기지 못하는 항목이라, 기기 설정의 '타임라인'에서 켜면 동작합니다."
+  },
+  "0.6.2": {
+    "en": "Finding an appliance is quicker and quieter: the app now asks each candidate port whether it actually speaks the protocol before attempting a full connection, so a device that is not a Samsung appliance is ruled out in about a second instead of several. Also adds routing for Samsung's EHS heat pump, with its power and water temperature.",
+    "ko": "가전 검색이 더 빠르고 조용해집니다. 각 후보 포트가 실제로 프로토콜을 쓰는지 먼저 물어본 뒤에 연결을 시도하므로, 삼성 가전이 아닌 기기는 수 초가 아니라 1초 남짓에 걸러집니다. 삼성 EHS 열펌프 라우팅도 추가했습니다(전원·출수 온도)."
   }
 }

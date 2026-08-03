@@ -38,7 +38,7 @@ there is no cloud round-trip.
 Samsung appliances running Tizen RT 3.x / DAWIT 3.0+ firmware — roughly 2022 and later.
 
 **The app claims support for air conditioners, induction cooktops, range hoods and
-refrigerators** — the four types verified on real hardware. The code routes all seventeen
+refrigerators** — the four types verified on real hardware. The code routes all eighteen
 types the reference covers (see [Support status](#support-status)), but the other twelve
 are deliberately left out of the app description and tags because they could not be
 tested. They may well work; please try one and report what you find.
@@ -326,7 +326,7 @@ computed for it, so a unit gets exactly what it reported.
 
 ### Support status
 
-All **seventeen** types the reference supports are routed, but they are verified to
+All **eighteen** types the reference supports are routed, but they are verified to
 different degrees. An unverified entry was ported from the reference's field definitions
 and never seen on the appliance itself — and as the range hood demonstrated,
 **guessing field names is usually wrong**: it pairs, shows capabilities, and reads
@@ -349,6 +349,7 @@ nothing.
 | Clean station (`VSKR`, `VSWW`) | Unverified. Operation state, dust bag usage and warning |
 | AirDresser (`DF`) | Unverified. Operation state, progress, sanitize |
 | Air monitor (`ASM`) | Unverified. Air quality, PM10/2.5/1.0, CO2, humidity, battery — sensors only, the board has no power resource |
+| Heat pump (`EHS`) | Unverified. Power, leaving-water temperature and setpoint. Zone mode, the hot-water loop and away mode need capabilities of their own — see BACKLOG |
 
 **What "unverified" means**: the field names, resource paths and writability were taken
 from the reference's definitions, and routing and manifest consistency are covered by

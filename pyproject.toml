@@ -14,7 +14,7 @@ authors = [{ name = "Geunwon Mo", email = "mokorean@gmail.com" }]
 # what Homey actually installs. Kept in sync here so local dev and tests can
 # `pip install -e .` and import the same versions.
 dependencies = [
-    "smartthings-local>=0.1.1",
+    "smartthings-local>=0.1.2",
 ]
 
 [project.optional-dependencies]

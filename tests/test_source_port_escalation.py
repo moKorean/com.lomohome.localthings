@@ -100,3 +100,122 @@ def test_attempt_wraps_rather_than_raising():
     assert local_source_port("192.168.1.90", beyond) == local_source_port(
         "192.168.1.90", 0
     )
+
+
+# --- the ClientHello liveness gate -----------------------------------------
+#
+# The UDP sweep cannot tell a silent port from a DTLS server: anything that does
+# not answer ICMP-unreachable looks live. Measured against the air conditioner at
+# 192.168.1.90 it nominated three ports where one speaks DTLS, and against a host
+# that is not an appliance at all it nominated three where none do — each of those
+# costs a full handshake to disprove. smartthings-local 0.1.2 added a stateless
+# ClientHello probe that settles it in one round trip.
+
+
+def test_the_sweep_reports_its_nominations_apart_from_the_rescues():
+    """They are treated differently, so they cannot come back as one list."""
+    import inspect
+
+    from lib import probe
+    signature = inspect.signature(probe.sweep_ports)
+    assert "tuple" in str(signature.return_annotation)
+    assert probe.find_live_ports.__doc__, "the combined form is still available"
+
+
+def test_a_port_that_does_not_speak_dtls_is_not_handshaked(monkeypatch):
+    """The whole point: no handshake is attempted against a port the probe has
+    already ruled out."""
+    from lib import probe
+
+    monkeypatch.setattr(probe, "sweep_ports", lambda *a, **k: ([49153, 49154], []))
+    monkeypatch.setattr(probe, "speaks_dtls", lambda host, port, **k: port == 49154)
+
+    handshaked = []
+
+    class _Session:
+        def __init__(self, host, port, **kwargs):
+            handshaked.append(port)
+
+        def connect(self):
+            raise ConnectionError("refused")
+
+        def close(self):
+            pass
+
+    monkeypatch.setattr(probe, "DtlsCoapSession", _Session)
+    with pytest.raises(ConnectionError):
+        probe.probe("1.2.3.4", "cert", "key")
+    assert handshaked and set(handshaked) == {49154}, (
+        f"handshaked {sorted(set(handshaked))}; 49153 was ruled out"
+    )
+
+
+def test_when_every_port_is_ruled_out_nothing_is_handshaked(monkeypatch):
+    """A host that is not an appliance should cost probes, not handshakes — that is
+    where the gate pays for itself on a subnet sweep."""
+    from lib import probe
+
+    monkeypatch.setattr(probe, "sweep_ports", lambda *a, **k: ([49153, 49154], []))
+    monkeypatch.setattr(probe, "speaks_dtls", lambda host, port, **k: False)
+
+    def _never(*args, **kwargs):
+        raise AssertionError("a handshake was attempted")
+
+    monkeypatch.setattr(probe, "DtlsCoapSession", _never)
+    with pytest.raises(ConnectionError) as raised:
+        probe.probe("1.2.3.4", "cert", "key")
+    assert "DTLS" in str(raised.value), str(raised.value)
+
+
+def test_a_rescued_preferred_port_is_never_second_guessed():
+    """The rescue exists because a liveness verdict was wrong once (reference
+    #192, a segregated VLAN). Replacing one verdict with another would put that
+    case straight back."""
+    import ast
+    from pathlib import Path
+    source = Path(__file__).parent.parent.joinpath("lib/probe.py").read_text()
+    function = next(
+        node for node in ast.walk(ast.parse(source))
+        if isinstance(node, ast.FunctionDef) and node.name == "probe"
+    )
+    body = ast.unparse(function)
+    assert "port not in rescued and speaks_dtls" in body, (
+        "the gate is applied to the rescued ports too"
+    )
+
+
+@pytest.mark.parametrize("failure", [ImportError, OSError, RuntimeError])
+def test_a_probe_that_cannot_answer_never_removes_a_port(monkeypatch, failure):
+    """None means "unknown", and unknown must behave exactly as before the gate
+    existed — an older library or an unreachable host must not silently narrow the
+    ports this app is willing to try."""
+    from lib import probe
+
+    def _raise(*args, **kwargs):
+        raise failure("no")
+
+    import builtins
+    real_import = builtins.__import__
+
+    def _import(name, *args, **kwargs):
+        if name.startswith("smartthings_local.protocol.dtls_probe"):
+            raise failure("no")
+        return real_import(name, *args, **kwargs)
+
+    monkeypatch.setattr(builtins, "__import__", _import)
+    assert probe.speaks_dtls("1.2.3.4", 49154) is None
+
+
+def test_the_gate_reads_the_probe_result_rather_than_assuming_its_shape():
+    """The library returns a ProbeResult, not a bool. Comparing it truthily would
+    call every port live and quietly undo the gate."""
+    import ast
+    from pathlib import Path
+    source = Path(__file__).parent.parent.joinpath("lib/probe.py").read_text()
+    function = next(
+        node for node in ast.walk(ast.parse(source))
+        if isinstance(node, ast.FunctionDef) and node.name == "speaks_dtls"
+    )
+    body = ast.unparse(function)
+    assert "LIVE" in body, "the outcome is not inspected"
+    assert "return bool(result)" not in body

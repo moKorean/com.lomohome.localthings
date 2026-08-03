@@ -306,6 +306,21 @@ action = "Start"
 레퍼런스 테이블에 없던 `x.com.st.d.hood`와 이 `oic.d.cooktop` 주의사항은 업스트림에
 기여했습니다 — [mbillow/localthings#230](https://github.com/mbillow/localthings/pull/230).
 
+### EHS 열펌프 미매핑 리소스
+
+`TP1X_DA_AC_EHS` (공기-물 열펌프). 전원·현재온도·희망온도만 이식했습니다. 나머지는 새
+capability와 아이콘이 필요한데, **실기기가 없어 확인할 수단이 없습니다.**
+
+| 리소스 | 내용 | 보류 이유 |
+|---|---|---|
+| `/mode/vs/0` | zone 운전 모드 | 값 집합이 에어컨과 다릅니다. `supportedModes`를 실기기에서 봐야 enum을 정의할 수 있습니다 |
+| `/mode/dhw/vs/0` 외 | 온수(DHW) 루프 전체 — 전원·모드·온도 | 별도 루프라 capability 세트를 새로 만들어야 합니다 |
+| `/option/outgoing/vs/0` | 외출 모드 (`x.com.samsung.da.away`) | 매핑은 명확하지만 맞는 아이콘이 저장소에 없고, 아이콘 path를 지어낼 수는 없습니다 |
+
+설정 온도는 실내 온도가 아니라 **출수 온도**입니다 — 레퍼런스가 이 리소스의 `type=Water`가
+문자 그대로의 수온이 아니라고 적어 둔 이유입니다. 기본 범위 5~30℃(0.5 단위)는 레퍼런스 값을
+따르고, 보드가 자기 `minimum`/`maximum`/`increment`를 보고하면 그쪽이 우선합니다.
+
 ### 에어모니터 미매핑 리소스 (`#210`)
 
 `ASM-KR-TP1-22` 보드에서 레퍼런스가 매핑한 것 중 둘을 보류했습니다.

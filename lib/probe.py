@@ -63,6 +63,14 @@ def local_source_port(host: str, attempt: int = 0) -> int:
 def find_live_ports(
     host: str, ports=None, timeout: float = LIVENESS_PROBE_TIMEOUT_S
 ) -> list[int]:
+    """Every port worth a handshake, nominations and rescues together."""
+    nominated, rescued = sweep_ports(host, ports, timeout)
+    return nominated + rescued
+
+
+def sweep_ports(
+    host: str, ports=None, timeout: float = LIVENESS_PROBE_TIMEOUT_S
+) -> tuple[list[int], list[int]]:
     """Narrow the port range before paying for a DTLS handshake.
 
     UDP is connectionless, but a *connected* UDP socket surfaces the ICMP
@@ -73,6 +81,10 @@ def find_live_ports(
       silence / any data -> may be live (open|filtered); a candidate
 
     The in-process equivalent of `nmap -sU`, minus the root requirement.
+
+    Returns the sweep's own nominations and the rescued preferred ports
+    separately, because only the first kind may be second-guessed — see the
+    comment on `rescued` below and `speaks_dtls`.
     """
     wanted = list(ports or PROBE_PORT_RANGE)
     candidates = []
@@ -118,7 +130,7 @@ def find_live_ports(
         port for port in PREFERRED_PROBE_PORTS
         if port in wanted and port not in candidates
     ]
-    return order_candidates(candidates) + rescued
+    return order_candidates(candidates), rescued
 
 
 def order_candidates(ports: list[int]) -> list[int]:
@@ -126,6 +138,45 @@ def order_candidates(ports: list[int]) -> list[int]:
     preferred = [p for p in PREFERRED_PROBE_PORTS if p in ports]
     rest = sorted(p for p in ports if p not in PREFERRED_PROBE_PORTS)
     return preferred + rest
+
+
+def speaks_dtls(host: str, port: int, timeout: float = 1.0) -> bool | None:
+    """Whether a real DTLS server answers on this port, or None if unknowable.
+
+    The UDP sweep above cannot tell a silent port from a DTLS server: anything
+    that does not answer with ICMP-unreachable looks live. Measured against the
+    air conditioner at 192.168.1.90 it called three ports live where one was, and
+    against a host that is not an appliance at all it called three live where none
+    were — each of those costs a full handshake to disprove.
+
+    A real DTLS server answers a ClientHello with a HelloVerifyRequest in about
+    one round trip, before any certificate work (RFC 6347 §4.2.1), so one exchange
+    settles it. The probe is stateless: the server replies without allocating an
+    association, so this leaves nothing behind for the real handshake to trip over
+    — which matters here, because this app pins a source port per device and an
+    orphaned association would be evicted rather than ignored.
+
+    Returns None when the question cannot be answered — the library is older than
+    0.1.2 and has no probe, or the host is unreachable in a way that raises rather
+    than times out. A None is treated as "try anyway" by the caller, so a failure
+    to probe never removes a port the previous behaviour would have attempted.
+    """
+    try:
+        # Imported by path, not `from ... import dtls_probe`: the submodule is not
+        # re-exported from the package's __init__, so the `from` form raises
+        # ImportError even where the module is present.
+        import smartthings_local.protocol.dtls_probe as dtls_probe
+    except Exception:
+        # Not just ImportError: this is an optional accelerator, and no way for it
+        # to fail loading may take pairing down with it.
+        return None
+    try:
+        result = dtls_probe.probe(host, port, stateless=True, retries=1,
+                                  timeout=timeout)
+    except Exception:
+        # `Host is down` and friends arrive as OSError rather than a DEAD result.
+        return None
+    return "LIVE" in str(getattr(result, "outcome", result)).upper()
 
 
 def _read_device_types(session) -> tuple:
@@ -158,7 +209,8 @@ def probe(host: str, leaf_cert_pem: str, leaf_key_pem: str) -> dict:
     Returns {port, serial, resources, device_types}. Raises ConnectionError when no
     port in the range answers.
     """
-    candidates = find_live_ports(host)
+    nominated, rescued = sweep_ports(host)
+    candidates = nominated + rescued
     if not candidates:
         raise ConnectionError(
             f"No live DTLS port on {host} in "
@@ -196,7 +248,20 @@ def probe(host: str, leaf_cert_pem: str, leaf_key_pem: str) -> dict:
                     session.close()
 
     last_error = None
+    unreachable = 0
     for port in candidates:
+        # Confirm the port before paying for a handshake, and only when it is
+        # about to be tried — probing them all up front would charge the common
+        # case, where the first candidate is the historically correct port and
+        # answers immediately.
+        #
+        # Only the sweep's own nominations are second-guessed. The rescued
+        # preferred ports exist precisely because a liveness verdict was wrong
+        # once (reference #192, a segregated VLAN), and replacing one such verdict
+        # with another would put that case back.
+        if port not in rescued and speaks_dtls(host, port) is False:
+            unreachable += 1
+            continue
         # Source-port escalation is nested inside the destination loop rather than
         # wrapped around it: an appliance holding a stale association rejects every
         # destination port identically, so retrying all of them on the same source
@@ -209,4 +274,10 @@ def probe(host: str, leaf_cert_pem: str, leaf_key_pem: str) -> dict:
                 last_error = exc
                 if not peer_holds_stale_session(exc):
                     break
+    if last_error is None and unreachable:
+        raise ConnectionError(
+            f"No DTLS server on {host} in "
+            f"{PROBE_PORT_RANGE[0]}-{PROBE_PORT_RANGE[-1]}. "
+            "This may not be a supported appliance."
+        )
     raise ConnectionError(f"No port on {host} completed a session: {last_error}")
