@@ -955,3 +955,51 @@ def test_silence_still_disqualifies():
     assert "_observe_silent_rounds += 1" in body, (
         "a silent round no longer widens the retry"
     )
+
+
+# --- the registration burst was losing the initial notifications ------------
+
+
+def test_registrations_are_spaced():
+    """Measured on the guest-room air conditioner: 0 of 27 initial notifications
+    after a subscribe round, then 6 within 25 s of switching the unit on and 7
+    within a minute, every value landing on the right capability. The channel works;
+    the burst is what was lost. The other three units read 27, 27 and 24 of 27 — a
+    lossy burst, not a broken channel.
+
+    The transport library's `subscribe()` is unpaced — `pace()` has one call site,
+    inside the Block2 loop — so nothing spaced them before this.
+    """
+    import ast
+    source = (Path(__file__).parent.parent / "lib/appliance/device.py").read_text()
+    function = next(
+        node for node in ast.walk(ast.parse(source))
+        if isinstance(node, ast.AsyncFunctionDef) and node.name == "_try_observe"
+    )
+    body = ast.unparse(function)
+    assert "OBSERVE_SUBSCRIBE_SPACING_S" in body, "the registrations are unspaced again"
+    assert "asyncio.sleep" in body, (
+        "spacing must not hold an executor thread — nine appliances subscribe at once"
+    )
+    assert "time.sleep" not in body
+
+
+def test_the_spacing_matches_the_librarys_own_bulk_path_and_not_its_rate_limit():
+    """0.05 s is what `refresh_observes()` uses between subscribes. `pace()`'s 0.2 s
+    would occupy the shared executor for 27 x 0.2 s per device, and this app starts
+    nine of them together."""
+    from lib.const import OBSERVE_SUBSCRIBE_SPACING_S
+    assert OBSERVE_SUBSCRIBE_SPACING_S == 0.05
+    assert 27 * OBSERVE_SUBSCRIBE_SPACING_S < 2.0, "a subscribe round got expensive"
+
+
+def test_the_first_registration_is_not_delayed():
+    """A device with one observable resource should not wait to send it."""
+    import ast
+    source = (Path(__file__).parent.parent / "lib/appliance/device.py").read_text()
+    function = next(
+        node for node in ast.walk(ast.parse(source))
+        if isinstance(node, ast.AsyncFunctionDef) and node.name == "_try_observe"
+    )
+    body = ast.unparse(function)
+    assert "if index:" in body, "the gap is applied before the first registration too"

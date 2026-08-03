@@ -87,6 +87,23 @@ OBSERVE_GRACE_S = 45.0
 # healthy channel should deliver one per href whatever the appliance is doing.
 OBSERVE_SUCCESS_FRACTION = 0.8
 
+# Gap between OBSERVE registrations. The transport library's `subscribe()` is
+# fire-and-forget and unpaced — its `pace()` has a single call site, inside the
+# Block2 loop — so 27 registrations left in microseconds and the appliance dropped
+# the initial notifications they should each have answered with.
+#
+# Measured on the guest-room air conditioner: 0 of 27 initial notifications after a
+# subscribe round, then 6 within 25 s of switching the unit on and 7 within a
+# minute, every value landing on the right capability. So the channel works and only
+# the burst is lost. The other three units read 27, 27 and 24 of 27 — a lossy burst,
+# not a broken channel.
+#
+# 0.05 s is the library's own figure, from `refresh_observes()`, its paced bulk
+# path. Deliberately not the 0.2 s that `pace()` would impose: this app subscribes
+# nine appliances at once, and 27 x 0.2 s each would occupy the shared executor for
+# five seconds per device at every start.
+OBSERVE_SUBSCRIBE_SPACING_S = 0.05
+
 OBSERVE_RETRY_S = 600.0
 # Summary sweep interval while push is healthy. Still polled, because a missed
 # notification is invisible otherwise.

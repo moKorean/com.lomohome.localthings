@@ -82,5 +82,9 @@
   "0.6.5": {
     "en": "Corrects 0.6.4. An appliance is again required to answer most of its subscriptions before the app treats live updates as working — one answer was not enough, and it was letting a barely-connected appliance be read ten times less often. The re-subscribing that 0.6.3 set out to stop is now actually stopped: it was being reset by any single answer, so it never took effect. Applying settings from a Flow no longer disturbs an appliance's live-update state while the card is running.",
     "ko": "0.6.4를 바로잡습니다. 실시간 업데이트가 동작한다고 보기 전에 구독 대부분이 응답해야 합니다 — 하나로는 부족했고, 그 때문에 연결이 거의 끊긴 가전을 10배 드물게 읽고 있었습니다. 0.6.3에서 멈추려던 반복 재구독도 이제 실제로 멈춥니다. 응답이 하나만 와도 초기화되어 여태 작동하지 않았습니다. 플로우로 설정을 적용할 때 카드 실행 중에 가전의 실시간 업데이트 상태를 건드리지도 않습니다."
+  },
+  "0.6.6": {
+    "en": "Live updates now work on appliances that were stuck without them. When the app asked an appliance to report changes, it sent all of the requests at once and the appliance answered almost none of them — so the app fell back to polling even though the appliance was perfectly willing to push. The requests are now spaced out. One air conditioner here answered none of 27 before and should now answer all of them.",
+    "ko": "실시간 업데이트를 받지 못하던 가전에서 이제 동작합니다. 앱이 변화 보고를 요청할 때 27개를 한꺼번에 보내서 가전이 거의 응답하지 못했고, 그래서 가전은 얼마든지 보낼 준비가 되어 있는데도 앱이 폴링으로 되돌아갔습니다. 이제 요청을 나눠 보냅니다. 여기 에어컨 한 대는 27개 중 0개를 응답했는데 이제 전부 응답할 것입니다."
   }
 }

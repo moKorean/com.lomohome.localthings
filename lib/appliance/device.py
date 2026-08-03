@@ -22,6 +22,7 @@ from lib.const import (
     OBSERVE_GRACE_S,
     OBSERVE_REFRESH_S,
     OBSERVE_RETRY_S,
+    OBSERVE_SUBSCRIBE_SPACING_S,
     OBSERVE_SUCCESS_FRACTION,
     OBSERVE_SWEEP_INTERVAL_S,
     POLL_INTERVAL_S,
@@ -219,7 +220,14 @@ The judgment is deliberately not made here. The initial notifications keep
         self._notified.clear()
         self._observe_hrefs = set(hrefs)
         failed = 0
-        for href in hrefs:
+        for index, href in enumerate(hrefs):
+            if index:
+                # Spaced, because the appliance drops the initial notifications when
+                # the registrations arrive back to back — see
+                # OBSERVE_SUBSCRIBE_SPACING_S. `asyncio.sleep`, not the library's
+                # `time.sleep`: this must not hold an executor thread, since all nine
+                # appliances subscribe at once when the app starts.
+                await asyncio.sleep(OBSERVE_SUBSCRIBE_SPACING_S)
             try:
                 await self._session.subscribe(href.strip("/").split("/"))
             except Exception as exc:
