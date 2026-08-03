@@ -129,6 +129,18 @@ are claimed in the app description; the other fourteen are routed and mapped fro
 the reference but unverified, and that distinction is deliberate — see the support
 table in `README.md`.
 
+The three refrigerators are **two different variants**, and which is which matters
+because they behave differently and half the fridge bugs have come from testing one
+and assuming the other:
+
+| Paired as | Variant | Notes |
+|---|---|---|
+| 냉장고 | Fridge-only | One compartment. No convertible mode. Its door lives in the `/doors/vs/0` aggregate; `/door/onedoorfreezer/vs/0` exists but never moves |
+| 냉동고, 음료장 | Convertible, same model | Fridge / freezer / **kimchi**. Currently freezer and cooler respectively. Their door lives in `/door/onedoorfreezer/vs/0`; the aggregate sits at Close |
+
+Kimchi is a third convertible position the owner confirms exists on both. Nothing in
+the app reads or writes it yet — `docs/BACKLOG.md`.
+
 Writing to these appliances changes the user's home. Record the state first,
 restore afterwards, and say so.
 

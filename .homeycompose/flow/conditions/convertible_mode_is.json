@@ -19,23 +19,7 @@
     },
     {
       "name": "value",
-      "type": "dropdown",
-      "values": [
-        {
-          "id": "Cooler",
-          "title": {
-            "en": "Fridge",
-            "ko": "냉장"
-          }
-        },
-        {
-          "id": "Freezer",
-          "title": {
-            "en": "Freezer",
-            "ko": "냉동"
-          }
-        }
-      ]
+      "type": "text"
     }
   ]
 }

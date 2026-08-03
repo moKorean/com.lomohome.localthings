@@ -8,7 +8,6 @@
   "actions/set_cabinet_light.json",
   "actions/set_child_lock.json",
   "actions/set_convenient_mode.json",
-  "actions/set_convertible_mode.json",
   "actions/set_edge_light.json",
   "actions/set_fan_mode.json",
   "actions/set_hood_fan_speed.json",

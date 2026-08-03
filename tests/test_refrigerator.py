@@ -143,14 +143,12 @@ def test_only_the_multiroom_token_differs_between_the_two_modes():
     assert differing == {"MULTIROOM_COOLER", "MULTIROOM_FREEZER"}, differing
 
 
-def test_an_unseen_multiroom_value_reports_nothing():
-    """It used to pass an unknown token through as a title-cased name, which was
-    right while the capability was a free-form string. It is an enum now, so a value
-    outside its list is refused when set and the tile would sit on something it
-    cannot change. Reporting nothing is the honest state. Kimchi is the token
-    expected here; docs/BACKLOG.md tracks it."""
+def test_an_unseen_multiroom_value_still_reads_through():
+    """The appliance also offers a kimchi setting whose token has not been seen. The
+    capability is a free-form string, so an unknown token can be shown as itself
+    rather than dropped — the owner confirms kimchi is a real third position."""
     rep = {"x.com.samsung.da.modes": ["CVN_KIMCHI_STORAGE", "MULTIROOM_KIMCHI"]}
-    assert appliances._read_convertible_mode(rep, {}) is None
+    assert appliances._read_convertible_mode(rep, {}) == "Kimchi"
 
 
 def test_the_fridge_only_variant_has_no_convertible_mode():
@@ -158,66 +156,36 @@ def test_the_fridge_only_variant_has_no_convertible_mode():
     assert "x.com.samsung.da.modes" not in load(FRIDGE_ONLY)["/mode/vs/0"]
 
 
-def test_the_convertible_mode_can_now_be_switched():
-    """It was read-only while the write contract was unconfirmed. The payload comes
-    from a live dump of both units and the reference's equivalent capability."""
+
+def test_the_convertible_mode_is_read_only():
+    """1.0.1 made this settable and 1.0.2 took it back out: the owner reports that
+    switching fridge/freezer fails from Samsung's own app too, so these units do not
+    accept the change remotely at all.
+
+    The payload was not the problem — writing each unit's current mode back was
+    accepted and preserved the other flags in `x.com.samsung.da.modes`. Shipping a
+    control that the appliance ignores is worse than shipping none, so this stays
+    read-only until an appliance is found that honours it. docs/BACKLOG.md has the
+    detail; do not re-add a writer from the reference's flex-zone capability without
+    new evidence.
+    """
     spec = appliances.REFRIGERATOR.spec_for("localthings_convertible_mode")
-    assert spec.writable
+    assert not spec.writable
+    assert not hasattr(appliances, "_write_convertible_mode")
 
 
-def test_switching_the_compartment_preserves_the_other_flags():
-    """`x.com.samsung.da.modes` carries several orthogonal flags at once. Both units
-    here read exactly this list, and a write of only the new mode would drop
-    CVN_KIMCHI_STORAGE and CV_NULL along with it."""
-    rep = {"x.com.samsung.da.modes":
-           ["CVN_KIMCHI_STORAGE", "CV_NULL", "MULTIROOM_FREEZER"]}
-    path, payload = appliances._write_convertible_mode("Cooler", rep)
-    assert path == ["mode", "vs", "0"]
-    assert payload == {"x.com.samsung.da.modes":
-                       ["CVN_KIMCHI_STORAGE", "CV_NULL", "MULTIROOM_COOLER"]}
-
-
-def test_switching_replaces_the_compartment_flag_rather_than_adding_one():
-    """Two MULTIROOM_ entries would leave the appliance to pick, and the reader
-    returns the first — so the tile could disagree with the appliance."""
-    rep = {"x.com.samsung.da.modes": ["MULTIROOM_COOLER"]}
-    _, payload = appliances._write_convertible_mode("Freezer", rep)
-    modes = payload["x.com.samsung.da.modes"]
-    assert modes == ["MULTIROOM_FREEZER"]
-    assert len([m for m in modes if m.startswith("MULTIROOM_")]) == 1
-
-
-def test_a_write_survives_a_missing_modes_list():
-    """A reading that arrived without the field must not raise mid-write."""
-    path, payload = appliances._write_convertible_mode("Freezer", {})
-    assert path == ["mode", "vs", "0"]
-    assert payload == {"x.com.samsung.da.modes": ["MULTIROOM_FREEZER"]}
-
-
-@pytest.mark.parametrize("value", ["Kimchi", "", "cooler ", None, "MULTIROOM_COOLER"])
-def test_an_unsupported_target_is_refused_rather_than_guessed(value):
-    """Only the two values measured on hardware are written. `"cooler "` is in the
-    list on purpose: the writer lower-cases and strips, so it must be accepted —
-    everything else here must not be."""
-    result = appliances._write_convertible_mode(value, {})
-    if value == "cooler ":
-        assert result[1] == {"x.com.samsung.da.modes": ["MULTIROOM_COOLER"]}
-    else:
-        assert result is None
-
-
-def test_the_capability_offers_exactly_the_two_measured_values():
-    """The enum and the writer have to agree, or the picker offers a value the
-    write refuses."""
+def test_the_capability_is_not_offered_as_settable():
+    """The Flow generator emits an action card for every setable capability, so a
+    stale `setable` here would put a card in front of users that cannot work."""
     definition = json.loads(
         (Path(__file__).parent.parent / ".homeycompose" / "capabilities"
          / "localthings_convertible_mode.json").read_text(encoding="utf-8"))
-    assert definition["setable"] is True
-    assert definition["type"] == "enum"
-    ids = [value["id"] for value in definition["values"]]
-    assert sorted(ids) == ["Cooler", "Freezer"]
-    for capability_id in ids:
-        assert appliances._write_convertible_mode(capability_id, {}) is not None
+    assert definition["setable"] is False
+    assert definition["type"] == "string"
+    generated = Path(__file__).parent.parent / ".homeycompose" / "flow" / "actions"
+    assert not (generated / "set_convertible_mode.json").exists()
+
+
 
 
 # --- fridge-only variant --------------------------------------------------

@@ -1,6 +1,6 @@
 {
   "id": "com.lomohome.localthings",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "compatibility": ">=13.0.0",
   "sdk": 3,
   "runtime": "python",
