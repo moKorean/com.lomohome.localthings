@@ -35,6 +35,57 @@ homey api raw -X POST \
 
 ## 냉장고 (`TP2X_REF_21K`, 키친핏)
 
+### 설정 온도가 적용되지 않습니다 (사용자 보고 2026-08-03, 원인 미측정)
+
+**증상**: 냉장고와 변온고 모두 앱에서 설정 온도를 바꿔도 반영되지 않습니다.
+
+읽기는 정상입니다 — 냉장고 `target_temperature.fridge` 2, 냉동고
+`target_temperature.freezer` −20, 음료장 `target_temperature.fridge` 2. 즉 capability가
+바인딩되고 값도 옵니다. **쓰기만 듣지 않습니다.**
+
+쓰기 함수는 두 경로 모두 존재합니다(`lib/registry/appliances.py`).
+
+| 경로 | href | writer | `exists` 게이트 |
+|---|---|---|---|
+| OCF 칸별 | `_ocf_desired("cooler"/"freezer")` | `_write_ocf_setpoint` | `_ocf_active` |
+| 벤더 집계 | `/temperatures/vs/0` | `_write_fridge_setpoint` | `_compartment_active(...)` |
+
+둘은 동시에 바인딩되지 않도록 게이트로 갈라져 있습니다. **어느 쪽이 바인딩됐는지 확인되지
+않았습니다.** 그것이 첫 질문입니다.
+
+주의할 이력: 0.4.1 체인지로그가 이 문제를 이미 한 번 고쳤다고 적고 있습니다 — "설정값이 이
+펌웨어가 최신으로 유지하지 않는 리소스에 쓰이고 있었다". 그러므로 **회귀이거나, 특정 변종에서만
+동작하는 것**입니다. 세 대 중 어디까지 되는지 따로 확인해야 합니다.
+
+- **실험**: `CLAUDE.md`의 원칙대로 승인 응답을 증거로 쓰지 않습니다.
+  1. `diagnostics`로 어느 spec이 바인딩됐는지 확인(`target_temperature.*`의 href).
+  2. 앱에서 값을 바꾼 뒤 `read-resource`로 **라이브** 값을 읽어 변했는지 확인. `resources`는
+     캐시이므로 쓰지 않습니다 — 이 구분을 무시해 두 번 틀렸습니다.
+  3. 안 변했으면 `write-resource`로 두 후보 href에 각각 직접 써 보고 어느 쪽을 가전이
+     받아들이는지 가립니다.
+  4. 받아들이는 href가 있으면 `exists` 게이트가 왜 그쪽을 고르지 않았는지 봅니다.
+- 쓰기 페이로드가 리스트형 리소스라면 `_fold_write_into`를 함께 볼 것. `dict.update`로 접으면
+  `items` 전체가 교체되어 `current`/`min`/`max`가 비는 버그가 있었습니다.
+
+### 변온고 모드 변경이 없습니다 (미구현, 냉장–냉동–김치)
+
+**증상**: 변온실을 냉장/냉동/김치로 바꿀 수 없습니다.
+
+**원인은 확인됐습니다 — 쓰기가 구현된 적이 없습니다.** `localthings_convertible_mode`의 Spec은
+읽기 함수(`_read_convertible_mode`)만 갖고 writer 인자가 비어 있어, 정의상 읽기 전용입니다.
+고장이 아니라 미구현입니다.
+
+읽기는 `/mode/vs/0`의 `x.com.samsung.da.modes`에서 `MULTIROOM_*` 토큰을 찾아
+`Cooler`/`Freezer`로 변환합니다. 실측값: 냉동고 `Freezer`, 음료장 `Cooler`.
+
+- **필요한 것**: `/mode/vs/0`에 무엇을 써야 모드가 바뀌는지. `modes`가 리스트이므로 페이로드
+  모양(전체 교체인지 해당 슬롯만인지)까지 확인해야 합니다.
+- **실험**: 전용앱(스마트싱스)에서 변온실을 냉장→냉동으로 바꾸고 전후로 `/mode/vs/0`를
+  `read-resource`로 덤프해 **어느 필드가 어떻게 달라지는지** 봅니다. 그 차이가 곧 쓸 페이로드
+  입니다. 그다음 `write-resource`로 재현하고 읽어서 확인합니다.
+- **김치는 두 겹으로 막혀 있습니다** — 쓰기가 없고, 현재 선택된 김치 강도를 읽을 방법도 아직
+  없습니다. 아래 항목 참고. 모드 쓰기가 먼저 풀려야 김치도 의미가 있습니다.
+
 ### 김치 냉각 강도 — `/mode/vs/0`
 
 ```
