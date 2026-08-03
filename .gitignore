@@ -25,3 +25,8 @@ uv.lock
 *.pem
 *.key
 certs/
+
+# OMC operational artifacts — session state, plans, logs. Project-scoped skills
+# under .omc/skills/ are the intended exception.
+.omc/
+!.omc/skills/
