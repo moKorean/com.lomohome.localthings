@@ -81,7 +81,6 @@ POLL_INTERVAL_S = 30.0
 # poll, so waiting longer costs nothing and a device subscribing 22 resources needs
 # well over 15s for its initial notifications to all land.
 OBSERVE_GRACE_S = 45.0
-OBSERVE_SUCCESS_FRACTION = 0.8
 OBSERVE_RETRY_S = 600.0
 # Summary sweep interval while push is healthy. Still polled, because a missed
 # notification is invisible otherwise.

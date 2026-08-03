@@ -879,3 +879,52 @@ def test_a_rebuilt_session_starts_the_channel_fresh():
         if isinstance(node, ast.AsyncFunctionDef) and node.name == "move_to"
     )
     assert "_observe_silent_rounds = 0" in ast.unparse(function)
+
+
+# --- earning push must judge the channel, not the appliance's activity -----
+
+
+def test_one_notification_is_enough_to_earn_push():
+    """The concern this verdict exists for is an appliance that accepts a
+    subscription and then never notifies. A single notification disproves that.
+
+    It used to need 80% of the subscribed resources inside a 45-second window,
+    which measures how busy the appliance was. Measured on the four air
+    conditioners here, all switched off: 27, 26, 3 and 6 of 27 — the two high ones
+    only because they happened to be running when they were last judged. An idle
+    appliance could never earn push and re-subscribed 27 resources every ten
+    minutes forever.
+    """
+    import ast
+    source = (Path(__file__).parent.parent / "lib/appliance/device.py").read_text()
+    function = next(
+        node for node in ast.walk(ast.parse(source))
+        if isinstance(node, ast.FunctionDef) and node.name == "_evaluate_observe"
+    )
+    body = "\n".join(
+        line.split("#", 1)[0] for line in ast.unparse(function).splitlines()
+    )
+    assert "needed = 1" in body, "the verdict still scales with the appliance's activity"
+    assert "OBSERVE_SUCCESS_FRACTION" not in body
+
+
+def test_the_activity_threshold_is_gone_entirely():
+    """Left behind, it would read as the rule still being in force."""
+    from lib import const
+    assert not hasattr(const, "OBSERVE_SUCCESS_FRACTION")
+
+
+def test_silence_still_disqualifies():
+    """Zero notifications is the one case the verdict is for, and it must keep
+    costing the device its push status."""
+    import ast
+    source = (Path(__file__).parent.parent / "lib/appliance/device.py").read_text()
+    function = next(
+        node for node in ast.walk(ast.parse(source))
+        if isinstance(node, ast.FunctionDef) and node.name == "_evaluate_observe"
+    )
+    body = ast.unparse(function)
+    assert "got >= needed" in body
+    assert "_observe_silent_rounds += 1" in body, (
+        "a silent round no longer widens the retry"
+    )

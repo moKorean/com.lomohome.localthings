@@ -74,5 +74,9 @@
   "0.6.3": {
     "en": "An appliance that accepts a subscription for live updates but never sends any is no longer re-subscribed every ten minutes forever. The app now waits longer each time it hears nothing back, and starts over as soon as the appliance does send something or the connection is rebuilt. One air conditioner here behaves that way, and it was costing it around 3,900 pointless requests a day.",
     "ko": "실시간 업데이트 구독을 받아들이고도 아무것도 보내지 않는 가전을, 10분마다 영원히 재구독하지 않습니다. 응답이 없을 때마다 대기 시간을 늘리고, 가전이 실제로 무언가 보내거나 연결이 새로 맺어지면 처음으로 되돌립니다. 여기 에어컨 한 대가 그 상태였고 하루 약 3,900회의 무의미한 요청을 쓰고 있었습니다."
+  },
+  "0.6.4": {
+    "en": "Appliances that were switched off or simply idle could never qualify for live updates, because the app judged the connection by how many readings arrived in the first 45 seconds — and an idle appliance sends almost none. It now only needs one, which is what actually proves the connection works. Those appliances stop re-subscribing every ten minutes and start getting updates the moment something changes.",
+    "ko": "꺼져 있거나 조작이 없던 가전이 실시간 업데이트 자격을 영영 얻지 못하고 있었습니다. 앱이 구독 직후 45초 동안 몇 개가 도착하는지로 판정했는데, 유휴 상태인 가전은 거의 보내지 않기 때문입니다. 이제 하나만 오면 됩니다 — 연결이 실제로 살아 있다는 증거는 그것으로 충분합니다. 해당 가전은 10분마다 재구독하기를 멈추고, 무언가 바뀌는 즉시 업데이트를 받습니다."
   }
 }

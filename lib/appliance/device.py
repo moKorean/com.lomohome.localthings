@@ -22,7 +22,6 @@ from lib.const import (
     OBSERVE_GRACE_S,
     OBSERVE_REFRESH_S,
     OBSERVE_RETRY_S,
-    OBSERVE_SUCCESS_FRACTION,
     OBSERVE_SWEEP_INTERVAL_S,
     POLL_INTERVAL_S,
     PUSH_HEALTH_WINDOW_S,
@@ -256,7 +255,23 @@ class ApplianceDevice(device.Device):
 
         hrefs = self._observe_hrefs
         got = len(self._notified & hrefs)
-        needed = max(1, int(len(hrefs) * OBSERVE_SUCCESS_FRACTION))
+        # One notification is the whole test. The concern this verdict exists for is
+        # an appliance that accepts a subscription and then never notifies — and a
+        # single notification disproves exactly that.
+        #
+        # It used to require OBSERVE_SUCCESS_FRACTION of the subscribed resources
+        # inside the grace window, which measures how busy the appliance was rather
+        # than whether push works. Measured on the four air conditioners here, all
+        # switched off and idle: two sat at 27 and 26 of 27 because they happened to
+        # be running when they were last judged, and two at 3 and 6 because they were
+        # not. An idle appliance sends almost nothing, so under the old rule it could
+        # never earn push, and re-subscribed 27 resources every ten minutes forever
+        # while polling at the short interval.
+        #
+        # A resource that never changes is not a fault, and the five-minute summary
+        # sweep is already the safety net for anything push misses — that is what it
+        # is for.
+        needed = 1
         self._observe_pending = False
 
         if got >= needed:
