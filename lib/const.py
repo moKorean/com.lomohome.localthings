@@ -98,15 +98,18 @@ OBSERVE_GRACE_S = 45.0
 # 2026-08-03, in both directions — first "the burst loses the initial
 # notifications", then an over-correction to "the appliances send none at all".
 #
-# The real fault is narrower and still open: the initial notifications are sometimes
-# lost *in their entirety*. The same switched-off unit read 0/27 and, a few hours
-# later, 27/27. Nothing about the appliance changed in between; what differed was
-# how recently the app had been reinstalled. See docs/BACKLOG.md — an appliance
-# holding orphaned observations from the previous app instance is the leading
-# suspect, and it is a hypothesis, not a finding.
+# Tuning this is close to pointless, and that is the measured conclusion rather than
+# a guess. Delivery of the initial notifications is simply variable: one switched-off
+# air conditioner, sampled 90s after four separate app starts, read 27/27, 27/27,
+# 27/27 and 8/27. A unit making no state changes cannot explain that with activity,
+# so no threshold survives it — a device reads healthy one round and fails badly the
+# next with nothing having changed. docs/BACKLOG.md has the four rounds, and the two
+# hypotheses they ruled out (accumulating orphaned observations from killed app
+# instances; how recently the app was reinstalled).
 #
-# Left as it is on purpose. `_observing` only selects the poll interval (30s vs the
-# 300s sweep), so failing this test costs polling and never correctness.
+# What needs replacing is the single-round snapshot, not the fraction. Left as it is
+# meanwhile: `_observing` only selects the poll interval (30s vs the 300s sweep), so
+# failing this test costs polling and never correctness.
 OBSERVE_SUCCESS_FRACTION = 0.8
 
 # Gap between OBSERVE registrations. The transport library's `subscribe()` is
@@ -119,10 +122,10 @@ OBSERVE_SUCCESS_FRACTION = 0.8
 # while the unit was being operated for the experiment, so most of those were real
 # state changes rather than initial notifications.
 #
-# The underlying loss is real, though — switched-off units have read both 0/27 and
-# 27/27 hours apart with nothing about the appliance changing — so a burst that
-# outruns the appliance remains a live candidate alongside the orphaned-observation
-# one in docs/BACKLOG.md.
+# The underlying loss is real — a switched-off unit has read anywhere from 8/27 to
+# 27/27 across four app starts — but nothing has pinned it on the burst. Four rounds
+# in docs/BACKLOG.md ruled out two other explanations and established only that
+# delivery is variable, which a burst alone does not account for either.
 #
 # Kept regardless, on grounds that do not depend on which it is: 1.35 s per device,
 # and it matches what the library itself does in `refresh_observes()`, its own paced

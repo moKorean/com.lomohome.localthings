@@ -287,11 +287,13 @@ answers none is a different case, and the living-room air conditioner here
         # switched-off units reading 27, 26, 3 and 6 of 27 — a spread that is about
         # where each sat in a six-hour cycle, not about the channel.
         #
-        # Left alone deliberately. Failing here costs polling, never correctness, and
-        # the fault worth fixing is not this threshold: the initial notifications are
-        # sometimes lost entirely, the same off unit reading 0/27 and later 27/27.
-        # docs/BACKLOG.md records that, and the miss-detection metric that would
-        # judge push honestly in both directions.
+        # Left alone deliberately, and the threshold is not what is worth fixing:
+        # delivery of the initial notifications is variable enough that no single
+        # round decides anything. One switched-off unit, sampled at the same offset
+        # after four app starts, read 27/27, 27/27, 27/27 and 8/27 — so this verdict
+        # can flip with nothing having changed. Failing it costs polling, never
+        # correctness. docs/BACKLOG.md has the rounds and the miss-detection metric
+        # that would judge push without depending on registration-time delivery.
         needed = max(1, int(len(hrefs) * OBSERVE_SUCCESS_FRACTION))
         self._observe_pending = False
 

@@ -87,7 +87,13 @@ Three habits, in order of how much they would have saved:
   retry window untouched, settling in one step what hours of reading had not. The
   standing permission to operate the appliances makes this cheap — use it.
 - **Do not write a conclusion from one reading.** Both of the day's wrong answers were
-  single-timepoint readings stated as settled. Take the second reading first.
+  single-timepoint readings stated as settled. Take the second reading first — here
+  four rounds showed one switched-off unit delivering 27/27, 27/27, 27/27 and 8/27 at
+  the same offset, so any one of them would have "proved" something.
+
+Repeat a round cheaply with
+`homey api raw -X POST --path /api/manager/apps/app/<id>/restart`. There is no way to
+disable an app from the CLI, and uninstalling would unpair the user's devices.
 
 `docs/BACKLOG.md` has the full record, including the loss mode that is still open.
 
