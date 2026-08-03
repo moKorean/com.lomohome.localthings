@@ -112,6 +112,14 @@
     </div>
 
     <div class="card">
+      <h2 id="t-mint"></h2>
+      <p id="t-mint-lede"></p>
+      <p class="meta" id="t-mint-note"></p>
+      <button id="btn-mint" class="secondary"><span id="t-mint-btn"></span></button>
+      <div id="mint-msg" class="msg"></div>
+    </div>
+
+    <div class="card">
       <h2 id="t-how"></h2>
       <p id="t-how-lede"></p>
       <ol id="steps"></ol>
@@ -181,24 +189,32 @@
         notConfigured: 'Not set up yet — add a certificate below before adding appliances.',
         valid: 'Ready.',
         invalid: 'The stored certificate has a problem.',
-        expired: 'The stored certificate has expired. Mint a new one and paste it below.',
+        expired: 'The stored certificate has expired. Issue a new one below.',
         metaFmt: 'Identity uuid:{0} · expires {1} · {2} certificates in chain',
         check: 'Verify the identity',
         checking2: 'Reading the current identity from Samsung’s gateway…',
         checkHint: 'Appliances only accept a certificate carrying the identity published by Samsung’s cloud gateway. This reads that identity now and compares it with the stored certificate. A mismatch is the one failure that looks like a network problem but is really a certificate that needs re-minting.',
         uuidOk: 'The stored identity still matches what appliances expect.',
-        uuidBad: 'Identity mismatch — stored uuid:{0}, appliances now expect uuid:{1}. Mint a new certificate.',
-        how: 'How to get a certificate',
-        howLede: 'One-time setup. The certificate is not tied to a specific appliance, so a single one works for every Samsung appliance on your network.',
+        uuidBad: 'Identity mismatch — stored uuid:{0}, appliances now expect uuid:{1}. Issue a new certificate.',
+        mint: 'Certificate',
+        mintLede: 'The app issues its own client certificate, so no other computer is needed. One was issued when the app started; it is not tied to a specific appliance, so a single one works for every Samsung appliance on your network.',
+        mintNote: 'Re-issue if the identity below no longer matches, or after replacing your Homey. What an appliance checks is the identity in the certificate, not who signed it — measured, not assumed. If a future appliance update changes that, paste a certificate from the procedure below instead.',
+        mintBtn: 'Issue a new certificate',
+        minting: 'Reading the identity and issuing…',
+        minted: 'Issued and stored. You can now add appliances under Devices.',
+        sourceMinted: 'Issued by the app.',
+        sourcePasted: 'Supplied by you. The app will not replace it.',
+        how: 'Using your own certificate instead (optional)',
+        howLede: 'Not needed in the normal case — the app issues its own. Use this only if you would rather supply a certificate signed by Samsung’s AC14K_M CA, or if an appliance update ever stops accepting the app’s.',
         steps: [
           'On a computer with Python 3 and <code>openssl</code>, clone <code>QuiteYellow/SmartThings-Local</code>.',
           'Run <code>setup_cert.py</code> with the command below. It fetches the public AC14K_M CA bundle, reads the identity from Samsung’s gateway, and signs a fresh key of its own. <code>pyOpenSSL</code> is only needed for the optional <code>--test</code> check. There is a <a href="' + GUIDE.en + '" data-external>step-by-step guide for macOS, Windows and Linux</a>.',
           'Open the two files it writes in <code>certs/</code> and paste their contents below.',
         ],
-        howNote: 'Only these two files are needed. The CA private key used to sign them stays on your computer and is never sent to Homey.',
+        howNote: 'Only these two files are needed. The CA private key that signs them stays on your computer and is never sent to Homey — the app never needs a CA key, whether it issues a certificate itself or you paste one.',
         creds: 'Client certificate',
         storedTitle: 'A certificate and key are stored.',
-        storedHint: 'The fields below are intentionally blank — stored keys are never shown again. To change the certificate, paste a new one and save; it replaces what is stored. Otherwise leave this alone.',
+        storedHint: 'The fields below are intentionally blank — stored keys are never shown again. Pasting one here replaces what is stored, including a certificate the app issued, and the app will not overwrite it afterwards. Otherwise leave this alone.',
         certLabel: 'Certificate chain',
         certHint: 'Paste the whole of certs/client_fullchain.pem. It holds several certificates one after another — the leaf first, then the CA chain. Include every BEGIN/END line. Do not use client.pem: that is the leaf alone and appliances cannot verify it.',
         keyLabel: 'Private key',
@@ -217,24 +233,32 @@
         notConfigured: '아직 설정되지 않았습니다 — 가전을 추가하기 전에 아래에서 인증서를 등록하세요.',
         valid: '준비 완료.',
         invalid: '저장된 인증서에 문제가 있습니다.',
-        expired: '저장된 인증서가 만료되었습니다. 새로 발급해 아래에 붙여넣으세요.',
+        expired: '저장된 인증서가 만료되었습니다. 아래에서 새로 발급하세요.',
         metaFmt: '식별자 uuid:{0} · 만료 {1} · 체인 인증서 {2}개',
         check: '식별자 확인',
         checking2: '삼성 게이트웨이에서 현재 식별자를 읽는 중…',
         checkHint: '가전은 삼성 클라우드 게이트웨이가 공개한 식별자를 담은 인증서만 받아들입니다. 이 버튼은 그 식별자를 지금 읽어와 저장된 인증서와 비교합니다. 불일치는 네트워크 장애처럼 보이지만 실제로는 인증서를 다시 발급해야 하는 유일한 경우입니다.',
         uuidOk: '저장된 식별자가 가전이 기대하는 값과 일치합니다.',
         uuidBad: '식별자 불일치 — 저장값 uuid:{0}, 현재 기대값 uuid:{1}. 인증서를 다시 발급하세요.',
-        how: '인증서 발급 방법',
-        howLede: '최초 1회만 하면 됩니다. 인증서는 특정 가전에 묶이지 않으므로 하나로 집 안 모든 삼성 가전에 사용됩니다.',
+        mint: '인증서',
+        mintLede: '앱이 클라이언트 인증서를 직접 발급하므로 다른 컴퓨터가 필요하지 않습니다. 앱이 시작될 때 하나 발급해 두었습니다. 인증서는 특정 가전에 묶이지 않으므로 하나로 집 안 모든 삼성 가전에 사용됩니다.',
+        mintNote: '아래 식별자가 더 이상 맞지 않을 때, 또는 Homey를 교체한 뒤에 다시 발급하세요. 가전이 확인하는 것은 인증서에 담긴 식별자이고 서명한 주체가 아닙니다 — 추정이 아니라 실측입니다. 나중에 가전 업데이트로 이것이 바뀌면 아래 절차로 받은 인증서를 붙여넣으세요.',
+        mintBtn: '인증서 새로 발급',
+        minting: '식별자를 읽고 발급하는 중…',
+        minted: '발급해 저장했습니다. 이제 기기 화면에서 가전을 추가할 수 있습니다.',
+        sourceMinted: '앱이 발급한 인증서입니다.',
+        sourcePasted: '사용자가 넣은 인증서입니다. 앱이 덮어쓰지 않습니다.',
+        how: '직접 받은 인증서를 쓰려면 (선택)',
+        howLede: '보통은 필요하지 않습니다 — 앱이 직접 발급합니다. 삼성 AC14K_M CA가 서명한 인증서를 쓰고 싶을 때, 또는 나중에 가전 업데이트로 앱이 발급한 인증서를 받지 않게 될 때만 사용하세요.',
         steps: [
           'Python 3과 <code>openssl</code>이 있는 컴퓨터에서 <code>QuiteYellow/SmartThings-Local</code>을 클론합니다.',
           '아래 명령으로 <code>setup_cert.py</code>를 실행합니다. 공개된 AC14K_M CA 번들을 받아 삼성 게이트웨이에서 식별자를 읽고, 새로 만든 키에 서명합니다. <code>pyOpenSSL</code>은 선택 항목인 <code>--test</code> 시험에만 필요합니다. <a href="' + GUIDE.ko + '" data-external>macOS·Windows·Linux별 상세 안내</a>를 참고하세요.',
           '<code>certs/</code>에 생성된 두 파일을 열어 아래에 붙여넣습니다.',
         ],
-        howNote: '이 두 파일만 필요합니다. 서명에 쓰인 CA 개인키는 컴퓨터에 남고 Homey로 전송되지 않습니다.',
+        howNote: '이 두 파일만 필요합니다. 서명에 쓰인 CA 개인키는 컴퓨터에 남고 Homey로 전송되지 않습니다 — 앱이 직접 발급하든 붙여넣든, 앱은 CA 키를 필요로 하지 않습니다.',
         creds: '클라이언트 인증서',
         storedTitle: '키가 저장되어 있습니다.',
-        storedHint: '아래 입력란은 의도적으로 비어 있습니다 — 저장된 키는 다시 표시하지 않습니다. 인증서를 변경하려면 새 값을 붙여넣고 저장하세요. 기존 값을 덮어씁니다. 변경할 필요가 없으면 그대로 두세요.',
+        storedHint: '아래 입력란은 의도적으로 비어 있습니다 — 저장된 키는 다시 표시하지 않습니다. 여기에 붙여넣으면 앱이 발급한 인증서를 포함해 저장된 값을 덮어쓰며, 이후 앱이 다시 덮어쓰지 않습니다. 변경할 필요가 없으면 그대로 두세요.',
         certLabel: '인증서 체인',
         certHint: 'certs/client_fullchain.pem 전체를 붙여넣으세요. 인증서 여러 개가 연달아 들어 있습니다 — 리프가 먼저, 그 뒤에 CA 체인입니다. BEGIN/END 줄을 모두 포함하세요. client.pem은 안 됩니다: 리프 하나뿐이어서 가전이 검증할 수 없습니다.',
         keyLabel: '개인키',
@@ -306,6 +330,10 @@
       setText('status-text', t('checking'));
       setText('t-check', t('check'));
       setText('t-check-hint', t('checkHint'));
+      setText('t-mint', t('mint'));
+      setText('t-mint-lede', t('mintLede'));
+      setText('t-mint-note', t('mintNote'));
+      setText('t-mint-btn', t('mintBtn'));
       setText('t-how', t('how'));
       setText('t-how-lede', t('howLede'));
       setText('t-how-note', t('howNote'));
@@ -373,6 +401,13 @@
         + (text || '').replace(/</g, '&lt;');
     }
 
+    function mintMessage(kind, text, loading) {
+      var el = document.getElementById('mint-msg');
+      el.className = 'msg ' + (kind || '');
+      el.innerHTML = (loading ? '<span class="spinner"></span>' : '')
+        + (text || '').replace(/</g, '&lt;');
+    }
+
     // Homey.api is promise-based and takes no callback; older builds are
     // callback-style. Support both, because waiting on a callback a
     // promise-based implementation never invokes is an infinite spinner.
@@ -424,6 +459,11 @@
             return;
           }
           var meta = t('metaFmt', s.uuid, s.expires, s.chain_length);
+          // Which of the two paths produced this certificate. Without it the page
+          // cannot explain why pasting is not overwritten, or what re-issue replaces.
+          if (s.source) {
+            meta += ' · ' + t(s.source === 'minted' ? 'sourceMinted' : 'sourcePasted');
+          }
           setStatus(s.expired ? 'err' : 'ok', s.expired ? t('expired') : t('valid'), meta);
           show('btn-check', true);
           show('t-check-hint', true);
@@ -461,6 +501,22 @@
         api('POST', '/credentials-clear', {})
           .then(function () { message('ok', t('cleared')); return refresh(); })
           .catch(function (err) { message('err', describe(err)); });
+      });
+
+      document.getElementById('btn-mint').addEventListener('click', function () {
+        var button = this;
+        button.disabled = true;
+        mintMessage('', t('minting'), true);
+        api('POST', '/credentials-mint', {})
+          .then(function () {
+            button.disabled = false;
+            mintMessage('ok', t('minted'));
+            return refresh();
+          })
+          .catch(function (err) {
+            button.disabled = false;
+            mintMessage('err', describe(err));
+          });
       });
 
       document.getElementById('btn-check').addEventListener('click', function () {

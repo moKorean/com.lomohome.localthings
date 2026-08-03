@@ -1,6 +1,6 @@
 {
   "id": "com.lomohome.localthings",
-  "version": "0.6.7",
+  "version": "0.7.0",
   "compatibility": ">=13.0.0",
   "sdk": 3,
   "runtime": "python",
@@ -65,6 +65,10 @@
     "save_credentials": {
       "method": "POST",
       "path": "/credentials"
+    },
+    "mint_credentials": {
+      "method": "POST",
+      "path": "/credentials-mint"
     },
     "clear_credentials": {
       "method": "POST",

@@ -12,10 +12,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-from lib import cert, compat, i18n, support
+from lib import cert, compat, credentials, i18n, support
 from lib.const import (
-    SETTING_LEAF_CERT,
-    SETTING_LEAF_KEY,
     SETTING_PAIR_ENV,
     SETTING_UI_LANGUAGE,
 )
@@ -62,10 +60,7 @@ def _log(homey, message: str) -> None:
 
 
 async def _stored(homey) -> tuple[str, str]:
-    return (
-        await compat.setting_get(homey, SETTING_LEAF_CERT),
-        await compat.setting_get(homey, SETTING_LEAF_KEY),
-    )
+    return await credentials.pems(homey)
 
 
 async def get_status(homey, **kwargs):
@@ -73,7 +68,8 @@ async def get_status(homey, **kwargs):
 
     Never returns the stored PEMs — the page only needs to know whether they are
     present and healthy, and echoing key material into a webview serves no
-    purpose.
+    purpose. `source` is reported so the page can say whether the app issued the
+    certificate itself or the user supplied it.
     """
     cert_pem, key_pem = await _stored(homey)
     # Logged so the settings page reaching the backend can be told apart from it
@@ -82,12 +78,14 @@ async def get_status(homey, **kwargs):
     if not cert_pem or not key_pem:
         return {"configured": False}
 
+    origin = await credentials.source(homey)
     try:
         info = await _run(cert.inspect_leaf, cert_pem, key_pem)
     except cert.InvalidCredentials as exc:
-        return {"configured": True, "valid": False, "error": str(exc)}
+        return {"configured": True, "valid": False, "source": origin,
+                "error": str(exc)}
 
-    return {"configured": True, "valid": True, **info}
+    return {"configured": True, "valid": True, "source": origin, **info}
 
 
 async def check_uuid(homey, **kwargs):
@@ -109,7 +107,12 @@ async def check_uuid(homey, **kwargs):
 
 
 async def save_credentials(homey, **kwargs):
-    """Validate then store. Validation failure leaves the previous value intact."""
+    """Store a certificate the user pasted, replacing whatever is there.
+
+    A pasted certificate takes precedence over one the app issued and is never
+    re-issued over afterwards. Validation failure leaves the previous value
+    intact, so a bad paste cannot cost a working setup.
+    """
     body = _body(kwargs)
     cert_pem = str(body.get("cert_pem") or "").strip()
     key_pem = str(body.get("key_pem") or "").strip()
@@ -117,27 +120,46 @@ async def save_credentials(homey, **kwargs):
         raise ValueError(i18n.translate(
             "error.credentials_required", await compat.ui_language(homey)))
 
-    info = await _run(cert.inspect_leaf, cert_pem, key_pem)
-
-    await compat.setting_set(homey, SETTING_LEAF_CERT, cert_pem + "\n")
-    await compat.setting_set(homey, SETTING_LEAF_KEY, key_pem + "\n")
-
-    # Read back before reporting success. A write that silently stored nothing
-    # would otherwise surface much later as "set up required" during pairing,
-    # with no clue that saving was what failed.
-    stored_cert, stored_key = await _stored(homey)
-    if not stored_cert or not stored_key:
+    try:
+        info = await credentials.accept_pasted(homey, cert_pem, key_pem)
+    except RuntimeError:
         _log(homey, "settings POST /credentials: write did not persist")
         raise RuntimeError(i18n.translate(
-            "error.credentials_not_persisted", await compat.ui_language(homey)))
+            "error.credentials_not_persisted", await compat.ui_language(homey))) from None
+
     _log(homey, f"Client certificate stored (uuid:{info['uuid']}, expires {info['expires']}, "
-                f"cert={len(stored_cert)}B key={len(stored_key)}B)")
+                f"cert={info['cert_bytes']}B key={info['key_bytes']}B, source=pasted)")
+    return {"ok": True, **info}
+
+
+async def mint_credentials(homey, **kwargs):
+    """Issue a fresh certificate in the app, needing no other machine.
+
+    Backs the settings page's re-issue button, and is also how a Homey that had no
+    internet route at startup gets one later. Overwrites a pasted certificate only
+    because the user asked for it here explicitly — nothing else does.
+    """
+    language = await compat.ui_language(homey)
+    try:
+        uuid = await _run(cert.fetch_samsung_uuid)
+    except Exception as exc:
+        _log(homey, f"settings POST /credentials-mint: gateway unreachable ({exc})")
+        raise RuntimeError(i18n.translate("error.gateway_unreachable", language)) from None
+
+    try:
+        info = await credentials.issue(homey, uuid)
+    except RuntimeError:
+        _log(homey, "settings POST /credentials-mint: write did not persist")
+        raise RuntimeError(i18n.translate(
+            "error.credentials_not_persisted", language)) from None
+
+    _log(homey, f"Client certificate issued (uuid:{info['uuid']}, "
+                f"expires {info['expires']}, source=minted)")
     return {"ok": True, **info}
 
 
 async def clear_credentials(homey, **kwargs):
-    for key in (SETTING_LEAF_CERT, SETTING_LEAF_KEY):
-        await compat.setting_unset(homey, key)
+    await credentials.clear(homey)
     _log(homey, "Client certificate cleared")
     return {"ok": True}
 

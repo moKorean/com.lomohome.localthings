@@ -2,8 +2,20 @@
 
 **English** · **[한국어](CA-SETUP.md)**
 
-This is a **one-time** setup before you can use the app. You run one script on your
-computer, it produces two files, and you paste their contents into the app's settings.
+> **You almost certainly do not need this.** Since 0.7.0 the app issues its own client
+> certificate on first run — install it, open **Devices → Add device**, and you are done.
+> This document is for the optional case of supplying a certificate signed by Samsung's
+> `AC14K_M` CA instead. A certificate you paste takes precedence and the app will never
+> replace it.
+>
+> Why the app can issue its own: the appliance checks the identifier carried in the
+> certificate, not who signed it. Measured against an air conditioner and a
+> refrigerator, both of which accepted a certificate signed by a key generated on the
+> spot. Follow this guide if you would rather hold a Samsung-signed certificate, or if
+> an appliance update ever stops accepting the app's own.
+
+If you do want your own: you run one script on your computer, it produces two files, and
+you paste their contents into the app's settings.
 You do not repeat it per appliance.
 
 It takes about ten minutes, and this guide assumes you have never used a command line.

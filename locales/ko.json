@@ -3,6 +3,7 @@
     "no_credentials": "클라이언트 인증서가 등록되지 않았습니다. 설정 → 앱 → 스마트싱스 로컬에서 등록하세요.",
     "credentials_required": "인증서와 개인키를 모두 붙여넣어야 합니다.",
     "credentials_not_persisted": "Homey가 인증서를 저장하지 못했습니다. 다시 시도해 보시고, 계속 발생하면 앱을 다시 시작하세요.",
+    "gateway_unreachable": "가전이 기대하는 식별자를 확인하려면 삼성 게이트웨이에 접속해야 하는데 실패했습니다. 인증서를 발급하지 않았습니다. Homey의 인터넷 연결을 확인하고 다시 시도하세요.",
     "host_required": "가전의 IP 주소를 입력하세요.",
     "not_recognised": "지원되는 가전 종류로 인식되지 않습니다.",
     "wrong_device": "{host}은 지금 다른 가전입니다. 기대한 시리얼은 {expected}인데 {found}이 응답했습니다.",

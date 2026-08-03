@@ -97,6 +97,30 @@ disable an app from the CLI, and uninstalling would unpair the user's devices.
 
 `docs/BACKLOG.md` has the full record, including the loss mode that is still open.
 
+## The appliance checks the identifier, not the signature
+
+Measured 2026-08-03, and it is why `lib/cert.py::mint_self_signed` exists: a certificate
+carrying the right `uuid:` token and the extension profile of a working certificate was
+accepted by an air conditioner and a refrigerator while signed by a CA generated on the
+spot. Live reads through the app, not merely a completed DTLS handshake — the handshake
+completes for a certificate the appliance then refuses to answer, so it is not the
+discriminator. SHA-256 works as well as the SHA-1 the real chain uses, which is what
+keeps this pure `cryptography` (49 refuses to sign SHA-1; pyOpenSSL would be needed).
+
+This reversed the file's earlier premise, which said the appliance accepts a certificate
+"signed by the AC14K_M intermediate CA". Consequences worth knowing before changing any
+of it:
+
+- `inspect_leaf` verifies **no** signature, issuer or chain link. It checks that two PEM
+  blocks parse, that the key matches the certificate, and that a `uuid:` token exists.
+  Do not treat "inspect_leaf accepted it" as evidence a certificate works — a
+  self-signed fake passes.
+- A pasted certificate always wins and is never re-issued over. `SETTING_CERT_SOURCE`
+  is what makes that decidable; a certificate with no flag is treated as pasted, because
+  every certificate predating the flag was.
+- The minimum the appliance actually requires was never isolated, so the profile is
+  reproduced field for field. Trimming it would be a guess.
+
 ## Verified hardware
 
 Four air conditioners (`TP1X_DA-AC-CAC-01001`), one induction cooktop, one range

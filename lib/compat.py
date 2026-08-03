@@ -7,6 +7,7 @@ comes back if it is awaitable. Getting this wrong is silent: an un-awaited
 `settings.set()` coroutine looks like a successful write and stores nothing.
 """
 
+import asyncio
 import inspect
 
 
@@ -15,6 +16,16 @@ async def resolve(value):
     if inspect.isawaitable(value):
         return await value
     return value
+
+
+async def run(fn, *args):
+    """Run a blocking call off the event loop.
+
+    Certificate work belongs here: RSA key generation takes tens to hundreds of
+    milliseconds and the TLS read from Samsung's gateway can take seconds, and
+    both would otherwise stall every device's poll loop.
+    """
+    return await asyncio.get_running_loop().run_in_executor(None, fn, *args)
 
 
 async def setting_get(homey, key: str, default: str = "") -> str:

@@ -3,6 +3,7 @@
     "no_credentials": "No client certificate is set up. Add one in Settings → Apps → SmartThings Local.",
     "credentials_required": "Both the certificate and the private key are required.",
     "credentials_not_persisted": "Homey did not save the certificate. Try again, and restart the app if it keeps happening.",
+    "gateway_unreachable": "Could not reach Samsung's gateway to look up the identity your appliances expect, so no certificate was issued. Check that Homey has internet access and try again.",
     "host_required": "Enter the appliance's IP address.",
     "not_recognised": "This appliance is no longer recognised as a supported type.",
     "wrong_device": "{host} is a different appliance now: expected serial {expected}, found {found}.",

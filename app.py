@@ -19,7 +19,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 from homey import app as homey_app
 
-from lib import compat, selfcheck
+from lib import cert, compat, credentials, selfcheck
 from lib.const import SETTING_PAIR_ENV, SETTING_UI_LANGUAGE
 
 
@@ -27,7 +27,35 @@ class LocalThingsApp(homey_app.App):
     async def on_init(self) -> None:
         selfcheck.run(self.log)
         await self._seed_ui_language()
+        await self._ensure_credentials()
         self.log("LocalThings app is running...")
+
+    async def _ensure_credentials(self) -> None:
+        """Issue a client certificate on first run, so setup needs no other machine.
+
+        Only when nothing is stored. A certificate the user pasted is never
+        replaced by one issued here — that is what `SETTING_CERT_SOURCE` is for,
+        and the appliance prefers neither, since what it checks is the UUID.
+
+        Never fatal. The UUID comes from Samsung's gateway over the internet, so
+        this fails on a Homey that has no route out yet; the settings page can
+        issue one on demand later, and pasting still works regardless.
+        """
+        try:
+            if await credentials.stored(self.homey):
+                return
+            self.log("No client certificate stored — issuing one")
+            uuid = await compat.run(cert.fetch_samsung_uuid)
+            info = await credentials.issue(self.homey, uuid)
+            self.log(
+                f"Client certificate issued for uuid:{info['uuid']} "
+                f"(expires {info['expires']})"
+            )
+        except Exception as exc:
+            self.log(
+                f"Could not issue a client certificate ({type(exc).__name__}: {exc}). "
+                "Open the app settings to issue one or paste your own."
+            )
 
     async def _seed_ui_language(self) -> None:
         """Recover the UI language from an earlier pairing session if it is unset.

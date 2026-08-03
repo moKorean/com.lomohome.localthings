@@ -90,5 +90,9 @@
   "0.6.7": {
     "en": "Diagnostics now name the appliance resources that never send their initial push notification, instead of only counting them. On a refrigerator answering 6 of 9, the count alone cannot tell a board that simply never pushes those resources from an unreliable connection; the names can.",
     "ko": "가전이 초기 푸시 알림을 보내지 않은 리소스의 이름을 진단에 표시합니다. 9개 중 6개만 응답하는 냉장고의 경우, 개수만으로는 해당 리소스가 원래 푸시를 보내지 않는 것인지 연결이 불안정한 것인지 구분할 수 없지만 이름을 보면 알 수 있습니다."
+  },
+  "0.7.0": {
+    "en": "No certificate setup. The app now issues its own client certificate on first run, so there is nothing to prepare on a computer — install the app and add your appliances. App settings show the certificate and offer a button to issue a fresh one. You can still paste a certificate signed by Samsung's CA, and the app will never replace one you supplied.",
+    "ko": "인증서 준비 과정이 없어졌습니다. 앱이 첫 실행 때 클라이언트 인증서를 직접 발급하므로 컴퓨터에서 할 일이 없습니다 — 앱을 설치하고 가전을 추가하면 됩니다. 앱 설정에서 인증서 상태를 보고 새로 발급할 수 있습니다. 삼성 CA가 서명한 인증서를 붙여넣는 방식도 그대로 쓸 수 있고, 직접 넣은 인증서는 앱이 덮어쓰지 않습니다."
   }
 }

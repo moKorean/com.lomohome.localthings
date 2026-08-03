@@ -8,9 +8,14 @@ of them.
 # App-level settings keys. The client certificate is stored once for the whole
 # app: its UUID comes from Samsung's cloud gateway rather than from any
 # appliance, so one certificate authenticates to every appliance on the network.
-# The AC14K_M CA that signed it is never given to the app.
 SETTING_LEAF_CERT = "leaf_cert_pem"
 SETTING_LEAF_KEY = "leaf_key_pem"
+# Where the stored certificate came from: SOURCE_MINTED if the app issued it
+# itself, SOURCE_PASTED if the user supplied one. Kept so that re-issuing never
+# silently discards a certificate the user went to the trouble of obtaining.
+SETTING_CERT_SOURCE = "cert_source"
+SOURCE_MINTED = "minted"
+SOURCE_PASTED = "pasted"
 # Last environment report from the pairing webview. Diagnostic only; lets the
 # view's own view of the SDK be inspected from an installed app.
 SETTING_PAIR_ENV = "pair_env"

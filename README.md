@@ -27,7 +27,7 @@ there is no cloud round-trip.
 |---|---|
 | Transport | DTLS 1.2 on one of UDP `49152-49160`, authenticated with a client certificate |
 | Cipher | `ECDHE-ECDSA-AES128-GCM-SHA256` (requires `@SECLEVEL=0`), ciphertext MTU pinned to 1200 |
-| Authentication | A leaf certificate signed by `AC14K_M`, an intermediate CA in Samsung's firmware trust store |
+| Authentication | A client certificate carrying the identifier published by Samsung's cloud gateway. The appliance checks that identifier, not the signature — so the app issues its own |
 | Protocol | CoAP, with token-stable Block2 transfers and OBSERVE subscriptions |
 | Payload | OCF resource representations encoded as CBOR |
 | Modelling | The `/device/0` batch response is parsed into per-href resources, and a per-appliance-type registry maps hrefs onto Homey capabilities |
@@ -66,8 +66,8 @@ identifies what answers, so you do not need to know any addresses.
 
 ## Installing
 
-Issuing one certificate and pasting it into the app's settings is the whole setup. You
-do not repeat it per appliance.
+Install the app and add your appliances. The app issues its own client certificate on
+first run, so there is no separate certificate step and nothing to do on a computer.
 
 ### 1 — Install the app
 
@@ -93,17 +93,37 @@ into per-architecture virtualenvs.
 > **removes the app when the run ends**. Unless you are developing, use
 > `homey app install`.
 
-### 2 — Issue a client certificate (once, on your computer)
+### 2 — Nothing. The app issues its own certificate
 
-Appliances trust certificates signed by the `AC14K_M` intermediate CA. You run one
-script on your computer to produce two files, **once for the whole house.**
+On first run the app reads the identifier appliances expect from Samsung's gateway,
+generates a key, and issues itself a client certificate. **Settings → Apps →
+SmartThings Local** shows the identifier, the expiry date, and that the app issued it;
+there is also a button to issue a fresh one, for after replacing a Homey or if the
+identifier ever changes.
 
-> **➡️ The full walkthrough is in [`docs/CA-SETUP.en.md`](docs/CA-SETUP.en.md).** It
-> covers prerequisites and commands for macOS, Windows and Linux separately, how to tell
-> it worked, and what to do when it does not — written for someone who has never used a
-> command line.
+**One certificate covers every Samsung appliance in the house.** The identifier comes
+from Samsung's gateway rather than from any appliance, so it is one per installation,
+not one per device.
 
-In short:
+What makes this possible is that **the appliance checks the identifier in the
+certificate, not who signed it** — measured against an air conditioner and a
+refrigerator, both of which accepted a certificate signed by a key generated on the
+spot. So no CA private key is fetched, bundled, pasted or stored, and the app needs
+nothing from any other machine. (This also means anything on your LAN could do the
+same; the identifier is public, and the `AC14K_M` CA key has been public for years.
+Issuing locally does not widen that.)
+
+If Homey has no internet route when the app starts, no certificate is issued then —
+open the app settings and use the button once it does.
+
+#### Supplying your own certificate instead (optional)
+
+You can still paste a certificate signed by Samsung's `AC14K_M` CA, and it takes
+precedence: the app never replaces a certificate you supplied. Use this if you would
+rather hold one signed by Samsung, or if an appliance update ever stops accepting the
+app's own.
+
+> **➡️ The walkthrough is in [`docs/CA-SETUP.en.md`](docs/CA-SETUP.en.md).**
 
 ```sh
 git clone https://github.com/QuiteYellow/SmartThings-Local.git
@@ -112,30 +132,11 @@ python3 -m venv .venv && .venv/bin/pip install pyOpenSSL
 OUT_DIR=./certs TARGET_IP=192.168.1.90 .venv/bin/python setup_cert.py --test
 ```
 
-If `--test` prints `GET /oic/sec/acl -> 2.05`, the appliance accepted the certificate.
+Paste `client_fullchain.pem` into **Certificate chain** and `client.key` into **Private
+key**. `client.pem` will not work — it is the leaf alone. The app **never receives a CA
+private key** either way.
 
-**One certificate covers every Samsung appliance in the house.** The identifier inside
-it comes from Samsung's gateway rather than from any appliance, so you need one per
-installation, not one per device.
-
-### 3 — Paste it into the app's settings
-
-Open **Settings → Apps → SmartThings Local** on your Homey and paste **two** of the
-files written to `certs/`:
-
-| File | Field |
-|---|---|
-| `client_fullchain.pem` | Certificate chain |
-| `client.key` | Private key |
-
-`client.pem` will not work — it is the leaf alone, with no chain for the appliance to
-validate against. The app detects this and tells you.
-
-Once saved, the status changes to **ready** and shows the identifier, expiry date and
-chain length. The app **never receives a CA private key** — it stores only an
-already-issued certificate, so the CA key used to sign it stays on your computer.
-
-### 4 — Add appliances
+### 3 — Add appliances
 
 **Devices → Add device → SmartThings Local → Search**
 
@@ -280,7 +281,8 @@ Relocation takes a minute or two, during which the device is unavailable. Reserv
 - **Homey Pro on firmware v13.0.0 or newer.** The app runs on Homey's Python runtime
   (`"runtime": "python"`, Python 3.14), so it will not install below v13.
 - `local` platform only, because it needs LAN UDP. It cannot work on Homey Cloud.
-- **A client certificate** (not included in this repository). Issue one signed by
+- **A client certificate** — the app issues its own on first run; nothing to prepare.
+  You may instead supply one signed by
   `AC14K_M` on your computer, once, and paste it into **Settings → Apps → SmartThings
   Local**. Because the UUID comes from Samsung's gateway rather than from any appliance,
   **one certificate covers every Samsung appliance in the house**, and adding an
