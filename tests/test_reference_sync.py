@@ -1003,3 +1003,30 @@ def test_the_first_registration_is_not_delayed():
     )
     body = ast.unparse(function)
     assert "if index:" in body, "the gap is applied before the first registration too"
+
+
+def test_diagnostics_names_the_resources_that_did_not_answer():
+    """A count cannot distinguish "this board never pushes these two resources"
+    from "the channel is unreliable". The refrigerator answers 4 then 6 of 9 across
+    rounds while three air conditioners answer 24-27 of 27, and without the hrefs
+    there is no way to tell which of those two it is — so the quorum cannot be
+    judged without guessing."""
+    import ast
+    source = (Path(__file__).parent.parent / "api.py").read_text()
+    function = next(
+        node for node in ast.walk(ast.parse(source))
+        if isinstance(node, ast.FunctionDef) and node.name == "_device_report"
+    )
+    body = ast.unparse(function)
+    assert "observe_silent_hrefs" in body
+    assert "_observe_hrefs" in body and "_notified" in body, (
+        "the silent set must be the subscribed set minus what answered"
+    )
+
+
+def test_the_silent_set_is_empty_when_everything_answered():
+    """It has to read as "nothing wrong", not as an absent field."""
+    subscribed = {"/a", "/b"}
+    notified = {"/a", "/b"}
+    assert sorted(subscribed - notified) == []
+    assert sorted({"/a", "/b", "/c"} - notified) == ["/c"]

@@ -86,5 +86,9 @@
   "0.6.6": {
     "en": "Live updates now work on appliances that were stuck without them. When the app asked an appliance to report changes, it sent all of the requests at once and the appliance answered almost none of them — so the app fell back to polling even though the appliance was perfectly willing to push. The requests are now spaced out. One air conditioner here answered none of 27 before and should now answer all of them.",
     "ko": "실시간 업데이트를 받지 못하던 가전에서 이제 동작합니다. 앱이 변화 보고를 요청할 때 27개를 한꺼번에 보내서 가전이 거의 응답하지 못했고, 그래서 가전은 얼마든지 보낼 준비가 되어 있는데도 앱이 폴링으로 되돌아갔습니다. 이제 요청을 나눠 보냅니다. 여기 에어컨 한 대는 27개 중 0개를 응답했는데 이제 전부 응답할 것입니다."
+  },
+  "0.6.7": {
+    "en": "Diagnostics now name the appliance resources that never send their initial push notification, instead of only counting them. On a refrigerator answering 6 of 9, the count alone cannot tell a board that simply never pushes those resources from an unreliable connection; the names can.",
+    "ko": "가전이 초기 푸시 알림을 보내지 않은 리소스의 이름을 진단에 표시합니다. 9개 중 6개만 응답하는 냉장고의 경우, 개수만으로는 해당 리소스가 원래 푸시를 보내지 않는 것인지 연결이 불안정한 것인지 구분할 수 없지만 이름을 보면 알 수 있습니다."
   }
 }

@@ -370,6 +370,16 @@ def _device_report(homey) -> list:
             # how long the next one is being held off for. Without these, a device
             # stuck subscribing to a dead push channel looks the same as one that
             # simply has not been tried yet.
+            # Which subscribed resources did *not* answer with their initial
+            # notification. The count alone cannot tell "this board never pushes
+            # these two resources" from "the channel is unreliable" — the same
+            # hrefs missing every round means the first, a different set each round
+            # means the second. Only the silent ones are listed: on a healthy
+            # appliance that is empty, and listing all 27 would bloat every report.
+            ("observe_silent_hrefs", lambda d=device: sorted(
+                (getattr(d, "_observe_hrefs", None) or set())
+                - (getattr(d, "_notified", None) or set())
+            )),
             ("observe_silent_rounds",
              lambda d=device: getattr(d, "_observe_silent_rounds", None)),
             ("observe_retry_after_s", lambda d=device: (
