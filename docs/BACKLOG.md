@@ -304,7 +304,20 @@ action = "Start"
 보드 토큰이 계속 판정합니다.
 
 레퍼런스 테이블에 없던 `x.com.st.d.hood`와 이 `oic.d.cooktop` 주의사항은 업스트림에
-기여했습니다 — [mbillow/localthings#230](https://github.com/mbillow/localthings/pull/230).
+기여했고 **머지됐습니다** — [mbillow/localthings#230](https://github.com/mbillow/localthings/pull/230).
+
+### 업스트림에 기여해 머지된 것
+
+| PR | 내용 |
+|---|---|
+| [#230](https://github.com/mbillow/localthings/pull/230) | `x.com.st.d.hood` → `range_hood`, 그리고 `oic.d.cooktop`이 가스/인덕션을 구분하지 못한다는 주의사항 |
+| [#255](https://github.com/mbillow/localthings/pull/255) | 자동건조 사이클 상태와 진행률 (`/option/autoclean/vs/0`의 `status`·`progress`) |
+
+레퍼런스도 `settingStatus`만 읽고 있었고, 실기기에서 `Start`/98% → `Stop`/0%를 관측해
+근거로 냈습니다. 둘 다 우리 앱에는 이미 들어가 있습니다.
+
+기여하지 않은 것: `oic.d.cooktop` 매핑 자체(모호해서 우리도 안 씀), 자가진단 `progress`
+(같은 구조지만 실행 중인 값을 못 봐서 뺐습니다 — PR 본문에 그렇게 적었습니다).
 
 ### EHS 열펌프 미매핑 리소스
 

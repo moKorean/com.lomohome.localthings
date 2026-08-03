@@ -279,6 +279,16 @@ ticked during installation — reinstall Python.
 The usual cause is that this appliance runs **older firmware** that does not support this
 protocol at all. Try another appliance's IP. Roughly 2022 and later models are in scope.
 
+**`openssl` fails at the signing step (Fedora, RHEL, newer Ubuntu)**
+The certificate has to be **SHA-1 signed** because of the `AC14K_M` chain, and
+recent distributions' system crypto policy refuses SHA-1 signatures outright. The
+issuing script now detects that and retries with a config that permits it
+(`SmartThings-Local` issue #19), so **pulling the latest clone fixes it.**
+
+```sh
+cd SmartThings-Local && git pull
+```
+
 **The test hangs with no response**
 Either the IP address is wrong, or the appliance is on a different network — a guest
 network, for instance. Your computer and the appliance must be on the same network.

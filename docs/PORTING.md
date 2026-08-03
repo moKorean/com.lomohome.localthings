@@ -2,8 +2,8 @@
 
 레퍼런스:
 
-- `../localthings-reference/` — [mbillow/localthings](https://github.com/mbillow/localthings), `main` @ `eb93820` (v0.17.2). 포팅 원본
-- `../smartthings-local-reference/` — [QuiteYellow/SmartThings-Local](https://github.com/QuiteYellow/SmartThings-Local), `main` @ `8c2108a`. 전송 계층 소스 + `setup_cert.py`
+- `../localthings-reference/` — [mbillow/localthings](https://github.com/mbillow/localthings), `main` @ `51103fa` (v0.18.0+36). 포팅 원본
+- `../smartthings-local-reference/` — [QuiteYellow/SmartThings-Local](https://github.com/QuiteYellow/SmartThings-Local), `main` @ `e5bd945` (v0.1.2+3). 전송 계층 소스 + `setup_cert.py`. 앱은 PyPI의 `smartthings-local>=0.1.2`를 씁니다 — 0.1.2가 stateless DTLS 프로브(`dtls_probe`)를 추가했고 우리 포트 탐색이 그걸 씁니다
 - `../homey-pythonscript-reference/` — [jaccoh/homey-pythonscript](https://github.com/jaccoh/homey-pythonscript), `main` @ `55f491f` (v0.4.0). Homey 파이썬 런타임 실증 사례
 
 이 문서는 세 레퍼런스를 실제로 읽고 실기기로 검증하며 정리한 설계 메모입니다. 구현이 진행되면 함께 갱신합니다.

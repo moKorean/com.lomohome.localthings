@@ -16,8 +16,8 @@ there is no cloud round-trip.
 > induction cooktop, a range hood and three refrigerators are discovered, paired
 > and controlled on real hardware, with state arriving by CoAP OBSERVE (polling
 > continues as a five-minute safety sweep). All 77 custom capabilities are usable
-> in Flows. The remaining twelve
-> appliance types are routed and mapped but not verified against hardware. Design notes
+> in Flows. The remaining fourteen appliance types are routed and mapped but not
+> verified against hardware. Design notes
 > and measurements are in [`docs/PORTING.md`](docs/PORTING.md); unmapped resources and
 > recorded decisions are in [`docs/BACKLOG.md`](docs/BACKLOG.md).
 
@@ -39,8 +39,8 @@ Samsung appliances running Tizen RT 3.x / DAWIT 3.0+ firmware — roughly 2022 a
 
 **The app claims support for air conditioners, induction cooktops, range hoods and
 refrigerators** — the four types verified on real hardware. The code routes all eighteen
-types the reference covers (see [Support status](#support-status)), but the other twelve
-are deliberately left out of the app description and tags because they could not be
+types the reference covers (see [Support status](#support-status)), but the other
+fourteen are deliberately left out of the app description and tags because they could not be
 tested. They may well work; please try one and report what you find.
 
 If you add an unsupported appliance by IP, the app builds a **support report** from that
@@ -243,6 +243,22 @@ Action cards go through `trigger_capability_listener`, not `set_capability_value
 latter moves Homey's copy without touching the appliance and does not raise when the
 appliance refuses — which would have a Flow report a success it never got.
 
+## What lands in the timeline
+
+Homey writes a timeline line by itself when a **boolean** capability carrying insight
+titles changes — which is why power and the absence sensor were already there and
+nothing else was. Auto dry and the self check now carry those titles too, so a cycle
+starting and finishing shows up as an event, and the absence sensor says which way it
+went rather than just that it moved.
+
+Two things cannot go that way, which is why they were missing: a **number** with
+insights becomes a chart and produces no line, and a **string** cannot be logged at
+all — not one capability of type `string` in Homey's own library sets `insights`. So
+mode and target-temperature changes are written explicitly, with the mode in the words
+you picked it by. Off by default, per appliance, under **Settings → Timeline**: a house
+of nine appliances writing every setpoint change buries the timeline, and one nobody
+wants is worse than none.
+
 ## It survives an IP change
 
 Identity is the **serial number** (the device's data id), not the address. When an
@@ -283,12 +299,13 @@ settings/index.html           App settings — certificate entry and issuing ins
 lib/
   const.py                    Measured protocol constants (port ranges, timeouts, source-port bases)
   cert.py                     Certificate validation and description, gateway UUID check (pure cryptography)
-  probe.py                    UDP liveness sweep and the pairing probe
+  probe.py                    Port sweep, DTLS liveness gate, and the pairing probe
   discovery.py                Subnet sweep, response-based, no false positives
   compat.py                   SDK contract adapters (settings and i18n, sync and async)
   session.py                  asyncio wrapper around DtlsCoapSession
   resources.py                /device/0 batch parsing, serial handling
   registry/                   Type routing (/oic/d, then board tokens) and per-appliance capability maps
+    ac_mode_matrix.py         Which settings each air-conditioner mode actually honours
   support.py                  Unsupported-appliance report, with per-unit identifiers redacted
   selfcheck.py                Runtime self-check, once at startup
   appliance/                  Driver and device implementation, separated so a per-type driver could subclass it

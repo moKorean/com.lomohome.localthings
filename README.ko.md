@@ -6,7 +6,7 @@ SmartThings 클라우드 없이, 최신 삼성 가전을 집 안 네트워크에
 
 Home Assistant 통합 [mbillow/localthings](https://github.com/mbillow/localthings)를 Homey로 포팅하는 프로젝트입니다. 가전과 DTLS-over-CoAP 세션을 직접 맺어 상태를 읽고 명령을 보내므로, 클라우드 왕복이 없습니다.
 
-> **상태: [Homey 앱스토어 등록 완료](https://homey.app/a/com.lomohome.localthings/)** — 실제로 배포 중인 버전은 링크에서 확인하세요. 제출한 버전은 인증을 통과할 때까지 스토어에 반영되지 않습니다. 에어컨 4대, 인덕션 1대, 주방 후드 1대, 냉장고 3대가 검색·페어링·제어까지 실기기에서 동작하고, 상태는 CoAP OBSERVE로 푸시받습니다(폴링은 5분 주기 안전 스윕). 커스텀 capability 77개 전부가 플로우에서 쓰입니다. 나머지 13종은 라우팅과 capability 매핑까지 이식했지만 실기기 검증은 못 했습니다. 설계와 실측 자료는 [`docs/PORTING.md`](docs/PORTING.md), 남은 미매핑 리소스와 결정 기록은 [`docs/BACKLOG.md`](docs/BACKLOG.md)를 참고하세요.
+> **상태: [Homey 앱스토어 등록 완료](https://homey.app/a/com.lomohome.localthings/)** — 실제로 배포 중인 버전은 링크에서 확인하세요. 제출한 버전은 인증을 통과할 때까지 스토어에 반영되지 않습니다. 에어컨 4대, 인덕션 1대, 주방 후드 1대, 냉장고 3대가 검색·페어링·제어까지 실기기에서 동작하고, 상태는 CoAP OBSERVE로 푸시받습니다(폴링은 5분 주기 안전 스윕). 커스텀 capability 77개 전부가 플로우에서 쓰입니다. 나머지 14종은 라우팅과 capability 매핑까지 이식했지만 실기기 검증은 못 했습니다. 설계와 실측 자료는 [`docs/PORTING.md`](docs/PORTING.md), 남은 미매핑 리소스와 결정 기록은 [`docs/BACKLOG.md`](docs/BACKLOG.md)를 참고하세요.
 
 ## 동작 방식
 
@@ -188,6 +188,19 @@ capability까지 발화하면 모든 플로우가 두 번 실행됩니다.
 Homey의 값만 바꾸고 가전에는 아무것도 보내지 않으며, 거부됐을 때 예외도 나지 않습니다 — 그러면
 플로우가 이루지 못한 성공을 보고합니다.
 
+## 활동(타임라인)에 남는 것
+
+Homey는 **insight 제목이 붙은 boolean** capability가 바뀔 때 타임라인에 스스로 한 줄 씁니다.
+전원과 부재 감지만 보이던 이유가 이것입니다. 자동 건조와 자가진단에도 제목을 붙였으므로 사이클
+시작·종료가 사건으로 남고, 부재 감지도 어느 쪽으로 바뀌었는지 표시됩니다.
+
+두 가지는 그 경로로 갈 수 없어서 빠져 있었습니다. **숫자**는 insights를 켜도 그래프만 되고 줄이
+안 생기며, **문자열**은 아예 불가입니다 — Homey 기본 라이브러리 전체에 `string` 타입으로
+insights를 쓰는 capability가 하나도 없습니다. 그래서 운전 모드와 희망 온도 변경만 직접 씁니다.
+모드는 고르실 때 쓰신 말로 표시됩니다. 기본값은 꺼짐이고 기기마다 **설정 → 타임라인**에서 켭니다
+— 가전 아홉 대가 희망 온도가 바뀔 때마다 줄을 쓰면 타임라인이 묻히고, 원치 않는 타임라인은
+없느니만 못합니다.
+
 ## IP가 바뀌어도 동작합니다
 
 정체성은 IP가 아니라 **시리얼**(기기의 data id)입니다. 주소가 바뀌면:
@@ -215,12 +228,13 @@ settings/index.html           앱 설정 화면 — 인증서 등록과 발급 �
 lib/
   const.py                    실측 프로토콜 상수 (포트 범위, 타임아웃, 소스 포트 base)
   cert.py                     인증서 검증·설명, 게이트웨이 UUID 대조 (순수 cryptography)
-  probe.py                    UDP 라이브니스 스윕 + 페어링 프로브
+  probe.py                    포트 스윕 + DTLS 라이브니스 게이트 + 페어링 프로브
   discovery.py                서브넷 스윕 (응답 기반, 오탐 없음)
   compat.py                   SDK 계약 어댑터 (settings·i18n 동기/비동기 양쪽)
   session.py                  DtlsCoapSession의 asyncio 래퍼
   resources.py                /device/0 배치 파싱, 시리얼 처리
   registry/                   종류 라우팅(/oic/d → 보드 토큰) + 가전별 capability 맵
+    ac_mode_matrix.py         에어컨 운전 모드별로 실제 적용되는 설정 표
   support.py                  미지원 기기 리포트 (개별 식별자 리댁션)
   selfcheck.py                런타임 자체 점검 (기동 시 1회)
   appliance/                  드라이버·기기 구현. 종류별 드라이버가 상속할 수 있게 분리
