@@ -70,5 +70,9 @@
   "0.6.2": {
     "en": "Finding an appliance is quicker and quieter: the app now asks each candidate port whether it actually speaks the protocol before attempting a full connection, so a device that is not a Samsung appliance is ruled out in about a second instead of several. Also adds routing for Samsung's EHS heat pump, with its power and water temperature.",
     "ko": "가전 검색이 더 빠르고 조용해집니다. 각 후보 포트가 실제로 프로토콜을 쓰는지 먼저 물어본 뒤에 연결을 시도하므로, 삼성 가전이 아닌 기기는 수 초가 아니라 1초 남짓에 걸러집니다. 삼성 EHS 열펌프 라우팅도 추가했습니다(전원·출수 온도)."
+  },
+  "0.6.3": {
+    "en": "An appliance that accepts a subscription for live updates but never sends any is no longer re-subscribed every ten minutes forever. The app now waits longer each time it hears nothing back, and starts over as soon as the appliance does send something or the connection is rebuilt. One air conditioner here behaves that way, and it was costing it around 3,900 pointless requests a day.",
+    "ko": "실시간 업데이트 구독을 받아들이고도 아무것도 보내지 않는 가전을, 10분마다 영원히 재구독하지 않습니다. 응답이 없을 때마다 대기 시간을 늘리고, 가전이 실제로 무언가 보내거나 연결이 새로 맺어지면 처음으로 되돌립니다. 여기 에어컨 한 대가 그 상태였고 하루 약 3,900회의 무의미한 요청을 쓰고 있었습니다."
   }
 }

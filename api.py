@@ -366,6 +366,15 @@ def _device_report(homey) -> list:
             ("subscriptions", lambda d=device: getattr(
                 getattr(d, "_session", None), "subscription_count", None)),
             ("notified_hrefs", lambda d=device: len(getattr(d, "_notified", ()) or ())),
+            # How many consecutive attempts produced no notification at all, and
+            # how long the next one is being held off for. Without these, a device
+            # stuck subscribing to a dead push channel looks the same as one that
+            # simply has not been tried yet.
+            ("observe_silent_rounds",
+             lambda d=device: getattr(d, "_observe_silent_rounds", None)),
+            ("observe_retry_after_s", lambda d=device: (
+                round(d._observe_retry_after())
+                if hasattr(d, "_observe_retry_after") else None)),
             ("capabilities", lambda d=device: len(d.get_capabilities() or ())),
             # The values, not just the count. "the capability is bound" and "the
             # capability holds the value the appliance reports" are different

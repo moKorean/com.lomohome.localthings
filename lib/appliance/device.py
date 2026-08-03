@@ -120,6 +120,10 @@ class ApplianceDevice(device.Device):
         self._subscribed_at = 0.0
         self._observe_pending = False
         self._observe_failed = 0
+        # Consecutive attempts that produced no notification at all. Widens the
+        # retry interval, so a device whose push channel is simply dead is not
+        # re-subscribed every ten minutes forever.
+        self._observe_silent_rounds = 0
         self._last_notify_at = 0.0
         # href -> monotonic deadline. A just-written resource ignores incoming
         # notifications briefly, so a slow-settling device can't revert the value
@@ -199,7 +203,8 @@ class ApplianceDevice(device.Device):
         if self._observing:
             if now - self._subscribed_at < OBSERVE_REFRESH_S:
                 return
-        elif self._observe_attempted_at and now - self._observe_attempted_at < OBSERVE_RETRY_S:
+        elif (self._observe_attempted_at
+              and now - self._observe_attempted_at < self._observe_retry_after()):
             return
 
         hrefs = self._observable_hrefs()
@@ -220,6 +225,27 @@ class ApplianceDevice(device.Device):
         self._observe_pending = True
         self._observe_failed = failed
         self.log(f"subscribed to {len(hrefs) - failed}/{len(hrefs)} resources")
+
+    def _observe_retry_after(self) -> float:
+        """How long to wait before subscribing again after giving up.
+
+        A device that answers *some* notifications is worth retrying on the normal
+        cadence — the channel works and only fell under the threshold. One that
+        answers none is a different case, and the living-room air conditioner here
+        is it: 27 resources subscribed, not one notification, ever. Retrying that
+        every ten minutes costs 27 CON subscribes each time, over five seconds of
+        exclusive session time while polls queue behind it, and leaves another 27
+        observer registrations on an appliance the library already warns remembers
+        them across sessions. Left alone that is roughly 3,900 pointless requests a
+        day.
+
+        So silence doubles the wait, up to the refresh interval. Any notification
+        at all resets it, as does a rebuilt session.
+        """
+        if not self._observe_silent_rounds:
+            return OBSERVE_RETRY_S
+        widened = OBSERVE_RETRY_S * (2 ** min(self._observe_silent_rounds, 8))
+        return min(widened, OBSERVE_REFRESH_S)
 
     def _evaluate_observe(self) -> None:
         """Decide push vs poll once the grace period has actually elapsed."""
@@ -246,9 +272,15 @@ class ApplianceDevice(device.Device):
             else:
                 self.log(
                     f"push unavailable ({got}/{len(hrefs)} notified, "
-                    f"{self._observe_failed} subscribe errors); polling"
+                    f"{self._observe_failed} subscribe errors); polling, "
+                    f"next attempt in {self._observe_retry_after():.0f}s"
                 )
             self._observing = False
+
+        if got:
+            self._observe_silent_rounds = 0
+        else:
+            self._observe_silent_rounds += 1
 
     def _push_is_healthy(self) -> bool:
         """Whether anything has been pushed recently enough to trust the channel.
@@ -409,6 +441,9 @@ class ApplianceDevice(device.Device):
         self._observing = False
         self._observe_pending = False
         self._observe_attempted_at = 0.0
+        # A new session is a new channel: whatever was wrong with the old one is
+        # not evidence about this one.
+        self._observe_silent_rounds = 0
         await self._sync_settings()
 
     async def _remember_location(self, host: str, port: int) -> None:

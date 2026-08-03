@@ -798,3 +798,84 @@ def test_the_heat_pump_setpoint_bounds_come_from_the_board_when_it_reports_them(
                              "x.com.samsung.da.maximum": "55",
                              "x.com.samsung.da.increment": "1"}, {})
     assert (reported["min"], reported["max"], reported["step"]) == (25.0, 55.0, 1.0)
+
+
+# --- a dead push channel must not be retried forever -----------------------
+
+
+def _observe_device():
+    """An ApplianceDevice with only the observe state, no Homey session."""
+    import sys
+    import types
+    stub = types.ModuleType("homey")
+    module = types.ModuleType("homey.device")
+
+    class Device:
+        pass
+
+    module.Device = Device
+    stub.device = module
+    sys.modules.setdefault("homey", stub)
+    sys.modules.setdefault("homey.device", module)
+    from lib.appliance.device import ApplianceDevice
+    d = object.__new__(ApplianceDevice)
+    d._observe_silent_rounds = 0
+    return d
+
+
+def test_a_channel_that_answers_nothing_is_retried_less_and_less():
+    """Measured on the living-room air conditioner: 27 resources subscribed, zero
+    notifications, ever. At the fixed ten-minute cadence that is 27 CON subscribes
+    every ten minutes forever — over five seconds of exclusive session time each
+    round, and another 27 observer registrations on an appliance the transport
+    library warns remembers them across sessions."""
+    from lib.const import OBSERVE_REFRESH_S, OBSERVE_RETRY_S
+    d = _observe_device()
+    assert d._observe_retry_after() == OBSERVE_RETRY_S
+    waits = []
+    for _ in range(6):
+        d._observe_silent_rounds += 1
+        waits.append(d._observe_retry_after())
+    assert waits == sorted(waits), waits
+    assert waits[0] > OBSERVE_RETRY_S, "the first silent round did not widen it"
+    assert waits[-1] <= OBSERVE_REFRESH_S, "the backoff is unbounded"
+
+
+def test_the_backoff_is_capped():
+    from lib.const import OBSERVE_REFRESH_S
+    d = _observe_device()
+    d._observe_silent_rounds = 500
+    assert d._observe_retry_after() == OBSERVE_REFRESH_S
+
+
+def test_a_partial_channel_keeps_the_normal_cadence():
+    """Under the threshold but not silent means the channel works and only
+    under-delivers — worth retrying at the usual rate, unlike total silence."""
+    from lib.const import OBSERVE_RETRY_S
+    d = _observe_device()
+    d._observe_silent_rounds = 0      # what a partial round leaves behind
+    assert d._observe_retry_after() == OBSERVE_RETRY_S
+
+
+def test_the_verdict_resets_the_counter_when_anything_arrived():
+    """One notification is evidence the channel is alive, whatever the total."""
+    import ast
+    source = (Path(__file__).parent.parent / "lib/appliance/device.py").read_text()
+    function = next(
+        node for node in ast.walk(ast.parse(source))
+        if isinstance(node, ast.FunctionDef) and node.name == "_evaluate_observe"
+    )
+    body = ast.unparse(function)
+    assert "if got:" in body and "_observe_silent_rounds = 0" in body
+    assert "_observe_silent_rounds += 1" in body
+
+
+def test_a_rebuilt_session_starts_the_channel_fresh():
+    """Whatever was wrong with the old session is not evidence about a new one."""
+    import ast
+    source = (Path(__file__).parent.parent / "lib/appliance/device.py").read_text()
+    function = next(
+        node for node in ast.walk(ast.parse(source))
+        if isinstance(node, ast.AsyncFunctionDef) and node.name == "move_to"
+    )
+    assert "_observe_silent_rounds = 0" in ast.unparse(function)
