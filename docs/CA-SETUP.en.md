@@ -2,7 +2,7 @@
 
 **English** · **[한국어](CA-SETUP.md)**
 
-> **You almost certainly do not need this.** Since 0.7.0 the app issues its own client
+> **You almost certainly do not need this.** Since 1.0.0 the app issues its own client
 > certificate on first run — install it, open **Devices → Add device**, and you are done.
 > This document is for the optional case of supplying a certificate signed by Samsung's
 > `AC14K_M` CA instead. A certificate you paste takes precedence and the app will never
