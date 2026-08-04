@@ -50,6 +50,20 @@ homey api raw -X POST --path /api/app/com.lomohome.localthings/write-resource \
 `homey app log`. `homey app run` **replaces** the installed app and removes it when
 the run ends — use `homey app install`.
 
+**Redirect to a file before reading a long response. Piping truncates it at ~64 KB**,
+mid-object, with no error. This produced two wrong conclusions in one day: the device
+list looked as though it contained no appliances of ours, and the insights list looked
+as though the capabilities we had just flagged were absent — which was written up as
+"the flag does not apply to existing devices" and was simply the cut. The same call
+redirected to a file returned 276 KB and every series was there.
+
+```sh
+homey api raw --path /api/manager/insights/log > /tmp/ins.json   # then read the file
+```
+
+An absence in a truncated response is not evidence of absence. If a query returns
+nothing you expected, check the size of what you actually received first.
+
 The Homey API rate-limits hard after a burst, and polling to see whether the limit
 has cleared keeps it tripped. Back off in single long waits — and mean it: checking
 counts as a request, so three "has it cleared yet?" probes are three more strikes.
