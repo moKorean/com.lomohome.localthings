@@ -258,7 +258,12 @@ def test_a_misrouted_water_purifier_would_have_had_fridge_controls():
     purifier = registry._REGISTRY_BY_KEY["water_purifier"]
     fridge_only = {s.capability for s in fridge.specs} - {s.capability for s in purifier.specs}
     assert "target_temperature.fridge" in fridge_only
-    assert "alarm_contact" in fridge_only
+    assert "localthings_convertible_mode" in fridge_only
+    assert "localthings_rapid_freeze" in fridge_only
+    # `alarm_contact` is deliberately not in this list: the purifier has a filter door
+    # of its own on /status/waterpurifier/vs/0, so the two registries genuinely share
+    # that one. The point stands on the capabilities above, which write nowhere on a
+    # purifier — but the door would have looked like it worked.
 
 
 def test_the_water_purifier_reads_the_sound_resources():

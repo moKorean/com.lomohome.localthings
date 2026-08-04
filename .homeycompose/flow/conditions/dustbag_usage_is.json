@@ -1,11 +1,11 @@
 {
   "title": {
-    "en": "Dust bag usage !{{is|is not}} at least [[value]] %",
-    "ko": "먼지봉투 사용량 [[value]] % !{{이상|미만}}"
+    "en": "Dust bag usage !{{is|is not}} at least [[value]]",
+    "ko": "먼지봉투 사용량 [[value]] !{{이상|미만}}"
   },
   "titleFormatted": {
-    "en": "Dust bag usage !{{is|is not}} at least [[value]] %",
-    "ko": "먼지봉투 사용량 [[value]] % !{{이상|미만}}"
+    "en": "Dust bag usage !{{is|is not}} at least [[value]]",
+    "ko": "먼지봉투 사용량 [[value]] !{{이상|미만}}"
   },
   "hint": {
     "en": "Checks the value as the appliance last reported it.",
@@ -20,8 +20,7 @@
     {
       "name": "value",
       "type": "number",
-      "min": 0,
-      "max": 100
+      "min": 0
     }
   ]
 }

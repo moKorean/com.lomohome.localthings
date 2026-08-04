@@ -277,10 +277,34 @@ def _progress_percent(rep, _resources):
 
 
 def _remaining_minutes(rep, _resources):
-    """`remainingTime` is HHMMSS-ish or minutes depending on board; both appear as
-    digit strings, so anything longer than four digits is treated as HHMMSS."""
+    """Minutes left on the cycle.
+
+    **`HH:MM:SS` is the only form any dump actually uses** — all twenty in the
+    reference's fixtures, across washers, dryers, dishwashers, AirDressers, ovens and
+    microwaves, from `00:00:00` idle to `04:09:00` running. This used to accept digit
+    strings only, so it returned None on every one of them: a washer with 3h35m left
+    published nothing at all, and the failure was invisible because None means "leave
+    the capability alone" rather than raising.
+
+    The bare-digit branch is kept because it costs one line and some board may yet
+    send it, but nothing has been seen to.
+    """
     raw = str(rep.get("x.com.samsung.da.remainingTime")
               or rep.get("remainingTime") or "").strip()
+    if not raw:
+        return None
+    if ":" in raw:
+        try:
+            parts = [int(p) for p in raw.split(":")]
+        except ValueError:
+            return None
+        if len(parts) == 3:
+            hours, minutes, seconds = parts
+        elif len(parts) == 2:
+            hours, minutes, seconds = 0, *parts
+        else:
+            return None
+        return round((hours * 3600 + minutes * 60 + seconds) / 60)
     if not raw.isdigit():
         return None
     if len(raw) > 4:

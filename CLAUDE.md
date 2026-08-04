@@ -105,6 +105,24 @@ disable an app from the CLI, and uninstalling would unpair the user's devices.
 
 `docs/BACKLOG.md` has the full record, including the loss mode that is still open.
 
+### A mapping that reads nothing looks exactly like one that works
+
+None means "leave the capability alone", so a wrong path or field name never raises:
+the device pairs, the capability appears, the tile stays blank forever, and the suite
+passes. Six appliance types shipped that way and were only found on 2026-08-04, by
+checking reads against the reference's committed dumps — the clean station read
+nothing at all, the water purifier's locks pointed at two resources that do not exist,
+the oven family had four fields that are not fields of `/oven/vs/0`, and
+`remainingTime` was parsed as a digit string when every dump uses `HH:MM:SS`.
+
+`tests/test_no_dead_mappings.py` holds the two invariants that catch it, both measured
+against those dumps — the closest thing to hardware for the fourteen types nobody here
+owns. **No path is bound that nothing reports**, and **no spec is blank on every dump
+of its type**. Blank on some dumps is ordinary: that board does not report that field.
+Blank on all of them means the mapping is wrong or unconfirmable, so it goes in the
+allow-list with a reason or it gets fixed. When adding or editing a type, run those
+dumps through it before believing the mapping.
+
 ## The appliance checks the identifier, not the signature
 
 Measured 2026-08-03, and it is why `lib/cert.py::mint_self_signed` exists: a certificate

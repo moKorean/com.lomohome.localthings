@@ -546,19 +546,72 @@ DEHUMIDIFIER = Registry(
 HREF_OVEN = "/oven/vs/0"
 
 
+def _oven_temperature(field: str):
+    """One temperature from `/temperatures/vs/0`'s items[], in °C.
+
+    Two things had to be fixed here at once. The values are not fields on
+    `/oven/vs/0` — that resource carries only `state`, `recipe` and, on a microwave,
+    `powerLevel`; the temperatures live in an items[] array on their own resource,
+    exactly like the fridge's aggregate.
+
+    And the unit is the appliance's choice: the reference's range dump reports
+    `Fahrenheit` with a current of 175. Its entities carry the device's own unit, but
+    Homey's `measure_temperature` is Celsius-only, so it has to be **converted** here
+    rather than labelled — publishing 175 would show an oven at 175 °C while it sat
+    at 79 °C.
+
+    0 is treated as not-reporting on both fields. Every idle dump reads 0, no house
+    has a 0 °C oven cavity, and on a Fahrenheit board a literal 0 would convert to
+    -17.8 °C — a sentinel published as a measurement is how the range hood shipped
+    broken.
+    """
+
+    def read(rep, _resources):
+        items = rep.get("x.com.samsung.da.items")
+        if not isinstance(items, list) or not items:
+            return None
+        item = items[0]
+        if not isinstance(item, dict):
+            return None
+        value = as_float(item.get(field))
+        if value is None or value == 0:
+            return None
+        unit = str(item.get("x.com.samsung.da.unit") or "C").strip().lower()
+        if unit.startswith("f"):
+            return round((value - 32) * 5 / 9, 1)
+        return value
+
+    return read
+
+
+def _oven_mode(rep, _resources):
+    """`modes` is a list of one on every dump; the mode itself is the entry."""
+    modes = rep.get("x.com.samsung.da.modes")
+    if isinstance(modes, list):
+        modes = modes[0] if modes else None
+    return None if modes is None else str(modes)
+
+
 def _oven_specs():
     return (
+        # `operationState` and `mode` are not fields this family reports. The state is
+        # `x.com.samsung.da.state` on /oven/vs/0, and the mode is a list on
+        # /mode/vs/0 — so all four of these read nothing on all seven of the
+        # reference's oven, range and microwave dumps before this.
         Spec("localthings_operation_state", HREF_OVEN,
-             shared.text("x.com.samsung.da.operationState")),
-        Spec("localthings_oven_mode", HREF_OVEN,
-             shared.text("x.com.samsung.da.mode")),
-        Spec("measure_temperature.cavity", HREF_OVEN,
-             lambda rep, _r: as_float(rep.get("x.com.samsung.da.temperature")),
+             shared.text("x.com.samsung.da.state")),
+        Spec("localthings_oven_mode", "/mode/vs/0", _oven_mode),
+        Spec("measure_temperature.cavity", "/temperatures/vs/0",
+             _oven_temperature("x.com.samsung.da.current"),
              titles={"en": "Cavity", "ko": "내부"}),
-        Spec("localthings_target_temperature_readonly", HREF_OVEN,
-             lambda rep, _r: as_float(rep.get("x.com.samsung.da.desiredTemperature")),
+        Spec("localthings_target_temperature_readonly", "/temperatures/vs/0",
+             _oven_temperature("x.com.samsung.da.desired"),
              titles={"en": "Set temperature", "ko": "설정 온도"}),
-        Spec("alarm_contact", "/door/vs/0", shared.flag("openState", on="Open")),
+        # `/doors/vs/0`, plural, carrying an items[] array — the shape the fridge
+        # already reads. It was written here as `/door/vs/0` with a bare `openState`,
+        # which is a resource none of the reference's oven, microwave or range dumps
+        # reports, so the door was bound and permanently blank on all three.
+        Spec("alarm_contact", "/doors/vs/0", shared.read_any_door_open),
     )
 
 
@@ -894,10 +947,36 @@ WATER_PURIFIER = Registry(
         # choosing from a hardcoded list — our sound mode is a free-form
         # read-only string, so an unfamiliar value reports rather than rejects.
         *shared.SOUND,
-        Spec("localthings_child_lock", "/lock/vs/0", shared.flag("status"),
-             shared.write_flag(["lock", "vs", "0"], "status")),
-        Spec("localthings_operation_state", "/status/vs/0",
+        # Neither `/lock/vs/0` nor `/status/vs/0` exists on this family. The
+        # reference's TP2X_WATERPURIFIER_20K dump settles what BACKLOG had left open
+        # for want of hardware: the locks live on `/status/lock/vs/0`, there are
+        # three of them, and they read Locked/Unlocked rather than On/Off — so the
+        # old single toggle was reading a missing field on a missing resource and
+        # would have written to one too.
+        Spec("localthings_child_lock.hotwater", "/status/lock/vs/0",
+             shared.flag("x.com.samsung.da.hotwaterLock", on="Locked"),
+             shared.write_flag(["status", "lock", "vs", "0"],
+                               "x.com.samsung.da.hotwaterLock",
+                               on="Locked", off="Unlocked"),
+             titles={"en": "Hot water lock", "ko": "온수 잠금"}),
+        Spec("localthings_child_lock.coldwater", "/status/lock/vs/0",
+             shared.flag("x.com.samsung.da.coldwaterLock", on="Locked"),
+             shared.write_flag(["status", "lock", "vs", "0"],
+                               "x.com.samsung.da.coldwaterLock",
+                               on="Locked", off="Unlocked"),
+             titles={"en": "Cold water lock", "ko": "냉수 잠금"}),
+        Spec("localthings_child_lock.buzzer", "/status/lock/vs/0",
+             shared.flag("x.com.samsung.da.buzzLock", on="Locked"),
+             shared.write_flag(["status", "lock", "vs", "0"],
+                               "x.com.samsung.da.buzzLock",
+                               on="Locked", off="Unlocked"),
+             titles={"en": "Button lock", "ko": "버튼 잠금"}),
+        Spec("localthings_operation_state", "/status/waterpurifier/vs/0",
              shared.text("x.com.samsung.da.status")),
+        # Same resource, and the one field on it whose meaning is unambiguous.
+        Spec("alarm_contact", "/status/waterpurifier/vs/0",
+             lambda rep, _r: shared.read_open_state(
+                 {"openState": rep.get("x.com.samsung.da.filterDoorStatus")})),
     ),
 )
 
@@ -910,19 +989,25 @@ VACUUM_STATION = Registry(
     specs=(
         *shared.POWER,
         *shared.UNIVERSAL,
-        Spec("localthings_operation_state", "/cleanstation/status/vs/0",
-             shared.text("status")),
-        Spec("localthings_dustbag_usage", "/dustbag/vs/0",
-             lambda rep, _r: as_float(rep.get("usage") or rep.get("dustBagUsage"))),
-        Spec("localthings_alarm_dustbag", "/dustbag/vs/0",
-             lambda rep, _r: _dustbag_full(rep)),
+        # Every path and field here was wrong, and none of them exists on the
+        # appliance: the station's state is `/status/cleanstation/vs/0`, not
+        # `/cleanstation/status/vs/0`, and the dust bag is two resources under
+        # `/component/station/`, not one `/dustbag/vs/0`. Field names too — all three
+        # are vendor-prefixed. Read off the reference's own A-VSKR-TP1-22 (VS9500AL)
+        # dump; this registry could not have reported anything before.
+        Spec("localthings_operation_state", "/status/cleanstation/vs/0",
+             shared.text("x.com.samsung.da.status")),
+        Spec("localthings_alarm_dustbag", "/component/station/dustbag/vs/0",
+             shared.flag("x.com.samsung.da.status", on="full")),
+        # A raw counter, not a percentage: unlike every filterUsage on these boards
+        # this resource ships no capacity or resolution beside it, so there is nothing
+        # to normalise against. The old mapping declared it a 0-100% reading, which
+        # the dump's 506 would have pinned at the top of forever. The reference reads
+        # it the same way and says so.
+        Spec("localthings_dustbag_usage", "/component/station/dustbagusage/vs/0",
+             lambda rep, _r: as_float(rep.get("x.com.samsung.da.dustbagUsage"))),
     ),
 )
-
-
-def _dustbag_full(rep):
-    status = rep.get("status") or rep.get("dustBagStatus")
-    return None if status is None else str(status).strip().lower() not in ("normal", "")
 
 
 # --- air dresser ----------------------------------------------------------
@@ -935,10 +1020,19 @@ AIR_DRESSER = Registry(
         *shared.POWER,
         *shared.UNIVERSAL,
         *shared.OPERATIONAL,
-        Spec("localthings_sanitize", "/airdresser/vs/0",
+        # `/airdresser/vs/0` does not exist. Three reference dumps of this family
+        # (TP1_21, TP2_20 and the original) put sanitize on its own option resource
+        # and the appliance's settings on `/washer/vs/0` — an AirDresser answers as a
+        # washer, which is also why the reference needs no AirDresser-specific wiring
+        # for the rest of it.
+        Spec("localthings_sanitize", "/airdresseroption/sanitize/vs/0",
              shared.flag("x.com.samsung.da.sanitize"),
-             shared.write_flag(["airdresser", "vs", "0"],
+             shared.write_flag(["airdresseroption", "sanitize", "vs", "0"],
                                "x.com.samsung.da.sanitize")),
+        Spec("localthings_wrinkle_prevent", HREF_WASHER,
+             shared.flag("x.com.samsung.da.wrinklePrevent"),
+             shared.write_flag(["washer", "vs", "0"],
+                               "x.com.samsung.da.wrinklePrevent")),
     ),
 )
 

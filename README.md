@@ -364,9 +364,9 @@ nothing.
 | Dehumidifier (`DHM`) | Unverified. Humidity, target humidity (writable), filter, panel display and water-tank light (both writable, on the revision that reports them) |
 | Oven, range, microwave (`OVEN/RANGE/MICROWAVE`) | Unverified. Operation state, mode, cavity and target temperature, door — **no heat control** |
 | Gas cooktop (`CT`) | Unverified. Power state, whether a burner is in use — **read-only** |
-| Water purifier (`WATERPURIFIER`) | Unverified. Operation state, child lock, water filter, cumulative water |
-| Clean station (`VSKR`, `VSWW`) | Unverified. Operation state, dust bag usage and warning |
-| AirDresser (`DF`) | Unverified. Operation state, progress, sanitize |
+| Water purifier (`WATERPURIFIER`) | Unverified against hardware, but read against the reference's dump of a real one. Operation state, filter-door contact, three locks — hot water, cold water and buttons (writable) — water filter, cumulative water |
+| Clean station (`VSKR`, `VSWW`) | Unverified against hardware, but read against the reference's dump of a real one. Operation state, dust-bag counter and full warning |
+| AirDresser (`DF`) | Unverified against hardware, but read against the reference's dumps of three real ones. Operation state, progress, remaining time, sanitize (writable), wrinkle prevent (writable) |
 | Air monitor (`ASM`) | Unverified. Air quality, PM10/2.5/1.0, CO2, humidity, battery — sensors only, the board has no power resource |
 | Heat pump (`EHS`) | Unverified. Power, leaving-water temperature and setpoint. Zone mode, the hot-water loop and away mode need capabilities of their own — see BACKLOG |
 
