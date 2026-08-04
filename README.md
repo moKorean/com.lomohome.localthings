@@ -192,6 +192,15 @@ value actually stayed, and re-sends it if the appliance took it back — verifie
 hardware to recover exactly the case above. Leave any field on "leave unchanged"
 (or temperature at 0) to skip it.
 
+**A setting the appliance already holds is not sent.** Each one costs a write, a settle
+wait and a re-read, and a Flow like "when I get home, cool to 24, fan 3, purify on" is
+usually asking for what is already there. The decision uses the value just read from the
+appliance — the card refreshes before it starts and after every step, so it is seconds
+old rather than the five minutes a poll cache can be. Skipped settings are still
+verified at the end: applying one setting can knock another out of place, and a setting
+skipped as already-correct is exactly the kind that drifts. When there is nothing to
+send, the final re-read is skipped too.
+
 **The operating mode takes priority**, because each mode honours only some of the
 other settings — and the ones it does not are still accepted on the wire and
 answered without a rejection flag. That is what the original report turned out to

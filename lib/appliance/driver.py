@@ -220,8 +220,34 @@ class ApplianceDriver(driver.Driver):
         await device.refresh_now()
         wanted = self._drop_what_the_mode_will_not_take(device, wanted)
 
+        # A setting that already holds is not sent. Each step costs a write, a settle
+        # wait and a re-read, so a Flow that re-asserts what the appliance is already
+        # doing — the common case for "when I get home, cool to 24, fan 3, purify on"
+        # — went through all of that to change nothing. Skipping is safe *here*
+        # specifically because of the refreshes this card already does: the value
+        # compared against was read from the appliance either by the refresh above or
+        # by the previous step's own re-read, so it is at most a couple of seconds
+        # old, not the five minutes a poll cache can be.
+        #
+        # It also cannot weaken what the card promises, because it only removes a
+        # write and never a check: `wanted` keeps every requested setting, including
+        # the skipped ones, so the reconcile pass below still verifies all of them.
+        # That matters — applying one setting can knock another out of place, and a
+        # setting skipped as already-correct can be exactly the one that drifts.
+        applied = 0
         for _name, capability, value in wanted:
+            if self._value_matches(device.get_capability_value(capability), value):
+                self.log(f"{capability}={value!r} already set; not sending")
+                continue
             await self._apply_step(device, capability, value)
+            applied += 1
+
+        if not applied:
+            # Nothing was sent, so nothing can have drifted, and the state was
+            # confirmed a moment ago by the comparisons above. The reconcile pass
+            # would only re-read the appliance to reach the same answer.
+            self.log("every requested setting already held; nothing sent")
+            return
 
         # Applying settings in order is not enough on its own: a later one can undo
         # an earlier one. Reported on this hardware — with the operating mode

@@ -556,6 +556,96 @@ class _StubHomey:
             return None
 
 
+class _Appliance:
+    """A device that keeps what it is given, counting reads and writes.
+
+    `side_effects` lets one write disturb another capability, which is what the
+    appliance really does — setting a comfort mode can move the operating mode.
+    """
+
+    def __init__(self, state=None, side_effects=None):
+        self.written = []
+        self.refreshes = 0
+        self.state = dict(state or {})
+        self.side_effects = side_effects or {}
+
+    def get_capability_value(self, capability):
+        return self.state.get(capability)
+
+    async def refresh_now(self):
+        self.refreshes += 1
+
+    async def trigger_capability_listener(self, capability, value):
+        self.written.append((capability, value))
+        self.state[capability] = value
+        for target, new in self.side_effects.get(capability, {}).items():
+            self.state[target] = new
+
+
+def _run_card(driver_instance, device, **args):
+    import asyncio
+    driver_instance.homey = _StubHomey()
+    driver_instance._AC_SETTLE_S = 0
+    asyncio.run(driver_instance._on_set_ac_settings({"device": device, **args}))
+
+
+def test_a_setting_that_already_holds_is_not_sent(driver_instance):
+    """The point of the skip: a Flow that re-asserts what the appliance is already
+    doing pays a write, a settle wait and a re-read per setting to change nothing."""
+    device = _Appliance({
+        "onoff": True,
+        "localthings_ac_mode": "Cool",
+        "target_temperature": 24.0,
+        "localthings_air_purify": True,
+    })
+    _run_card(driver_instance, device, power="on", mode="Cool", temperature=24.0,
+              air_purify="on", convenient="keep")
+    assert device.written == [], device.written
+
+
+def test_only_the_settings_that_differ_are_sent(driver_instance):
+    device = _Appliance({
+        "onoff": True,
+        "localthings_ac_mode": "Cool",
+        "target_temperature": 24.0,
+    })
+    _run_card(driver_instance, device, power="on", mode="Cool", temperature=26.0,
+              air_purify="keep", convenient="keep")
+    assert device.written == [("target_temperature", 26.0)], device.written
+
+
+def test_nothing_to_send_means_no_extra_round_trip(driver_instance):
+    """With no write there is nothing that could have drifted, so the reconcile pass
+    is skipped too — otherwise the "fast path" would still cost a device read."""
+    device = _Appliance({"onoff": True, "target_temperature": 24.0})
+    _run_card(driver_instance, device, power="on", mode="keep", temperature=24.0,
+              air_purify="keep", convenient="keep")
+    assert device.written == []
+    assert device.refreshes == 1, (
+        f"{device.refreshes} reads for a card that sent nothing; one is the up-front "
+        f"refresh the skip decisions are made from"
+    )
+
+
+def test_a_skipped_setting_is_still_verified_at_the_end(driver_instance):
+    """The reason skipping is safe: it removes a write, never a check.
+
+    Here the mode is already Cool and gets skipped, and then the temperature write
+    knocks it to Dry — exactly the class of interaction this card exists for. The
+    skipped setting has to be noticed and put back."""
+    device = _Appliance(
+        {"onoff": True, "localthings_ac_mode": "Cool", "target_temperature": 24.0},
+        side_effects={"target_temperature": {"localthings_ac_mode": "Dry"}},
+    )
+    _run_card(driver_instance, device, power="on", mode="Cool", temperature=28.0,
+              air_purify="keep", convenient="keep")
+    assert ("target_temperature", 28.0) in device.written
+    assert ("localthings_ac_mode", "Cool") in device.written, (
+        "the skipped mode drifted and was not restored"
+    )
+    assert device.state["localthings_ac_mode"] == "Cool"
+
+
 def test_a_setting_the_appliance_reverts_is_sent_again(driver_instance):
     """Measured on real hardware: turn the unit on, set the mode about three
     seconds later, and the appliance acknowledges the write and then restores the
