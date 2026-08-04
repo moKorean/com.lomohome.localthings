@@ -1,0 +1,16 @@
+{
+  "type": "string",
+  "getable": true,
+  "setable": false,
+  "title": {
+    "en": "Last air grade",
+    "ko": "최근 공기질 등급"
+  },
+  "desc": {
+    "en": "The grade from the appliance's last measurement, as it reports it. The scale behind values like 'Kr1' is not established, so it is shown rather than translated into a number.",
+    "ko": "가전이 마지막 측정에서 낸 등급을 그대로 표시합니다. 'Kr1' 같은 값의 척도가 확인되지 않아 숫자로 바꾸지 않고 그대로 보여줍니다."
+  },
+  "uiComponent": "sensor",
+  "insights": false,
+  "icon": "/assets/capabilities/mdi-gauge.svg"
+}

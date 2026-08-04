@@ -1,0 +1,15 @@
+{
+  "type": "boolean",
+  "getable": true,
+  "setable": true,
+  "title": {
+    "en": "Auto empty",
+    "ko": "자동 비움"
+  },
+  "desc": {
+    "en": "Whether the station empties the vacuum into its dust bag by itself.",
+    "ko": "스테이션이 청소기의 먼지를 먼지봉투로 스스로 비우는지입니다."
+  },
+  "uiComponent": "toggle",
+  "icon": "/assets/capabilities/mdi-delete-empty.svg"
+}

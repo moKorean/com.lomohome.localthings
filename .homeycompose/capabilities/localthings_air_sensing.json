@@ -1,0 +1,15 @@
+{
+  "type": "boolean",
+  "getable": true,
+  "setable": false,
+  "title": {
+    "en": "Periodic air sensing",
+    "ko": "주기적 공기질 감지"
+  },
+  "desc": {
+    "en": "Whether the appliance measures the air by itself on a schedule.",
+    "ko": "가전이 정해진 주기로 스스로 공기질을 측정하는지입니다."
+  },
+  "uiComponent": "sensor",
+  "icon": "/assets/capabilities/mdi-air-filter.svg"
+}

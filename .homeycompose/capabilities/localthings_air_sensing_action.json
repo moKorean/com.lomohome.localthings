@@ -1,0 +1,16 @@
+{
+  "type": "string",
+  "getable": true,
+  "setable": false,
+  "title": {
+    "en": "Action on sensing",
+    "ko": "감지 시 동작"
+  },
+  "desc": {
+    "en": "What the appliance does by itself when a measurement comes back dirty — ventilate, alarm, or only sense.",
+    "ko": "측정 결과가 나쁠 때 가전이 스스로 무엇을 하는지입니다 — 환기, 알림, 또는 감지만."
+  },
+  "uiComponent": "sensor",
+  "insights": false,
+  "icon": "/assets/capabilities/mdi-fan-auto.svg"
+}

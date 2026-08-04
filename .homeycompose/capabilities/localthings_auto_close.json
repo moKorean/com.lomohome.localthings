@@ -1,0 +1,15 @@
+{
+  "type": "boolean",
+  "getable": true,
+  "setable": true,
+  "title": {
+    "en": "Auto close",
+    "ko": "자동 닫힘"
+  },
+  "desc": {
+    "en": "Whether the station closes its lid after emptying.",
+    "ko": "비운 뒤 스테이션이 덮개를 스스로 닫는지입니다."
+  },
+  "uiComponent": "toggle",
+  "icon": "/assets/capabilities/mdi-arrow-left-right.svg"
+}

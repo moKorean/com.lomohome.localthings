@@ -1,0 +1,16 @@
+{
+  "type": "string",
+  "getable": true,
+  "setable": false,
+  "title": {
+    "en": "Sensing",
+    "ko": "감지 상태"
+  },
+  "desc": {
+    "en": "Whether a measurement is running right now.",
+    "ko": "지금 측정이 진행 중인지입니다."
+  },
+  "uiComponent": "sensor",
+  "insights": false,
+  "icon": "/assets/capabilities/mdi-motion-sensor.svg"
+}

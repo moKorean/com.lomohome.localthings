@@ -1,0 +1,25 @@
+{
+  "title": {
+    "en": "Last air grade !{{is|is not}} [[value]]",
+    "ko": "최근 공기질 등급 [[value]] !{{임|아님}}"
+  },
+  "titleFormatted": {
+    "en": "Last air grade !{{is|is not}} [[value]]",
+    "ko": "최근 공기질 등급 [[value]] !{{임|아님}}"
+  },
+  "hint": {
+    "en": "Checks the value as the appliance last reported it.",
+    "ko": "가전이 마지막으로 보고한 값을 확인합니다."
+  },
+  "args": [
+    {
+      "name": "device",
+      "type": "device",
+      "filter": "driver_id=appliance&capabilities=localthings_air_sensing_level"
+    },
+    {
+      "name": "value",
+      "type": "text"
+    }
+  ]
+}

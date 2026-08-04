@@ -153,6 +153,36 @@ def test_every_capability_the_hood_gets_actually_produces_a_value(resources):
     assert not dead, "capabilities offered but unreadable: " + "; ".join(dead)
 
 
+def test_periodic_air_sensing_is_read_from_the_appliances_own_fields(resources):
+    """Four values off /airlevelcheck/vs/0, which the hood reports and we ignored.
+    The reference exposes the same four for this family and deliberately leaves the
+    resource unexposed on air conditioners, where it is only scheduler plumbing."""
+    rep = resources["/airlevelcheck/vs/0"]
+    assert _spec("localthings_air_sensing", resources).read(rep, resources) is True
+    assert _spec("localthings_air_sensing_state", resources).read(rep, resources) \
+        == "NonProcessing"
+    assert _spec("localthings_air_sensing_level", resources).read(rep, resources) == "Kr1"
+    assert _spec("localthings_air_sensing_action", resources).read(rep, resources) \
+        == "Sensing"
+
+
+def test_the_sensing_action_is_a_string_because_the_device_reports_off_list_values():
+    """Measured on this unit: autoExeState is 'Sensing' while its own
+    supportedAutoExeState lists only Airpurify and Alarm. A picker built from the
+    supported list could not display the value the appliance is actually in."""
+    rep = json.loads(FIXTURE.read_text())["/airlevelcheck/vs/0"]
+    assert rep["x.com.samsung.da.autoExeState"] == "Sensing"
+    assert rep["x.com.samsung.da.supportedAutoExeState"] == ["Airpurify", "Alarm"]
+    spec = next(s for s in appliances.RANGE_HOOD.specs
+                if s.capability == "localthings_air_sensing_action")
+    assert not spec.writable
+    definition = json.loads(
+        (Path(__file__).parent.parent
+         / ".homeycompose/capabilities/localthings_air_sensing_action.json").read_text()
+    )
+    assert definition["type"] == "string"
+
+
 def test_the_previous_wrong_mapping_cannot_come_back(resources):
     """Guard the specific mistakes, by name. Each read null on this hardware."""
     for spec in appliances.RANGE_HOOD.specs:

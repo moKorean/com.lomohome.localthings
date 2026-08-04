@@ -961,6 +961,106 @@
       },
       {
         "title": {
+          "en": "Action on sensing !{{is|is not}} [[value]]",
+          "ko": "감지 시 동작 [[value]] !{{임|아님}}"
+        },
+        "titleFormatted": {
+          "en": "Action on sensing !{{is|is not}} [[value]]",
+          "ko": "감지 시 동작 [[value]] !{{임|아님}}"
+        },
+        "hint": {
+          "en": "Checks the value as the appliance last reported it.",
+          "ko": "가전이 마지막으로 보고한 값을 확인합니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_air_sensing_action"
+          },
+          {
+            "name": "value",
+            "type": "text"
+          }
+        ],
+        "id": "air_sensing_action_is"
+      },
+      {
+        "title": {
+          "en": "Periodic air sensing !{{is|is not}} on",
+          "ko": "주기적 공기질 감지 !{{켜짐|꺼짐}}"
+        },
+        "titleFormatted": {
+          "en": "Periodic air sensing !{{is|is not}} on",
+          "ko": "주기적 공기질 감지 !{{켜짐|꺼짐}}"
+        },
+        "hint": {
+          "en": "Checks the value as the appliance last reported it.",
+          "ko": "가전이 마지막으로 보고한 값을 확인합니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_air_sensing"
+          }
+        ],
+        "id": "air_sensing_is"
+      },
+      {
+        "title": {
+          "en": "Last air grade !{{is|is not}} [[value]]",
+          "ko": "최근 공기질 등급 [[value]] !{{임|아님}}"
+        },
+        "titleFormatted": {
+          "en": "Last air grade !{{is|is not}} [[value]]",
+          "ko": "최근 공기질 등급 [[value]] !{{임|아님}}"
+        },
+        "hint": {
+          "en": "Checks the value as the appliance last reported it.",
+          "ko": "가전이 마지막으로 보고한 값을 확인합니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_air_sensing_level"
+          },
+          {
+            "name": "value",
+            "type": "text"
+          }
+        ],
+        "id": "air_sensing_level_is"
+      },
+      {
+        "title": {
+          "en": "Sensing !{{is|is not}} [[value]]",
+          "ko": "감지 상태 [[value]] !{{임|아님}}"
+        },
+        "titleFormatted": {
+          "en": "Sensing !{{is|is not}} [[value]]",
+          "ko": "감지 상태 [[value]] !{{임|아님}}"
+        },
+        "hint": {
+          "en": "Checks the value as the appliance last reported it.",
+          "ko": "가전이 마지막으로 보고한 값을 확인합니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_air_sensing_state"
+          },
+          {
+            "name": "value",
+            "type": "text"
+          }
+        ],
+        "id": "air_sensing_state_is"
+      },
+      {
+        "title": {
           "en": "Active alarm !{{is|is not}} [[value]]",
           "ko": "발생 알람 [[value]] !{{임|아님}}"
         },
@@ -1122,6 +1222,50 @@
           }
         ],
         "id": "auto_clean_progress_is"
+      },
+      {
+        "title": {
+          "en": "Auto close !{{is|is not}} on",
+          "ko": "자동 닫힘 !{{켜짐|꺼짐}}"
+        },
+        "titleFormatted": {
+          "en": "Auto close !{{is|is not}} on",
+          "ko": "자동 닫힘 !{{켜짐|꺼짐}}"
+        },
+        "hint": {
+          "en": "Checks the value as the appliance last reported it.",
+          "ko": "가전이 마지막으로 보고한 값을 확인합니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_auto_close"
+          }
+        ],
+        "id": "auto_close_is"
+      },
+      {
+        "title": {
+          "en": "Auto empty !{{is|is not}} on",
+          "ko": "자동 비움 !{{켜짐|꺼짐}}"
+        },
+        "titleFormatted": {
+          "en": "Auto empty !{{is|is not}} on",
+          "ko": "자동 비움 !{{켜짐|꺼짐}}"
+        },
+        "hint": {
+          "en": "Checks the value as the appliance last reported it.",
+          "ko": "가전이 마지막으로 보고한 값을 확인합니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_auto_empty"
+          }
+        ],
+        "id": "auto_empty_is"
       },
       {
         "title": {
@@ -3430,6 +3574,90 @@
       },
       {
         "title": {
+          "en": "Turn Auto close on or off",
+          "ko": "자동 닫힘 켜기 또는 끄기"
+        },
+        "titleFormatted": {
+          "en": "Turn Auto close [[state]]",
+          "ko": "자동 닫힘 [[state]]"
+        },
+        "hint": {
+          "en": "Fails the Flow if the appliance refuses the change, rather than reporting a success it did not achieve.",
+          "ko": "가전이 변경을 거부하면 플로우를 실패로 처리합니다. 이루지 못한 성공을 보고하지 않습니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_auto_close"
+          },
+          {
+            "name": "state",
+            "type": "dropdown",
+            "values": [
+              {
+                "id": "on",
+                "title": {
+                  "en": "on",
+                  "ko": "켜기"
+                }
+              },
+              {
+                "id": "off",
+                "title": {
+                  "en": "off",
+                  "ko": "끄기"
+                }
+              }
+            ]
+          }
+        ],
+        "id": "set_auto_close"
+      },
+      {
+        "title": {
+          "en": "Turn Auto empty on or off",
+          "ko": "자동 비움 켜기 또는 끄기"
+        },
+        "titleFormatted": {
+          "en": "Turn Auto empty [[state]]",
+          "ko": "자동 비움 [[state]]"
+        },
+        "hint": {
+          "en": "Fails the Flow if the appliance refuses the change, rather than reporting a success it did not achieve.",
+          "ko": "가전이 변경을 거부하면 플로우를 실패로 처리합니다. 이루지 못한 성공을 보고하지 않습니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_auto_empty"
+          },
+          {
+            "name": "state",
+            "type": "dropdown",
+            "values": [
+              {
+                "id": "on",
+                "title": {
+                  "en": "on",
+                  "ko": "켜기"
+                }
+              },
+              {
+                "id": "off",
+                "title": {
+                  "en": "off",
+                  "ko": "끄기"
+                }
+              }
+            ]
+          }
+        ],
+        "id": "set_auto_empty"
+      },
+      {
+        "title": {
           "en": "Turn Auto fill on or off",
           "ko": "자동 급수 켜기 또는 끄기"
         },
@@ -4753,6 +4981,69 @@
       "decimals": 0,
       "icon": "/assets/capabilities/mdi-blur.svg"
     },
+    "localthings_air_sensing": {
+      "type": "boolean",
+      "getable": true,
+      "setable": false,
+      "title": {
+        "en": "Periodic air sensing",
+        "ko": "주기적 공기질 감지"
+      },
+      "desc": {
+        "en": "Whether the appliance measures the air by itself on a schedule.",
+        "ko": "가전이 정해진 주기로 스스로 공기질을 측정하는지입니다."
+      },
+      "uiComponent": "sensor",
+      "icon": "/assets/capabilities/mdi-air-filter.svg"
+    },
+    "localthings_air_sensing_action": {
+      "type": "string",
+      "getable": true,
+      "setable": false,
+      "title": {
+        "en": "Action on sensing",
+        "ko": "감지 시 동작"
+      },
+      "desc": {
+        "en": "What the appliance does by itself when a measurement comes back dirty — ventilate, alarm, or only sense.",
+        "ko": "측정 결과가 나쁠 때 가전이 스스로 무엇을 하는지입니다 — 환기, 알림, 또는 감지만."
+      },
+      "uiComponent": "sensor",
+      "insights": false,
+      "icon": "/assets/capabilities/mdi-fan-auto.svg"
+    },
+    "localthings_air_sensing_level": {
+      "type": "string",
+      "getable": true,
+      "setable": false,
+      "title": {
+        "en": "Last air grade",
+        "ko": "최근 공기질 등급"
+      },
+      "desc": {
+        "en": "The grade from the appliance's last measurement, as it reports it. The scale behind values like 'Kr1' is not established, so it is shown rather than translated into a number.",
+        "ko": "가전이 마지막 측정에서 낸 등급을 그대로 표시합니다. 'Kr1' 같은 값의 척도가 확인되지 않아 숫자로 바꾸지 않고 그대로 보여줍니다."
+      },
+      "uiComponent": "sensor",
+      "insights": false,
+      "icon": "/assets/capabilities/mdi-gauge.svg"
+    },
+    "localthings_air_sensing_state": {
+      "type": "string",
+      "getable": true,
+      "setable": false,
+      "title": {
+        "en": "Sensing",
+        "ko": "감지 상태"
+      },
+      "desc": {
+        "en": "Whether a measurement is running right now.",
+        "ko": "지금 측정이 진행 중인지입니다."
+      },
+      "uiComponent": "sensor",
+      "insights": false,
+      "icon": "/assets/capabilities/mdi-motion-sensor.svg"
+    },
     "localthings_alarm_code": {
       "type": "string",
       "title": {
@@ -4844,6 +5135,36 @@
       "min": 0,
       "max": 100,
       "icon": "/assets/capabilities/mdi-progress-clock.svg"
+    },
+    "localthings_auto_close": {
+      "type": "boolean",
+      "getable": true,
+      "setable": true,
+      "title": {
+        "en": "Auto close",
+        "ko": "자동 닫힘"
+      },
+      "desc": {
+        "en": "Whether the station closes its lid after emptying.",
+        "ko": "비운 뒤 스테이션이 덮개를 스스로 닫는지입니다."
+      },
+      "uiComponent": "toggle",
+      "icon": "/assets/capabilities/mdi-arrow-left-right.svg"
+    },
+    "localthings_auto_empty": {
+      "type": "boolean",
+      "getable": true,
+      "setable": true,
+      "title": {
+        "en": "Auto empty",
+        "ko": "자동 비움"
+      },
+      "desc": {
+        "en": "Whether the station empties the vacuum into its dust bag by itself.",
+        "ko": "스테이션이 청소기의 먼지를 먼지봉투로 스스로 비우는지입니다."
+      },
+      "uiComponent": "toggle",
+      "icon": "/assets/capabilities/mdi-delete-empty.svg"
     },
     "localthings_auto_ventilation": {
       "type": "boolean",

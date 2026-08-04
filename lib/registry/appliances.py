@@ -683,6 +683,7 @@ def _any_burner_active(rep):
 
 HREF_HOOD_FAN = "/hood/fanspeed/vs/0"
 HREF_HOOD_LAMP = "/hood/lamp/vs/0"
+HREF_AIRLEVEL = "/airlevelcheck/vs/0"
 HREF_HOOD_FILTER = "/filter/hoodfilter/vs/0"
 
 FIELD_FAN_SPEED = "x.com.samsung.da.hood.fanSpeed"
@@ -816,6 +817,24 @@ RANGE_HOOD = Registry(
         Spec("localthings_auto_ventilation", HREF_HOOD_FAN,
              shared.flag(FIELD_AUTO_OPERATION),
              exists=_has(FIELD_AUTO_OPERATION)),
+        # Periodic air-quality sensing. The reference exposes these for the hood and
+        # deliberately leaves the same resource unexposed on the air conditioner and
+        # air purifier, calling it scheduler plumbing there — this is the family where
+        # it drives something the user can see.
+        #
+        # All read-only, and the level and action are free-form strings rather than
+        # enums for a measured reason: our unit reports autoExeState 'Sensing' while
+        # its own supportedAutoExeState lists only ['Airpurify', 'Alarm'], so a picker
+        # built from the supported list could not even display the current value. The
+        # 'Kr1' grade's scale is still unknown — docs/BACKLOG.md.
+        Spec("localthings_air_sensing", HREF_AIRLEVEL,
+             shared.flag("x.com.samsung.da.periodicSensingActivationState")),
+        Spec("localthings_air_sensing_state", HREF_AIRLEVEL,
+             shared.text("x.com.samsung.da.sensingState")),
+        Spec("localthings_air_sensing_level", HREF_AIRLEVEL,
+             shared.text("x.com.samsung.da.lastSensingLevel")),
+        Spec("localthings_air_sensing_action", HREF_AIRLEVEL,
+             shared.text("x.com.samsung.da.autoExeState")),
         # Titled per device: the shared capability is the air conditioner's panel
         # indicator, which "표시등" describes correctly, but on a hood the same
         # capability drives the light over the cooktop.
@@ -1006,6 +1025,20 @@ VACUUM_STATION = Registry(
         # it the same way and says so.
         Spec("localthings_dustbag_usage", "/component/station/dustbagusage/vs/0",
              lambda rep, _r: as_float(rep.get("x.com.samsung.da.dustbagUsage"))),
+        # The station's two automatic behaviours, writable as the reference has them:
+        # emptying the vacuum into the bin, and closing the lid afterwards. Its own
+        # dump carries both as On/Off with the usual convention. The third field on
+        # this resource, desiredDischargingTime, is a picker whose choices come from
+        # supportedDischargingTime — left out for the reason the tank light's colour
+        # was, and recorded in docs/BACKLOG.md.
+        Spec("localthings_auto_empty", "/setting/dustbin/vs/0",
+             shared.flag("x.com.samsung.da.autoEmpty"),
+             shared.write_flag(["setting", "dustbin", "vs", "0"],
+                               "x.com.samsung.da.autoEmpty")),
+        Spec("localthings_auto_close", "/setting/dustbin/vs/0",
+             shared.flag("x.com.samsung.da.autoClose"),
+             shared.write_flag(["setting", "dustbin", "vs", "0"],
+                               "x.com.samsung.da.autoClose")),
     ),
 )
 

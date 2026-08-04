@@ -118,7 +118,13 @@ def known_hrefs() -> set[str]:
         found |= set(re.findall(r'"href"\s*:\s*"([^"]+)"', path.read_text()))
     assert len(found) > 100, f"only {len(found)} reference hrefs — the parse broke"
     for path in OUR_FIXTURES.glob("*.json"):
-        found |= set(json.loads(path.read_text()).get("resources") or {})
+        # Two shapes are in use: some fixtures wrap the dump in "resources" with
+        # metadata beside it, others are flat with the hrefs at the top level.
+        # Reading only one of them found nothing in four files and said nothing.
+        data = json.loads(path.read_text())
+        mine = data.get("resources") or {k: v for k, v in data.items() if k.startswith("/")}
+        assert mine, f"{path.name}: no resources parsed — has the fixture shape changed?"
+        found |= set(mine)
     return found
 
 
@@ -205,6 +211,9 @@ def test_the_six_broken_types_now_read_their_real_resources(dumps):
             "localthings_operation_state": "Ready",
             "localthings_alarm_dustbag": False,
             "localthings_dustbag_usage": 506.0,
+            # Added from the same dump once the type could read anything at all.
+            "localthings_auto_empty": True,
+            "localthings_auto_close": True,
         },
         "water_purifier_device.json": {
             "localthings_child_lock.hotwater": False,
