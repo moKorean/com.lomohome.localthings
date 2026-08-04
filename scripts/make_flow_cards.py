@@ -52,6 +52,10 @@ EVENT_LIKE = {
     "localthings_firmware_update",
     "localthings_selfcheck",
     "localthings_burner_any_active",
+    # A cooktop switching on or off is the event a hood-follows-cooktop Flow waits
+    # for. Only this writable form gets it: localthings_power_state is the same
+    # reading on hardware nobody here has measured.
+    "localthings_power",
     "localthings_machine_state",
     "localthings_operation_state",
     "localthings_progress",
@@ -65,6 +69,12 @@ TRIGGERED_ELSEWHERE = {
     "localthings_alarm_filter",
     "localthings_cycle_active",
 }
+
+# Booleans the appliance accepts in one direction only, so the action card offers
+# just that direction. A dropdown that lets a Flow pick the impossible direction
+# builds a Flow that fails every time it runs, and the dropdown is the last place to
+# say so before it is built — lib/registry/induction_cooktop.py has the measurement.
+OFF_ONLY = {"localthings_power"}
 
 BOOL_STATES = [
     {"id": "on", "title": {"en": "on", "ko": "켜기"}},
@@ -104,11 +114,15 @@ def device_arg(capability: str) -> dict:
     }
 
 
-def value_arg(definition: dict) -> dict:
+def value_arg(definition: dict, capability: str = "") -> dict:
     """The argument a card needs to carry a value of this capability's type."""
     kind = definition.get("type")
     if kind == "boolean":
-        return {"name": "state", "type": "dropdown", "values": BOOL_STATES}
+        # The arg keeps its name and shape either way, so the listener that reads
+        # `state` needs no special case for a one-directional capability.
+        states = [s for s in BOOL_STATES if s["id"] == "off"] \
+            if capability in OFF_ONLY else BOOL_STATES
+        return {"name": "state", "type": "dropdown", "values": states}
     if kind == "enum":
         return {
             "name": "value",
@@ -133,7 +147,9 @@ def action_card(capability: str, definition: dict) -> dict | None:
     if kind == "boolean":
         # Korean reads naturally without a particle here: "조명 켜기".
         formatted = {"en": f"Turn {en} [[state]]", "ko": f"{ko} [[state]]"}
-        title = {"en": f"Turn {en} on or off", "ko": f"{ko} 켜기 또는 끄기"}
+        title = {"en": f"Turn {en} off", "ko": f"{ko} 끄기"} \
+            if capability in OFF_ONLY \
+            else {"en": f"Turn {en} on or off", "ko": f"{ko} 켜기 또는 끄기"}
     elif kind in ("enum", "number", "string"):
         # "풍량 설정: 3" avoids the 을/를 choice a generator cannot make reliably.
         formatted = {"en": f"Set {en} to [[value]]", "ko": f"{ko} 설정: [[value]]"}
@@ -149,7 +165,7 @@ def action_card(capability: str, definition: dict) -> dict | None:
             "ko": "가전이 변경을 거부하면 플로우를 실패로 처리합니다. 이루지 못한 "
                   "성공을 보고하지 않습니다.",
         },
-        "args": [device_arg(capability), value_arg(definition)],
+        "args": [device_arg(capability), value_arg(definition, capability)],
     }
 
 

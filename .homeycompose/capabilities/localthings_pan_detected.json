@@ -1,0 +1,16 @@
+{
+  "type": "boolean",
+  "getable": true,
+  "setable": false,
+  "title": {
+    "en": "Pan",
+    "ko": "냄비"
+  },
+  "desc": {
+    "en": "Whether the burner has cookware on it. Reported only while the burner is running: an idle induction coil reports a pan on every burner whether one is there or not.",
+    "ko": "화구에 조리기구가 올려져 있는지입니다. 화구가 동작 중일 때만 표시됩니다 — 꺼진 인덕션은 실제 여부와 무관하게 모든 화구에 냄비가 있다고 보고합니다."
+  },
+  "uiComponent": "sensor",
+  "insights": false,
+  "icon": "/assets/capabilities/mdi-pot-steam.svg"
+}

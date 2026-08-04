@@ -258,6 +258,73 @@ action = "Start"
 
 ---
 
+## 인덕션 (`TP1X_DA-KS-COOKTOP-01011`, NV9000D-/KO4)
+
+### 원격 끄기 — 가전이 스스로 알려주고 있었습니다 (구현, 1.0.3)
+
+사용자 보고: 원격으로 **켜기는 안 되는데 끄기는 되는 것 같다**(화구 점화도 안 됨). 덤프에
+답이 그대로 있었습니다. `/cooktop/spec/vs/0`:
+
+```
+supportedFeatureList = ["kitchenService", "remoteChildLock", "remotePowerOff"]
+```
+
+`remotePowerOff`는 있고 `remotePowerOn`은 없으며, 버너 제어에 해당하는 항목도 없습니다. 보고된
+세 가지가 이 목록 그대로입니다. 2026-08-04에 실기기에서 다시 읽어 확인했습니다.
+
+**이 목록을 게이트로 신뢰하는 근거**는 가정이 아니라 한 건의 실측입니다 — `remoteChildLock`이
+목록에 있고, 차일드락 쓰기는 이 가전에서 이미 동작이 검증된 유일한 쓰기입니다. 반대로 버너
+관련 항목은 목록에 없고 버너 쓰기는 되지 않습니다. 그래서 `_remote_feature`가 이 목록을 읽어
+`remotePowerOff`를 광고하는 유닛에만 토글을 붙이고, 없는 유닛은 읽기 전용
+`localthings_power_state`로 남습니다 — 항상 실패하는 스위치는 센서보다 나쁩니다.
+
+레퍼런스는 `cooktop_power`를 읽기 전용으로 두면서 *"no live device to confirm remotely turning
+a cooktop on wouldn't leave a burner active unattended"*라고 적어 두었습니다. 실기기가 없어
+판단을 미룬 것이고, 여기서의 답은 **가전이 켜기를 아예 받지 않는다**는 것이라 안전한 방향만
+열려 있었습니다. 화력 쓰기는 여전히 넣지 않습니다.
+
+**아직 검증되지 않은 것**: 켜져 있는 인덕션에 끄기를 보내는 실제 동작. 이미 꺼져 있으면
+`Device._write`가 전송 자체를 생략하므로(현재 값과 같은 쓰기는 거부되기 때문) 아무것도 증명되지
+않습니다. 화구를 쓰는 중에 한 번 보내면 끝납니다.
+
+### `panDetection` — 꺼진 상태에서는 측정값이 아닙니다 (미해결)
+
+꺼진 인덕션이 **세 화구 모두** `panDetection: true`를 보고합니다. 6일 간격의 두 읽기(2026-07-29
+덤프, 2026-08-04 실측)가 같고, 그동안 전원은 off·화력은 전부 0이었습니다. 인덕션 코일은 전류가
+흐를 때만 철제 부하를 감지할 수 있으므로, 이 `true`를 그대로 published 하면 세 화구에 영원히
+"냄비 있음"이 뜹니다. 그래서 **화구가 동작 중일 때만** 값을 냅니다(`_burner_pan`).
+
+**확정 방법**: 냄비를 전부 내리고 다시 읽습니다. `false`로 바뀌면 꺼진 상태에서도 유효한
+필드이므로 게이트를 없앨 수 있고, 그대로 `true`면 게이트가 맞습니다. 지금 인덕션 위에 냄비가
+몇 개 있는지 확인만 해도 절반은 답이 나옵니다.
+
+### 버너 타이머 `remainingTime` — 단위 미확인
+
+버너별 `timer = {operationState, cookingTime, remainingTime}`. 지금까지 모든 읽기에서 0이라
+**단위를 확정하지 못했습니다.** 초로 가정했습니다 — 이 가전에서 의미가 확인된 유일한 시간값인
+`/cooktop/settings/status/vs/0`의 `safetyAlert.settingTime`이 1시간 차단에 3600이라 초입니다.
+
+**확정 방법**: 화구 타이머를 아는 시간으로 걸고 값을 읽습니다. 10분에 10이 뜨면 초가 맞고,
+600이 뜨면 원래 분 단위였다는 뜻입니다. `tests/test_induction_cooktop.py`가 변환을 고정해 두었
+으므로 바꾸려면 의도적으로 고쳐야 합니다.
+
+### `/cooktop/recipe/status/vs/0` — 통째로 미매핑
+
+```
+operationBurnerNumber = 2, sequenceNumber, textData.menu = "",
+stageInfo = {numberOfStages: 0, cookingTimeList: []}
+```
+
+스마트싱스 레시피(kitchenService) 연동용으로 보입니다. `menu`가 빈 문자열이고 단계가 0이라
+채워진 상태를 본 적이 없습니다. 공식 앱에서 레시피 기능을 한 번 쓰고 다시 덤프하면 필드가
+어떻게 채워지는지 알 수 있습니다. 그 전에는 매핑할 근거가 없습니다.
+
+미매핑으로 남긴 나머지: `safetyAlert.settingTime`(차단 타이머 길이 — state만 노출),
+버너 `mode`(항상 `normal`), `additionalStateList`(항상 `[""]`), 프로브의
+`targetTemperature`·`batteryState`·`operationBurnerNumber`, `/quickcontrol/info/vs/0`.
+
+---
+
 ## 위젯 — 한 번 만들었다가 뺐다
 
 후드의 전원·풍량·조명·밝기를 한 카드에 놓는 위젯을 만들어 설치까지 했고, **보기에 좋지

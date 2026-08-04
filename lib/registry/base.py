@@ -27,6 +27,11 @@ class Spec:
     href: str
     read: Callable[[dict, dict], Any]
     write: Callable[[Any, dict], tuple[list[str], dict]] | None = None
+    # i18n key for the error shown when write() refuses a value by returning None,
+    # in place of the generic "does not support {value}". A capability the appliance
+    # accepts in one direction only has to say which direction: "does not support
+    # True" is a fact about our code, not an explanation the user can act on.
+    refusal: str | None = None
     # Presence gate for capabilities that only apply to some units of a type —
     # a three-burner cooktop must not be given a fourth burner's controls. The
     # reference calls the same thing exists_fn. Declaring a generous superset and

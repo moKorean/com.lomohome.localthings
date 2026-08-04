@@ -77,6 +77,24 @@ rejection flag. Three separate bugs have come from trusting that reply:
 
 Confirm by reading back, and re-send when the appliance takes it back.
 
+### Some appliances publish what they will accept
+
+Before concluding that a write is impossible, look for the appliance's own list.
+The induction cooktop's `/cooktop/spec/vs/0` carries
+`supportedFeatureList: [kitchenService, remoteChildLock, remotePowerOff]`, which
+explains three owner-reported behaviours at once: power off works, power on does
+not, burner control does not. It had been sitting in the committed dump unread while
+`cooktop_power` stayed read-only on the reference's caveat about unverified hardware.
+
+Such a list is worth trusting as a gate only when something in it is already
+verified — here `remoteChildLock` is listed and the child-lock write is the one
+write proven to work on that unit, while nothing burner-shaped is listed and burner
+writes fail. Gate the capability on the list (`_remote_feature`) rather than on the
+model, so a unit that omits an entry keeps the reading and never grows a control
+that always fails. Where a capability is accepted in one direction only, say which:
+`Spec.refusal` names the message, and `make_flow_cards.OFF_ONLY` keeps the Flow
+action from offering the impossible direction.
+
 ### Check what a counter counts before tuning it
 
 `_notified` counts initial notifications *and* the state changes that follow, because

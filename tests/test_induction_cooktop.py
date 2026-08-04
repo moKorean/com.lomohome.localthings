@@ -39,7 +39,7 @@ def test_cooktop_token_does_not_collide_with_air_conditioner(resources):
 
 def test_reads_match_the_captured_state(resources):
     reg = registry.resolve(resources)
-    assert _read(reg, resources, "localthings_power_state") is False
+    assert _read(reg, resources, "localthings_power") is False
     assert _read(reg, resources, "localthings_operation_state") == "ready"
     assert _read(reg, resources, "localthings_child_lock") is False
     assert _read(reg, resources, "localthings_smart_control") is False
@@ -56,8 +56,12 @@ def test_only_the_burners_the_device_reports_are_exposed(resources):
         assert f"localthings_burner_level.{index}" in caps
         assert f"localthings_burner_state.{index}" in caps
         assert f"localthings_alarm_hot_surface.{index}" in caps
+        assert f"localthings_pan_detected.{index}" in caps
+        assert f"localthings_remaining_minutes.{index}" in caps
     for index in (3, 4, 5):
         assert f"localthings_burner_level.{index}" not in caps
+        assert f"localthings_pan_detected.{index}" not in caps
+        assert f"localthings_remaining_minutes.{index}" not in caps
 
 
 def test_burner_values_are_read_per_burner(resources):
@@ -99,11 +103,111 @@ def test_disconnected_probe_reports_nothing_rather_than_zero(resources):
 
 
 def test_heat_controls_are_not_writable(resources):
-    """A cooktop must not be remotely ignited by an automation. Only the child
-    lock — a lock toggle, not a heat control — may be written."""
+    """A cooktop must not be remotely ignited by an automation. Only the child lock
+    — a lock toggle, not a heat control — and power *off* may be written."""
     reg = registry.resolve(resources)
     writable = [s.capability for s in reg.specs if s.writable]
-    assert writable == ["localthings_child_lock"]
+    assert writable == ["localthings_power", "localthings_child_lock"]
+
+
+def test_power_off_is_writable_and_power_on_is_refused(resources):
+    """The appliance advertises remotePowerOff and no remotePowerOn."""
+    reg = registry.resolve(resources)
+    spec = reg.spec_for("localthings_power", resources)
+    rep = resources[spec.href]
+    assert spec.write(False, rep) == (
+        ["cooktop", "status", "vs", "0"], {"power": "off"},
+    )
+    assert spec.write(True, rep) is None
+    assert spec.refusal == "error.no_remote_power_on"
+
+
+def test_the_power_toggle_is_gated_on_the_appliance_saying_it_accepts_off():
+    """The gate is supportedFeatureList, so a unit of this family that does not
+    advertise remotePowerOff keeps the reading and never grows a dead toggle."""
+    without = {
+        "/information/vs/0": {
+            "x.com.samsung.da.modelNum": "TP1X_DA-KS-COOKTOP-01011|1|2",
+        },
+        "/cooktop/spec/vs/0": {"supportedFeatureList": ["kitchenService"]},
+        "/cooktop/status/vs/0": {"power": "on", "burnerList": []},
+    }
+    reg = registry.resolve(without)
+    caps = reg.capabilities(without)
+    assert "localthings_power" not in caps
+    assert "localthings_power_state" in caps
+    assert _read(reg, without, "localthings_power_state") is True
+
+
+def test_the_two_power_forms_are_never_both_bound(resources):
+    """Both read the same field; binding both would show the value twice."""
+    caps = registry.resolve(resources).capabilities(resources)
+    assert "localthings_power" in caps
+    assert "localthings_power_state" not in caps
+
+
+def test_a_missing_spec_resource_leaves_no_power_control(resources):
+    """No spec resource means no evidence the appliance accepts anything, so the
+    gate must fail closed rather than assume the verified unit's feature list."""
+    stripped = {k: v for k, v in resources.items() if k != "/cooktop/spec/vs/0"}
+    reg = registry.resolve(stripped)
+    caps = reg.capabilities(stripped)
+    assert "localthings_power" not in caps
+    assert "localthings_power_state" in caps
+
+
+def test_pan_detection_is_ignored_while_the_burner_is_idle(resources):
+    """Every burner of the idle hob reports a pan — twice, six days apart — so an
+    idle reading is a sentinel and not a measurement."""
+    reg = registry.resolve(resources)
+    burners = resources["/cooktop/status/vs/0"]["burnerList"]
+    assert [b["panDetection"] for b in burners] == [True, True, True]
+    assert [b["operationState"] for b in burners] == ["ready", "ready", "ready"]
+    for index in (0, 1, 2):
+        assert _read(reg, resources, f"localthings_pan_detected.{index}") is None
+
+
+def test_pan_detection_is_reported_once_the_burner_runs(resources):
+    reg = registry.resolve(resources)
+    running = json.loads(FIXTURE.read_text())["resources"]
+    burners = running["/cooktop/status/vs/0"]["burnerList"]
+    burners[1]["operationState"] = "running"
+    burners[2]["operationState"] = "running"
+    burners[2]["panDetection"] = False
+    spec = reg.spec_for("localthings_pan_detected.1")
+    assert spec.read(running[spec.href], running) is True
+    spec = reg.spec_for("localthings_pan_detected.2")
+    assert spec.read(running[spec.href], running) is False
+
+
+def test_burner_timer_reports_nothing_when_no_timer_is_set(resources):
+    reg = registry.resolve(resources)
+    assert resources["/cooktop/status/vs/0"]["burnerList"][0]["timer"] == {
+        "cookingTime": 0, "operationState": "ready", "remainingTime": 0,
+    }
+    for index in (0, 1, 2):
+        assert _read(reg, resources, f"localthings_remaining_minutes.{index}") is None
+
+
+def test_burner_timer_is_published_in_minutes(resources):
+    """Seconds is an assumption — see _burner_remaining_minutes. This pins the
+    conversion so changing it after the observation is a deliberate edit."""
+    reg = registry.resolve(resources)
+    timed = json.loads(FIXTURE.read_text())["resources"]
+    timed["/cooktop/status/vs/0"]["burnerList"][0]["timer"]["remainingTime"] = 600
+    timed["/cooktop/status/vs/0"]["burnerList"][1]["timer"]["remainingTime"] = 90
+    spec = reg.spec_for("localthings_remaining_minutes.0")
+    assert spec.read(timed[spec.href], timed) == 10
+    spec = reg.spec_for("localthings_remaining_minutes.1")
+    assert spec.read(timed[spec.href], timed) == 2
+
+
+def test_the_cooktops_idle_alarm_code_is_not_reported_as_an_alarm(resources):
+    """CT_E_OFF is this appliance's idle code, not a fault."""
+    reg = registry.resolve(resources)
+    items = resources["/alarms/vs/0"]["x.com.samsung.da.items"]
+    assert items[0]["x.com.samsung.da.code"] == "CT_E_OFF"
+    assert _read(reg, resources, "localthings_alarm_code") == "none"
 
 
 def test_child_lock_write_sends_one_field(resources):

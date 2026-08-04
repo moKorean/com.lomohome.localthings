@@ -142,13 +142,32 @@ def test_number_conditions_carry_a_value_argument():
 
 
 def test_boolean_actions_offer_both_states():
+    """Except where the appliance accepts one direction only, and then exactly the
+    direction it accepts — an action offering the impossible one builds a Flow that
+    fails every run."""
+    # Written out rather than imported from the generator: a test that reads the
+    # policy from the code it checks agrees with any change, including a wrong one.
+    one_way = {"set_power": {"off"}}
     for name, card in cards("actions").items():
         dropdowns = [
             a for a in card.get("args") or () if a.get("name") == "state"
         ]
+        expected = one_way.get(name, {"on", "off"})
         for arg in dropdowns:
             ids = {v["id"] for v in arg.get("values") or ()}
-            assert ids == {"on", "off"}, f"actions/{name}: {ids}"
+            assert ids == expected, f"actions/{name}: {ids}"
+
+
+def test_the_one_way_action_matches_a_write_that_refuses_the_other_way():
+    """A card offering only 'off' is a claim about the appliance. The write behind it
+    has to make the same claim, or the card and the code disagree."""
+    from lib.registry import induction_cooktop
+
+    spec = next(s for s in induction_cooktop.REGISTRY.specs
+                if s.capability == "localthings_power" and s.writable)
+    assert spec.write(True, {}) is None
+    assert spec.write(False, {}) is not None
+    assert spec.refusal
 
 
 # --- the listeners have to exist for the cards to do anything ---------------
