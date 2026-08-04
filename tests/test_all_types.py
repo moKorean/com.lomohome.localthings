@@ -234,6 +234,52 @@ def test_power_binds_only_the_form_the_board_reports():
     assert "onoff" not in reg.capabilities({})
 
 
+def test_the_dehumidifier_revision_with_a_screen_and_a_tank_light_gets_both():
+    """One revision reports the air purifier's screen resource and a water-tank
+    light; the revisions without them must not grow dead controls."""
+    reg = registry._REGISTRY_BY_KEY["dehumidifier"]
+    bare = {"/humidity/vs/0": {"x.com.samsung.da.humidity": "51"}}
+    assert "localthings_display_light" not in reg.capabilities(bare)
+    assert "localthings_watertank_light" not in reg.capabilities(bare)
+
+    equipped = dict(bare, **{
+        "/display/vs/0": {"mode": "On"},
+        "/watertank/lighting/vs/0": {
+            "status": "On",
+            "colorOption": "White",
+            "colorSupportedList": ["White", "Blue"],
+            "mode": "High",
+            "modeSupportedList": ["Low", "High"],
+            "waterfullAlarmStatus": "Off",
+        },
+    })
+    caps = reg.capabilities(equipped)
+    assert "localthings_display_light" in caps
+    assert "localthings_watertank_light" in caps
+    assert "localthings_watertank_alarm_status" in caps
+
+    light = reg.spec_for("localthings_watertank_light")
+    rep = equipped[light.href]
+    assert light.read(rep, equipped) is True
+    assert light.write(False, rep) == (
+        ["watertank", "lighting", "vs", "0"], {"status": "Off"})
+
+    status = reg.spec_for("localthings_watertank_alarm_status")
+    assert status.read(rep, equipped) == "Off"
+    assert not status.writable, "its meaning is unconfirmed; it must stay a reading"
+
+
+def test_the_tank_lights_colour_and_brightness_are_deliberately_unbound():
+    """Their values come from the device's own supported lists, and Homey needs an
+    enum's values in the manifest. With no dump to read them from they would be
+    invented — see docs/BACKLOG.md. This holds the decision so it is revisited on
+    purpose rather than half-implemented from the reference."""
+    reg = registry._REGISTRY_BY_KEY["dehumidifier"]
+    bound = {spec.capability for spec in reg.specs}
+    assert "localthings_watertank_light_color" not in bound
+    assert "localthings_watertank_light_brightness" not in bound
+
+
 def test_negative_power_is_not_published_as_a_reading():
     """Seen as -500 W on an idle cooktop; it is a sentinel, not a measurement."""
     assert appliances.shared.read_power_watts(

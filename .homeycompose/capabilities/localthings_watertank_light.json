@@ -1,0 +1,11 @@
+{
+  "type": "boolean",
+  "getable": true,
+  "setable": true,
+  "title": {
+    "en": "Water tank light",
+    "ko": "물통 조명"
+  },
+  "uiComponent": "toggle",
+  "icon": "/assets/capabilities/mdi-led-on.svg"
+}

@@ -781,6 +781,15 @@ class ApplianceDriver(driver.Driver):
             return {"ok": False, "reason": "no_credentials"}
         try:
             result = await self._run(probe.probe, host, cert_pem, key_pem)
+        except probe.ProbeFailure as failure:
+            # A new reason rather than 'unreachable': the view's own text for that one
+            # says to check the address, which is wrong advice for a refused
+            # certificate. An unrecognised reason falls through to `detail` there, so
+            # the specific sentence reaches the user with no view change.
+            self.log(f"repair probe {host} failed: {failure}")
+            return {"ok": False, "reason": "probe_failed", "detail": i18n.translate(
+                failure.error_key, await compat.ui_language(self.homey),
+                **failure.params)}
         except Exception as exc:
             return {"ok": False, "reason": "unreachable", "detail": str(exc)[:200]}
 
@@ -840,13 +849,18 @@ class ApplianceDriver(driver.Driver):
 
         cert_pem, key_pem = await self._credentials()
         if not cert_pem or not key_pem:
-            raise ValueError(
-                "No client certificate configured. Set one up in "
-                "Settings -> Apps -> LocalThings first."
-            )
+            raise ValueError(i18n.translate("error.no_credentials", language))
 
         self.log(f"probing {host}")
-        result = await self._run(probe.probe, host, cert_pem, key_pem)
+        try:
+            result = await self._run(probe.probe, host, cert_pem, key_pem)
+        except probe.ProbeFailure as failure:
+            # probe() names the message rather than rendering it, because it is
+            # blocking and knows nothing about who is looking. The detail it carries
+            # is for the log; the user gets the sentence for their own failure.
+            self.log(f"probe {host} failed: {failure}")
+            raise ValueError(i18n.translate(
+                failure.error_key, language, **failure.params)) from failure
 
         resources = result["resources"]
         reg = registry.resolve(resources, result.get("device_types") or ())

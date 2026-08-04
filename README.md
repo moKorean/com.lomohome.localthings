@@ -15,7 +15,7 @@ there is no cloud round-trip.
 > in certification for a while before it is served. Four air conditioners, an
 > induction cooktop, a range hood and three refrigerators are discovered, paired
 > and controlled on real hardware, with state arriving by CoAP OBSERVE (polling
-> continues as a five-minute safety sweep). All 77 custom capabilities are usable
+> continues as a five-minute safety sweep). All 79 custom capabilities are usable
 > in Flows. The remaining fourteen appliance types are routed and mapped but not
 > verified against hardware. Design notes
 > and measurements are in [`docs/PORTING.md`](docs/PORTING.md); unmapped resources and
@@ -158,11 +158,11 @@ homey api raw --path /api/app/com.lomohome.localthings/diagnostics
 
 ## Flow automation
 
-Homey creates Flow cards for **its own built-in capabilities only**. The 77 this app
+Homey creates Flow cards for **its own built-in capabilities only**. The 79 this app
 defines had none, so you could not switch a hood's light from a Flow or raise a
 notification from filter wear.
 
-There are now **131 cards** — 29 actions, 78 conditions, 24 triggers.
+There are now **134 cards** — 30 actions, 80 conditions, 24 triggers.
 
 | Kind | Scope |
 |---|---|
@@ -353,7 +353,7 @@ nothing.
 
 | Appliance | Status |
 |---|---|
-| **Air conditioner** (`RAC/PRAC/KRAC/CAC/WAC/FAC/CAWW/ARA`) | **Verified on hardware.** Power, target and current temperature, mode, fan, comfort modes, airflow, air purify, auto clean, panel and edge lighting, UV, absence power saving, humidity, power, dust, filter, sound, Smart Cool Clean state and progress (38) |
+| **Air conditioner** (`RAC/PRAC/KRAC/CAC/WAC/FAC/CAWW/ARA`) | **Verified on hardware.** Power, target and current temperature, mode, fan, comfort modes, airflow, air purify, auto clean, panel and edge lighting, UV, absence power saving, humidity, power, dust, both dust filters with their own wash alarms, sound, Smart Cool Clean state and progress (44) |
 | **Induction cooktop** (`COOKTOP`) | **Verified on hardware.** Per-burner level, state and residual heat, child lock (writable), smart control, safety shutoff, power, Bluetooth probe (19) |
 | **Range hood** (`AHD`) | **Verified on hardware** (AHD-WW-TP1-22). Power, 5-step fan (writable), light on/off and 2-step brightness (writable), auto-ventilation state, filter usage and replacement alarm, air quality and PM10/2.5/1.0, cumulative energy (14) |
 | **Refrigerator** (`REF`) | **Verified on hardware** (three TP2X_REF_21K Kitchen Fit units — convertible cooling, convertible freezing, fridge-only). Per-compartment current and target temperature (writable), convertible-compartment mode (read-only — the appliance refuses the change remotely, including from Samsung's own app), rapid cool (writable), door, two cumulative energy counters, instantaneous power, self check, firmware (9) |
@@ -361,7 +361,7 @@ nothing.
 | Dryer (`DV*`) | Unverified. Machine state, progress, remaining time, dry level, wrinkle prevention |
 | Dishwasher (`ADW`, `DW*`) | Unverified. Machine state, progress, sanitize, heated dry, cumulative water, sound |
 | Air purifier (`AIR/TVTL/VTWW/AVT`) | Unverified. Fan, panel light, pet filter, HEPA filter, air quality, PM10/2.5/1.0 |
-| Dehumidifier (`DHM`) | Unverified. Humidity, target humidity (writable), filter |
+| Dehumidifier (`DHM`) | Unverified. Humidity, target humidity (writable), filter, panel display and water-tank light (both writable, on the revision that reports them) |
 | Oven, range, microwave (`OVEN/RANGE/MICROWAVE`) | Unverified. Operation state, mode, cavity and target temperature, door — **no heat control** |
 | Gas cooktop (`CT`) | Unverified. Power state, whether a burner is in use — **read-only** |
 | Water purifier (`WATERPURIFIER`) | Unverified. Operation state, child lock, water filter, cumulative water |
@@ -528,7 +528,7 @@ python3 -m venv .venv
 ## Languages
 
 Korean and English are supported, and **any language not declared falls back to
-English** — app name, description, 77 capabilities, 131 Flow cards, settings labels,
+English** — app name, description, 79 capabilities, 134 Flow cards, settings labels,
 three webviews and device names alike. `tests/test_i18n.py` enforces it, because adding
 a Korean string and forgetting the English one is invisible to whoever wrote it.
 

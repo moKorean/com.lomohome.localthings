@@ -2698,6 +2698,54 @@
       },
       {
         "title": {
+          "en": "Water tank alarm !{{is|is not}} [[value]]",
+          "ko": "물통 알림 [[value]] !{{임|아님}}"
+        },
+        "titleFormatted": {
+          "en": "Water tank alarm !{{is|is not}} [[value]]",
+          "ko": "물통 알림 [[value]] !{{임|아님}}"
+        },
+        "hint": {
+          "en": "Checks the value as the appliance last reported it.",
+          "ko": "가전이 마지막으로 보고한 값을 확인합니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_watertank_alarm_status"
+          },
+          {
+            "name": "value",
+            "type": "text"
+          }
+        ],
+        "id": "watertank_alarm_status_is"
+      },
+      {
+        "title": {
+          "en": "Water tank light !{{is|is not}} on",
+          "ko": "물통 조명 !{{켜짐|꺼짐}}"
+        },
+        "titleFormatted": {
+          "en": "Water tank light !{{is|is not}} on",
+          "ko": "물통 조명 !{{켜짐|꺼짐}}"
+        },
+        "hint": {
+          "en": "Checks the value as the appliance last reported it.",
+          "ko": "가전이 마지막으로 보고한 값을 확인합니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_watertank_light"
+          }
+        ],
+        "id": "watertank_light_is"
+      },
+      {
+        "title": {
           "en": "Welcome lighting !{{is|is not}} on",
           "ko": "웰컴 라이팅 !{{켜짐|꺼짐}}"
         },
@@ -4226,6 +4274,48 @@
       },
       {
         "title": {
+          "en": "Turn Water tank light on or off",
+          "ko": "물통 조명 켜기 또는 끄기"
+        },
+        "titleFormatted": {
+          "en": "Turn Water tank light [[state]]",
+          "ko": "물통 조명 [[state]]"
+        },
+        "hint": {
+          "en": "Fails the Flow if the appliance refuses the change, rather than reporting a success it did not achieve.",
+          "ko": "가전이 변경을 거부하면 플로우를 실패로 처리합니다. 이루지 못한 성공을 보고하지 않습니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_watertank_light"
+          },
+          {
+            "name": "state",
+            "type": "dropdown",
+            "values": [
+              {
+                "id": "on",
+                "title": {
+                  "en": "on",
+                  "ko": "켜기"
+                }
+              },
+              {
+                "id": "off",
+                "title": {
+                  "en": "off",
+                  "ko": "끄기"
+                }
+              }
+            ]
+          }
+        ],
+        "id": "set_watertank_light"
+      },
+      {
+        "title": {
           "en": "Turn Welcome lighting on or off",
           "ko": "웰컴 라이팅 켜기 또는 끄기"
         },
@@ -5614,6 +5704,33 @@
       "units": {
         "en": "L"
       }
+    },
+    "localthings_watertank_alarm_status": {
+      "type": "string",
+      "getable": true,
+      "setable": false,
+      "title": {
+        "en": "Water tank alarm",
+        "ko": "물통 알림"
+      },
+      "desc": {
+        "en": "The appliance's own water-tank alarm field, reported as it comes. Whether it means the tank is full or only that the alarm is enabled is not established, so it is not turned into an alarm; a real tank-full condition appears in the active alarm instead.",
+        "ko": "가전이 보고하는 물통 알림 필드를 그대로 표시합니다. 물통이 가득 찼다는 뜻인지 알림 기능이 켜져 있다는 뜻인지 확인되지 않았으므로 경보로 만들지 않았습니다 — 실제 물통 가득 상태는 발생 알람에 나타납니다."
+      },
+      "uiComponent": "sensor",
+      "insights": false,
+      "icon": "/assets/capabilities/mdi-alert-circle-outline.svg"
+    },
+    "localthings_watertank_light": {
+      "type": "boolean",
+      "getable": true,
+      "setable": true,
+      "title": {
+        "en": "Water tank light",
+        "ko": "물통 조명"
+      },
+      "uiComponent": "toggle",
+      "icon": "/assets/capabilities/mdi-led-on.svg"
     },
     "localthings_welcome_light": {
       "type": "boolean",

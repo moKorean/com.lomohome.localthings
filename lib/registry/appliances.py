@@ -510,6 +510,30 @@ DEHUMIDIFIER = Registry(
              shared._filter_percent),
         Spec("localthings_alarm_filter", "/filter/airdustfilter/vs/0",
              shared.read_filter_alarm),
+        # The TP1X_DA_AC_DHM_01001_0000 revision reports the air purifier's screen
+        # toggle on the identical href and shape, so the same spec covers it — the
+        # reference reached this by the same route (its issues #271/#231). Gated by
+        # resource presence like everything else, so a revision without the screen
+        # simply does not get the control.
+        Spec("localthings_display_light", "/display/vs/0", shared.flag("mode"),
+             shared.write_flag(["display", "vs", "0"], "mode")),
+        # Ambient light in the water tank on that same revision. On/off is a plain
+        # status field; the colour and brightness selects the reference also exposes
+        # are not ported, because their values come from the device's own
+        # colorSupportedList/modeSupportedList and Homey needs an enum's values
+        # declared statically in the manifest — with no dump of ours to read them
+        # from, they would be invented. docs/BACKLOG.md.
+        Spec("localthings_watertank_light", "/watertank/lighting/vs/0",
+             shared.flag("status"),
+             shared.write_flag(["watertank", "lighting", "vs", "0"], "status")),
+        # Read-only and a plain string on purpose: the two dumps that carry this
+        # field disagree (On vs Off) so it is live rather than constant, but whether
+        # it means the tank is full or merely that the chime is enabled is not
+        # established. A real WaterTankFull condition already surfaces through
+        # localthings_alarm_code, so guessing this into an alarm would risk a second,
+        # wrong one.
+        Spec("localthings_watertank_alarm_status", "/watertank/lighting/vs/0",
+             shared.text("waterfullAlarmStatus")),
     ),
 )
 

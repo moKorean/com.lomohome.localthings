@@ -285,3 +285,35 @@ def test_pm1_filter_gets_its_own_title(resources):
     reg = reg_of(resources)
     options = reg.capability_options(resources, "ko")
     assert options["localthings_filter_usage.pm1"]["title"] == "PM1.0 필터"
+
+
+def test_the_pm1_filter_raises_its_own_wash_alarm(resources):
+    """Its wear was published while its wash/replace flag was not, so a PM1 filter
+    asking for attention said nothing while the main filter did."""
+    reg = reg_of(resources)
+    assert "localthings_alarm_filter.pm1" in reg.capabilities(resources)
+    spec = reg.spec_for("localthings_alarm_filter.pm1")
+    assert spec.href == "/filter/airdustPM1filter/vs/0"
+    assert resources[spec.href]["x.com.samsung.da.filterStatus"] == "normal"
+    assert spec.read(resources[spec.href], resources) is False
+    assert spec.read({"x.com.samsung.da.filterStatus": "wash"}, resources) is True
+    assert not spec.writable
+
+
+def test_a_pm1_filter_with_no_live_fields_gets_no_capabilities():
+    """The reference has seen this href carrying only capacity metadata
+    (TP1X_FAC_TIME_23K). A capability that can never hold a value reads as a broken
+    app, so both PM1 entries are gated on their own field."""
+    resources = {
+        "/information/vs/0": {
+            "x.com.samsung.da.modelNum": "TP1X_DA-AC-CAC-01001|1|2",
+        },
+        "/filter/airdustPM1filter/vs/0": {
+            "x.com.samsung.da.filterCapacity": "2400",
+            "x.com.samsung.da.filterCapacityUnit": "Hour",
+            "x.com.samsung.da.filterResetType": ["notresetable"],
+        },
+    }
+    caps = registry.resolve(resources).capabilities(resources)
+    assert "localthings_filter_usage.pm1" not in caps
+    assert "localthings_alarm_filter.pm1" not in caps

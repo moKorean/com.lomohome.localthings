@@ -15,7 +15,11 @@
     "handshake_refused": "The appliance is refusing new connections. This usually clears itself within a few minutes; the app keeps retrying.",
     "unreachable": "Could not reach the appliance at {host}. The app keeps retrying, and searches the network for it by serial number.",
     "setting_not_applied": "The air conditioner accepted {capability} = {value} and then changed it back. This usually means it was still starting up — try putting a short delay after turning it on.",
-    "settings_conflict": "The air conditioner would not hold these together: {settings}. Each was applied and then changed back by the appliance, which usually means the combination is one it does not allow — AI Comfort and a specific comfort mode, for instance. Pick one of them."
+    "settings_conflict": "The air conditioner would not hold these together: {settings}. Each was applied and then changed back by the appliance, which usually means the combination is one it does not allow — AI Comfort and a specific comfort mode, for instance. Pick one of them.",
+    "probe_no_response": "Nothing answered at {host}. Check the address, and note that appliances older than about 2022 are cloud-only and cannot be controlled locally.",
+    "probe_no_dtls_server": "{host} is reachable but has no local control port open. This is usually cloud-only firmware rather than a wrong address.",
+    "probe_handshake_refused": "The appliance at {host} would not start a connection. That normally means it is still holding the previous one — wait a minute or two and try again.",
+    "probe_certificate_refused": "The appliance at {host} connected but then answered nothing, which is what it does when it will not accept the client certificate. Issue a fresh one in Settings → Apps → SmartThings Local and try again."
   },
   "timeline": {
     "localthings_ac_mode": "**{name}**: mode {previous} → {value}",

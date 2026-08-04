@@ -577,6 +577,16 @@ REGISTRY = Registry(
         Spec("localthings_dust_pm10", HREF_SENSORS, _sensor_value("Dust")),
         Spec("localthings_dust_pm1", HREF_SENSORS, _sensor_value("SuperFineDust")),
         Spec("localthings_filter_usage.pm1", HREF_PM1_FILTER, _filter_usage_percent,
+             exists=_has_field("x.com.samsung.da.filterUsage"),
+             titles={"en": "PM1.0 filter", "ko": "PM1.0 필터"}),
+        # The second filter had its wear published and its own wash/replace flag
+        # dropped, so a PM1 filter asking for attention said nothing while the main
+        # one did. Gated on the field, because the reference has seen boards that
+        # report this href with capacity metadata and no live status at all
+        # (TP1X_FAC_TIME_23K) — ours reports it, theirs does not, and a capability
+        # that can never have a value is worse than none.
+        Spec("localthings_alarm_filter.pm1", HREF_PM1_FILTER, _read_filter_alarm,
+             exists=_has_field("x.com.samsung.da.filterStatus"),
              titles={"en": "PM1.0 filter", "ko": "PM1.0 필터"}),
     ),
 )

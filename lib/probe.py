@@ -38,6 +38,42 @@ def peer_holds_stale_session(exc: BaseException) -> bool:
     return any(alert in text for alert in _STALE_PEER_ALERTS)
 
 
+class ProbeFailure(ConnectionError):
+    """A pairing failure that knows which of them it is.
+
+    Every way pairing could fail used to raise one of three English sentences
+    assembled here, with the underlying exception appended — so an IP with nothing
+    on it, an appliance on cloud-only firmware, one still holding the last session,
+    and one that will not accept our certificate all read alike, and none of them
+    were translated. The reference hit the same wall and split it into a taxonomy
+    (mbillow/localthings, "Replace the blanket cannot connect with a real failure
+    taxonomy"); this is the same idea over our own failure modes.
+
+    `error_key` is an i18n key the caller translates — probe() is blocking and
+    language-free by design, so it names the message rather than rendering it. The
+    detail stays in the exception text for the log.
+    """
+
+    def __init__(self, error_key: str, detail: str = "", **params):
+        self.error_key = error_key
+        self.params = params
+        super().__init__(detail or error_key)
+
+
+# Which bucket a failed attempt lands in depends on *when* it failed, not on the
+# exception type: the appliance rejects a certificate by completing the handshake
+# and then never answering (docs — the handshake is not the discriminator, measured
+# while establishing that it checks the identifier and not the signature). So a
+# failure before the session is up is a handshake problem, and one after it is up is
+# the certificate. This is where we diverge from the reference, which reads
+# certificate rejection off a handshake alert; on this hardware that alert does not
+# come.
+_ERR_NO_RESPONSE = "error.probe_no_response"
+_ERR_NO_DTLS = "error.probe_no_dtls_server"
+_ERR_HANDSHAKE = "error.probe_handshake_refused"
+_ERR_CERTIFICATE = "error.probe_certificate_refused"
+
+
 def local_source_port(host: str, attempt: int = 0) -> int:
     """Deterministic UDP source port for this device's DTLS socket.
 
@@ -212,10 +248,10 @@ def probe(host: str, leaf_cert_pem: str, leaf_key_pem: str) -> dict:
     nominated, rescued = sweep_ports(host)
     candidates = nominated + rescued
     if not candidates:
-        raise ConnectionError(
-            f"No live DTLS port on {host} in "
-            f"{PROBE_PORT_RANGE[0]}-{PROBE_PORT_RANGE[-1]}. "
-            "This may not be a supported appliance."
+        raise ProbeFailure(
+            _ERR_NO_RESPONSE, host=host,
+            detail=f"No live DTLS port on {host} in "
+                   f"{PROBE_PORT_RANGE[0]}-{PROBE_PORT_RANGE[-1]}",
         )
 
     def attempt_once(port: int, source_attempt: int) -> dict:
@@ -230,6 +266,9 @@ def probe(host: str, leaf_cert_pem: str, leaf_key_pem: str) -> dict:
             )
             session.connect()
             session.start_reader()
+            # Past this line the handshake completed, so a failure from here on is
+            # the certificate rather than the connection — see the note above.
+            answered.add(port)
             code, payload = session.get(["device", "0"], timeout=PROBE_GET_TIMEOUT_S)
             if code != 0x45 or not payload:
                 raise ConnectionError(
@@ -249,6 +288,7 @@ def probe(host: str, leaf_cert_pem: str, leaf_key_pem: str) -> dict:
 
     last_error = None
     unreachable = 0
+    answered: set[int] = set()
     for port in candidates:
         # Confirm the port before paying for a handshake, and only when it is
         # about to be tried — probing them all up front would charge the common
@@ -275,9 +315,18 @@ def probe(host: str, leaf_cert_pem: str, leaf_key_pem: str) -> dict:
                 if not peer_holds_stale_session(exc):
                     break
     if last_error is None and unreachable:
-        raise ConnectionError(
-            f"No DTLS server on {host} in "
-            f"{PROBE_PORT_RANGE[0]}-{PROBE_PORT_RANGE[-1]}. "
-            "This may not be a supported appliance."
+        raise ProbeFailure(
+            _ERR_NO_DTLS, host=host,
+            detail=f"No DTLS server on {host} in "
+                   f"{PROBE_PORT_RANGE[0]}-{PROBE_PORT_RANGE[-1]}",
         )
-    raise ConnectionError(f"No port on {host} completed a session: {last_error}")
+    # `answered` is what separates the two: a handshake that completed on some port
+    # and then produced nothing usable points at the certificate, and that is worth
+    # saying because the fix is a button in the app settings. Anything else is a
+    # connection that never got up, which usually clears by itself.
+    key = _ERR_CERTIFICATE if answered else _ERR_HANDSHAKE
+    raise ProbeFailure(
+        key, host=host,
+        detail=f"No port on {host} completed a session "
+               f"(handshake completed on {sorted(answered)}): {last_error}",
+    )
