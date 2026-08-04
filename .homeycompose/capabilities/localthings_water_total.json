@@ -11,5 +11,6 @@
   "icon": "/assets/capabilities/mdi-water-outline.svg",
   "units": {
     "en": "L"
-  }
+  },
+  "insights": true
 }

@@ -234,6 +234,39 @@ def test_power_binds_only_the_form_the_board_reports():
     assert "onoff" not in reg.capabilities({})
 
 
+def _definitions() -> dict:
+    return {p.stem: json.loads(p.read_text()) for p in CAPABILITY_DIR.glob("*.json")}
+
+
+def test_every_number_capability_decides_whether_it_is_graphed():
+    """Homey graphs a *custom* capability only when the definition says so, and the
+    default is off — so a reading with no `insights` key is silently absent from
+    Insights. Seventeen of nineteen numbers were in that state: the dust readings and
+    filter wear this app exists to report could not be charted at all, while two levels
+    that happened to carry the flag could.
+
+    Requiring the key rather than a particular value is the point. Whether a number is
+    worth graphing is a judgment — measured or accumulated, yes; chosen by the user, no
+    — and this makes it a judgment someone made instead of a default nobody saw.
+    """
+    undecided = [
+        name for name, definition in _definitions().items()
+        if definition.get("type") == "number" and "insights" not in definition
+    ]
+    assert not undecided, (
+        "number capabilities that never say whether they are graphed: "
+        + ", ".join(sorted(undecided))
+    )
+
+
+def test_the_readings_this_app_exists_to_report_are_graphed():
+    """Named, because these are the ones the owner went looking for and could not find.
+    A rule about keys would be satisfied by turning them all off."""
+    for name in ("localthings_dust_pm1", "localthings_dust_pm10",
+                 "localthings_filter_usage", "localthings_air_quality"):
+        assert _definitions()[name].get("insights") is True, name
+
+
 def test_the_dehumidifier_revision_with_a_screen_and_a_tank_light_gets_both():
     """One revision reports the air purifier's screen resource and a water-tank
     light; the revisions without them must not grow dead controls."""

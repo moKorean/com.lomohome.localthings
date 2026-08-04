@@ -11,5 +11,6 @@
   "icon": "/assets/capabilities/mdi-blur.svg",
   "units": {
     "en": "µg/m³"
-  }
+  },
+  "insights": true
 }

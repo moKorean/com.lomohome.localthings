@@ -8,5 +8,6 @@
   "setable": false,
   "uiComponent": "sensor",
   "decimals": 0,
-  "icon": "/assets/capabilities/mdi-blur.svg"
+  "icon": "/assets/capabilities/mdi-blur.svg",
+  "insights": true
 }

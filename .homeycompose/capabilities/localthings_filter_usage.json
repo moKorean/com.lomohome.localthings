@@ -13,5 +13,6 @@
   "max": 100,
   "decimals": 1,
   "uiComponent": "sensor",
-  "icon": "/assets/capabilities/mdi-air-filter.svg"
+  "icon": "/assets/capabilities/mdi-air-filter.svg",
+  "insights": true
 }

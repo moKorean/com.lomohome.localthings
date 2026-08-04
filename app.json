@@ -5102,7 +5102,8 @@
       "setable": false,
       "uiComponent": "sensor",
       "decimals": 0,
-      "icon": "/assets/capabilities/mdi-blur.svg"
+      "icon": "/assets/capabilities/mdi-blur.svg",
+      "insights": true
     },
     "localthings_air_sensing": {
       "type": "boolean",
@@ -5257,7 +5258,8 @@
       },
       "min": 0,
       "max": 100,
-      "icon": "/assets/capabilities/mdi-progress-clock.svg"
+      "icon": "/assets/capabilities/mdi-progress-clock.svg",
+      "insights": true
     },
     "localthings_auto_close": {
       "type": "boolean",
@@ -5497,7 +5499,8 @@
       "icon": "/assets/capabilities/mdi-blur.svg",
       "units": {
         "en": "µg/m³"
-      }
+      },
+      "insights": true
     },
     "localthings_dust_pm10": {
       "type": "number",
@@ -5512,7 +5515,8 @@
       "icon": "/assets/capabilities/mdi-blur.svg",
       "units": {
         "en": "µg/m³"
-      }
+      },
+      "insights": true
     },
     "localthings_dustbag_usage": {
       "type": "number",
@@ -5529,7 +5533,8 @@
         "en": "The station's own dust-bag counter, as it reports it. It ships no capacity alongside it, so there is nothing to turn it into a percentage with.",
         "ko": "청정스테이션이 보고하는 먼지봉투 카운터를 그대로 표시합니다. 용량 값이 함께 오지 않아 백분율로 환산할 근거가 없습니다."
       },
-      "min": 0
+      "min": 0,
+      "insights": true
     },
     "localthings_edge_light": {
       "type": "boolean",
@@ -5595,7 +5600,8 @@
       "decimals": 0,
       "icon": "/assets/capabilities/mdi-fan-speed-1.svg",
       "min": 0,
-      "max": 10
+      "max": 10,
+      "insights": true
     },
     "localthings_filter_usage": {
       "type": "number",
@@ -5612,7 +5618,8 @@
       "max": 100,
       "decimals": 1,
       "uiComponent": "sensor",
-      "icon": "/assets/capabilities/mdi-air-filter.svg"
+      "icon": "/assets/capabilities/mdi-air-filter.svg",
+      "insights": true
     },
     "localthings_firmware_update": {
       "type": "boolean",
@@ -5778,7 +5785,8 @@
       "max": 100,
       "decimals": 0,
       "uiComponent": "sensor",
-      "icon": "/assets/capabilities/mdi-progress-clock.svg"
+      "icon": "/assets/capabilities/mdi-progress-clock.svg",
+      "insights": true
     },
     "localthings_operation_state": {
       "type": "string",
@@ -5915,7 +5923,8 @@
         "en": "%"
       },
       "min": 0,
-      "max": 100
+      "max": 100,
+      "insights": true
     },
     "localthings_rapid_freeze": {
       "type": "boolean",
@@ -5954,7 +5963,8 @@
         "en": "min"
       },
       "min": 0,
-      "max": 1440
+      "max": 1440,
+      "insights": true
     },
     "localthings_rinse_cycles": {
       "type": "number",
@@ -5968,7 +5978,8 @@
       "decimals": 0,
       "icon": "/assets/capabilities/mdi-washing-machine.svg",
       "min": 0,
-      "max": 10
+      "max": 10,
+      "insights": false
     },
     "localthings_sabbath": {
       "type": "boolean",
@@ -6049,7 +6060,8 @@
       },
       "min": 0,
       "max": 100,
-      "icon": "/assets/capabilities/mdi-progress-clock.svg"
+      "icon": "/assets/capabilities/mdi-progress-clock.svg",
+      "insights": true
     },
     "localthings_smart_control": {
       "type": "boolean",
@@ -6096,7 +6108,8 @@
       "decimals": 0,
       "icon": "/assets/capabilities/mdi-volume-high.svg",
       "min": 0,
-      "max": 100
+      "max": 100,
+      "insights": false
     },
     "localthings_spin_speed": {
       "type": "string",
@@ -6125,7 +6138,8 @@
       },
       "min": 30,
       "max": 70,
-      "step": 5
+      "step": 5,
+      "insights": true
     },
     "localthings_target_temperature_readonly": {
       "type": "number",
@@ -6140,7 +6154,8 @@
       "icon": "/assets/capabilities/mdi-thermometer.svg",
       "units": {
         "en": "°C"
-      }
+      },
+      "insights": true
     },
     "localthings_uvled": {
       "type": "boolean",
@@ -6177,7 +6192,8 @@
       "icon": "/assets/capabilities/mdi-water-outline.svg",
       "units": {
         "en": "L"
-      }
+      },
+      "insights": true
     },
     "localthings_watertank_alarm_status": {
       "type": "string",

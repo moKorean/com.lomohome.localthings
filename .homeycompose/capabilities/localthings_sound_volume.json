@@ -10,5 +10,6 @@
   "decimals": 0,
   "icon": "/assets/capabilities/mdi-volume-high.svg",
   "min": 0,
-  "max": 100
+  "max": 100,
+  "insights": false
 }

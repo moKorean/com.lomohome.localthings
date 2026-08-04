@@ -13,5 +13,6 @@
     "en": "min"
   },
   "min": 0,
-  "max": 1440
+  "max": 1440,
+  "insights": true
 }

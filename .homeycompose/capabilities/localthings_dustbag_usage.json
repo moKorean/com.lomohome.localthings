@@ -13,5 +13,6 @@
     "en": "The station's own dust-bag counter, as it reports it. It ships no capacity alongside it, so there is nothing to turn it into a percentage with.",
     "ko": "청정스테이션이 보고하는 먼지봉투 카운터를 그대로 표시합니다. 용량 값이 함께 오지 않아 백분율로 환산할 근거가 없습니다."
   },
-  "min": 0
+  "min": 0,
+  "insights": true
 }

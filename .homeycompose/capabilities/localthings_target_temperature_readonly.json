@@ -11,5 +11,6 @@
   "icon": "/assets/capabilities/mdi-thermometer.svg",
   "units": {
     "en": "°C"
-  }
+  },
+  "insights": true
 }

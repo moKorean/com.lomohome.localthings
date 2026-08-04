@@ -14,5 +14,6 @@
   },
   "min": 30,
   "max": 70,
-  "step": 5
+  "step": 5,
+  "insights": true
 }
