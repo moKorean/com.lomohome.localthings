@@ -537,14 +537,21 @@ def test_the_vendor_kids_lock_yields_to_the_ocf_one():
     assert spec.exists({}, {"/kidslock/0": {}, "/kidslock/vs/0": {}}) is False
 
 
-def test_the_cooktop_child_lock_is_still_writable():
-    """The regression the capability split exists to prevent: this one is verified
-    on real hardware here and must not be made read-only along with the others."""
+def test_the_cooktop_child_lock_is_read_only_after_the_appliance_refused_it():
+    """This test used to assert the opposite, on the strength of a comment saying the
+    write was verified on the hardware here. It is not: with the owner at the cooktop
+    on 2026-08-04, a POST to /cooktop/status/vs/0 answered 4.05 Method Not Allowed for
+    childLock and for power alike, hob off and hob running, while a POST to the range
+    hood in the same minute was accepted. The whole appliance takes no writes.
+
+    Kept rather than deleted, because the wrong version of this test is exactly what
+    would let the toggle come back."""
     from lib.registry import induction_cooktop
-    spec = next(s for s in induction_cooktop.REGISTRY.specs
-                if s.capability == "localthings_child_lock")
-    assert spec.writable
-    assert spec.write(True, {}) == (["cooktop", "status", "vs", "0"], {"childLock": "on"})
+    writable = [s.capability for s in induction_cooktop.REGISTRY.specs if s.writable]
+    assert writable == [], f"the cooktop accepts no writes, yet {writable} are offered"
+    bound = {s.capability for s in induction_cooktop.REGISTRY.specs}
+    assert "localthings_child_lock_state" in bound
+    assert "localthings_child_lock" not in bound
 
 
 def test_the_two_child_lock_capabilities_look_the_same_to_a_user():

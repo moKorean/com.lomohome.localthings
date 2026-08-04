@@ -9,7 +9,6 @@
     "wrong_device": "{host}은 지금 다른 가전입니다. 기대한 시리얼은 {expected}인데 {found}이 응답했습니다.",
     "not_writable": "이 가전에서는 {capability}를 바꿀 수 없습니다.",
     "value_unsupported": "이 가전은 {value}를 지원하지 않습니다.",
-    "no_remote_power_on": "이 가전은 원격으로 끄기만 할 수 있고, 켤 수는 없습니다. 가전이 스스로 알려주는 지원 목록에 원격 끄기만 있습니다.",
     "write_rejected": "가전이 {capability}를 {value}로 설정하는 것을 거부했습니다.",
     "repair_no_device": "어느 기기를 복구하는지 판단할 수 없었습니다.",
     "already_paired": "이 가전은 이미 Homey에 추가되어 있습니다 ({model}, {host}). 기기 목록에서 열어 주세요.",

@@ -77,23 +77,38 @@ rejection flag. Three separate bugs have come from trusting that reply:
 
 Confirm by reading back, and re-send when the appliance takes it back.
 
-### Some appliances publish what they will accept
+### A list of features is not a write contract
 
-Before concluding that a write is impossible, look for the appliance's own list.
-The induction cooktop's `/cooktop/spec/vs/0` carries
-`supportedFeatureList: [kitchenService, remoteChildLock, remotePowerOff]`, which
-explains three owner-reported behaviours at once: power off works, power on does
-not, burner control does not. It had been sitting in the committed dump unread while
-`cooktop_power` stayed read-only on the reference's caveat about unverified hardware.
+The induction cooktop's `/cooktop/spec/vs/0` advertises
+`supportedFeatureList: [kitchenService, remoteChildLock, remotePowerOff]`, which lines
+up neatly with three owner-reported behaviours: off works, on does not, burners do not.
+1.0.3 shipped a power-off toggle on that reasoning, and it failed on the owner's first
+attempt.
 
-Such a list is worth trusting as a gate only when something in it is already
-verified — here `remoteChildLock` is listed and the child-lock write is the one
-write proven to work on that unit, while nothing burner-shaped is listed and burner
-writes fail. Gate the capability on the list (`_remote_feature`) rather than on the
-model, so a unit that omits an entry keeps the reading and never grows a control
-that always fails. Where a capability is accepted in one direction only, say which:
-`Spec.refusal` names the message, and `make_flow_cards.OFF_ONLY` keeps the Flow
-action from offering the impossible direction.
+The appliance answers **4.05 Method Not Allowed** to a POST on `/cooktop/status/vs/0`
+for `power` and `childLock` alike, hob off and hob running, with `smartControlState` on
+and GET working throughout. So the second half of the reasoning was wrong too: the
+child-lock write, described in a code comment as "verified on the unit here" and used
+as proof that the list could be trusted, does not work either. Whatever those entries
+mean — most plausibly that the feature exists over Samsung's cloud — they say nothing
+about this resource taking a POST.
+
+What to take from it:
+
+- **A capability list tells you what to try, never what will work.** The only evidence
+  that a write works is a write that worked, on that appliance, read back.
+- **Check the control before believing a claim.** One POST to the hood in the same
+  minute was accepted, which is what turned "our transport is broken" into "this
+  appliance refuses writes" in a single step. Without it the conclusion would have been
+  a guess.
+- **A comment saying "verified" is not verification.** That one was load-bearing for a
+  feature built two days later and nobody re-ran it. If a write matters, pin it with a
+  test that talks to something, or write down when and how it was confirmed.
+
+The whole apparatus built for the toggle — `Spec.refusal`, `make_flow_cards.OFF_ONLY`,
+a dedicated error message — was removed with it rather than left as an abstraction with
+no user. `tests/test_induction_cooktop.py` holds the reopening condition: an appliance
+of that family answering something other than 4.05.
 
 ### Check what a counter counts before tuning it
 

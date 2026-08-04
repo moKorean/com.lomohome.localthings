@@ -533,50 +533,6 @@
       },
       {
         "title": {
-          "en": "Power turned off",
-          "ko": "전원 꺼짐"
-        },
-        "titleFormatted": {
-          "en": "Power turned off",
-          "ko": "전원 꺼짐"
-        },
-        "hint": {
-          "en": "Fires on a change, not on every reading that repeats the same value.",
-          "ko": "값이 바뀔 때만 실행됩니다. 같은 값을 다시 읽을 때는 실행되지 않습니다."
-        },
-        "args": [
-          {
-            "name": "device",
-            "type": "device",
-            "filter": "driver_id=appliance&capabilities=localthings_power"
-          }
-        ],
-        "id": "localthings_power_false"
-      },
-      {
-        "title": {
-          "en": "Power turned on",
-          "ko": "전원 켜짐"
-        },
-        "titleFormatted": {
-          "en": "Power turned on",
-          "ko": "전원 켜짐"
-        },
-        "hint": {
-          "en": "Fires on a change, not on every reading that repeats the same value.",
-          "ko": "값이 바뀔 때만 실행됩니다. 같은 값을 다시 읽을 때는 실행되지 않습니다."
-        },
-        "args": [
-          {
-            "name": "device",
-            "type": "device",
-            "filter": "driver_id=appliance&capabilities=localthings_power"
-          }
-        ],
-        "id": "localthings_power_true"
-      },
-      {
-        "title": {
           "en": "Probe connected turned off",
           "ko": "프로브 연결 꺼짐"
         },
@@ -2288,28 +2244,6 @@
           }
         ],
         "id": "pet_filter_is"
-      },
-      {
-        "title": {
-          "en": "Power !{{is|is not}} on",
-          "ko": "전원 !{{켜짐|꺼짐}}"
-        },
-        "titleFormatted": {
-          "en": "Power !{{is|is not}} on",
-          "ko": "전원 !{{켜짐|꺼짐}}"
-        },
-        "hint": {
-          "en": "Checks the value as the appliance last reported it.",
-          "ko": "가전이 마지막으로 보고한 값을 확인합니다."
-        },
-        "args": [
-          {
-            "name": "device",
-            "type": "device",
-            "filter": "driver_id=appliance&capabilities=localthings_power"
-          }
-        ],
-        "id": "power_is"
       },
       {
         "title": {
@@ -4308,41 +4242,6 @@
       },
       {
         "title": {
-          "en": "Turn Power off",
-          "ko": "전원 끄기"
-        },
-        "titleFormatted": {
-          "en": "Turn Power [[state]]",
-          "ko": "전원 [[state]]"
-        },
-        "hint": {
-          "en": "Fails the Flow if the appliance refuses the change, rather than reporting a success it did not achieve.",
-          "ko": "가전이 변경을 거부하면 플로우를 실패로 처리합니다. 이루지 못한 성공을 보고하지 않습니다."
-        },
-        "args": [
-          {
-            "name": "device",
-            "type": "device",
-            "filter": "driver_id=appliance&capabilities=localthings_power"
-          },
-          {
-            "name": "state",
-            "type": "dropdown",
-            "values": [
-              {
-                "id": "off",
-                "title": {
-                  "en": "off",
-                  "ko": "끄기"
-                }
-              }
-            ]
-          }
-        ],
-        "id": "set_power"
-      },
-      {
-        "title": {
           "en": "Turn Rapid freezing on or off",
           "ko": "급속 냉동 켜기 또는 끄기"
         },
@@ -5819,8 +5718,8 @@
         "ko": "냄비"
       },
       "desc": {
-        "en": "Whether the burner has cookware on it. Reported only while the burner is running: an idle induction coil reports a pan on every burner whether one is there or not.",
-        "ko": "화구에 조리기구가 올려져 있는지입니다. 화구가 동작 중일 때만 표시됩니다 — 꺼진 인덕션은 실제 여부와 무관하게 모든 화구에 냄비가 있다고 보고합니다."
+        "en": "Whether a running burner has cookware on it. It reads no once the burner stops, because an idle induction coil cannot sense a load and reports a pan on every burner whether one is there or not.",
+        "ko": "동작 중인 화구에 조리기구가 올려져 있는지입니다. 화구를 끄면 '아니오'가 됩니다 — 꺼진 인덕션 코일은 부하를 감지할 수 없고, 실제 여부와 무관하게 모든 화구에 냄비가 있다고 보고하기 때문입니다."
       },
       "uiComponent": "sensor",
       "insights": false,
@@ -5836,21 +5735,6 @@
       "setable": true,
       "uiComponent": "toggle",
       "icon": "/assets/capabilities/mdi-air-filter.svg"
-    },
-    "localthings_power": {
-      "type": "boolean",
-      "getable": true,
-      "setable": true,
-      "title": {
-        "en": "Power",
-        "ko": "전원"
-      },
-      "desc": {
-        "en": "Off can be sent, on cannot. The appliance's own supportedFeatureList carries remotePowerOff and no remotePowerOn, and it ignores a remote power-on from Samsung's app too.",
-        "ko": "끄기만 보낼 수 있고 켜기는 되지 않습니다. 가전이 스스로 알려주는 지원 목록(supportedFeatureList)에 remotePowerOff만 있고 remotePowerOn은 없으며, 삼성 앱에서도 원격 켜기는 되지 않습니다."
-      },
-      "uiComponent": "toggle",
-      "icon": "/assets/capabilities/mdi-stove.svg"
     },
     "localthings_power_save_mode": {
       "type": "enum",

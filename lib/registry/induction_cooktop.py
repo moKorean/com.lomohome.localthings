@@ -5,20 +5,27 @@ Field names follow the reference integration's capabilities/range.py, whose
 cooktop half has the same resource shape, so other units of this board family
 should bind without changes.
 
-**Heat controls are read-only on purpose.** The reference exposes a burner
-power-level write but marks it unverified, and its gas-cooktop module states the
-principle plainly: a cooktop must not be remotely ignited by an automation. Burner
-levels are therefore reported and not settable here. Child lock *is* writable —
-per the reference, a lock toggle is not a heat control. Adding heat control is a
-decision for the app's owner, not a default.
+**Everything here is read-only, because this appliance accepts no writes at all.**
+Measured 2026-08-04 with the owner at the cooktop: a POST to `/cooktop/status/vs/0`
+answers **4.05 Method Not Allowed** for `power` and for `childLock` alike, with the hob
+off and again with a burner running, while `smartControlState` reads `on` and GET works
+throughout. A POST to the range hood in the same minute was accepted, so the transport
+is fine and the refusal is this appliance's policy.
 
-**The appliance publishes what it accepts remotely**, in `/cooktop/spec/vs/0`'s
-`supportedFeatureList`. The verified unit lists `remoteChildLock` and
-`remotePowerOff` and nothing else, which is why power off is writable and power on
-is not — see `_remote_feature`. The reference left `cooktop_power` read-only for
-want of a live device to confirm that remote power-on would not leave a burner
-running unattended; the answer here is that the appliance refuses to be switched
-on at all, so only the safe direction was ever on offer.
+**`supportedFeatureList` is not a write contract.** `/cooktop/spec/vs/0` advertises
+`[kitchenService, remoteChildLock, remotePowerOff]`, and 1.0.3 briefly shipped a power
+toggle on the strength of it, reasoning that `remoteChildLock` was in the list and the
+child-lock write was known to work. Both halves were wrong: the toggle failed on the
+owner's first try, and the child-lock write it leaned on fails too. Whatever those
+entries mean — most likely the feature is reachable through Samsung's cloud — they do
+not mean this resource takes a POST. Do not rebuild a control from that list.
+
+Heat control stays out for the separate reason the reference gives for cooktops: an
+automation must not ignite one. That rule is unaffected by the above, and now moot.
+
+**Reopening condition**: an appliance of this family that answers something other than
+4.05. The payloads are recorded in docs/BACKLOG.md, so nothing needs rediscovering —
+`{"power": "off"}` and `{"childLock": "on"|"off"}` on `/cooktop/status/vs/0`.
 """
 
 import math
@@ -75,22 +82,30 @@ def _burner_hot_surface(index: int):
 
 
 def _burner_pan(index: int):
-    """Cookware on the burner, but only while the burner is running.
+    """Cookware detected on a burner that is running, and False when none is.
 
-    An idle hob reports `panDetection: true` on **every** burner: both the captured
-    dump and a live read six days later show all three true with the appliance off
-    and all burners at level 0. An induction coil can only sense a ferrous load
-    while it is energised, so treating an idle burner's `true` as a measurement
-    would publish "pan present" on three burners forever.
+    An idle hob reports `panDetection: true` on **every** burner — the captured dump,
+    a live read six days later, and a third reading all show it with the appliance off
+    and every burner at 0. An induction coil can only sense a ferrous load while it is
+    energised, so an idle `true` is not a measurement.
 
-    Unresolved: whether an idle burner ever reports false. Removing every pan and
-    re-reading settles it, and would let this gate go — docs/BACKLOG.md.
+    The gate first returned None while idle, which was worse: None means "leave the
+    capability alone", so the owner's burner 2 sat at "pan detected" long after the
+    cooking finished — the exact display the gate existed to prevent, arrived at from
+    the other side. Reported: it turns to yes when a burner starts and never clears.
+
+    So the reading is now explicitly False whenever no measurement is being made, and
+    the capability means "a running burner has cookware on it". A stale True claims
+    something about right now; a False claims nothing is being detected right now,
+    which is true.
     """
 
     def read(rep, _resources):
         burner = _burner(rep, index)
-        if burner is None or not _burner_running(burner):
+        if burner is None:
             return None
+        if not _burner_running(burner):
+            return False
         detected = burner.get("panDetection")
         return None if detected is None else bool(detected)
 
@@ -98,14 +113,13 @@ def _burner_pan(index: int):
 
 
 def _burner_remaining_minutes(index: int):
-    """Minutes left on a burner's own timer, or None when no timer is set.
+    """Minutes left on a burner's own timer, and 0 when none is set.
 
-    `timer.remainingTime` is an int and 0 on every reading taken so far, so its
-    **unit is unverified**. Seconds is assumed, because the one duration on this
-    appliance whose meaning is known — `safetyAlert.settingTime`, 3600 for the
-    one-hour shutoff — is in seconds. One observation settles it: set a burner timer
-    for a known number of minutes and read this back. 10 minutes showing 10 confirms
-    seconds; showing 600 means the field was already minutes. docs/BACKLOG.md.
+    `timer.remainingTime` is in **seconds — confirmed on the appliance**, not assumed:
+    the owner set a burner timer and the capability read the right number of minutes
+    and counted down with it. That closes the question this docstring used to leave
+    open, and the assumption it was based on (`safetyAlert.settingTime` is 3600 for the
+    one-hour shutoff, so durations on this board are seconds) held.
     """
 
     def read(rep, _resources):
@@ -116,8 +130,11 @@ def _burner_remaining_minutes(index: int):
         if not isinstance(timer, dict):
             return None
         seconds = as_int(timer.get("remainingTime"))
-        if not seconds or seconds < 0:
+        if seconds is None or seconds < 0:
             return None
+        # 0 rather than None when no timer is set. None means "leave the capability
+        # alone", which left a cancelled timer showing its last count forever —
+        # reported by the owner after cancelling one.
         return math.ceil(seconds / 60)
 
     return read
@@ -129,46 +146,6 @@ def _on_off(field: str):
         return None if value is None else str(value).lower() == "on"
 
     return read
-
-
-def _remote_feature(name: str):
-    """Gate on the appliance's own list of remotely accepted features.
-
-    `/cooktop/spec/vs/0`'s `supportedFeatureList` reads
-    `[kitchenService, remoteChildLock, remotePowerOff]` on the verified unit. That
-    list is trustworthy as a gate for one concrete reason rather than by assumption:
-    `remoteChildLock` is in it and our child-lock write is the one write on this
-    appliance already proven to work, while nothing resembling burner control is in
-    it and burner writes do not work. A unit that omits an entry simply never gets
-    the control, which is the point — a switch that always fails is worse than no
-    switch.
-    """
-
-    def supported(_rep, resources):
-        features = (resources.get(HREF_SPEC) or {}).get("supportedFeatureList")
-        return isinstance(features, list) and name in features
-
-    return supported
-
-
-_supports_remote_power_off = _remote_feature("remotePowerOff")
-
-
-def _write_power(value, _rep):
-    # Off only. `remotePowerOn` is absent from supportedFeatureList and the owner
-    # confirms the appliance ignores a remote power-on, so a power-on request is
-    # refused here rather than sent — these appliances acknowledge writes they will
-    # not honour, so sending it would look like it worked. Spec.refusal supplies the
-    # message that says which direction is available.
-    if value:
-        return None
-    return ["cooktop", "status", "vs", "0"], {"power": "off"}
-
-
-def _write_child_lock(value, _rep):
-    # A lone scalar, so a single-field POST is enough — unlike burnerList, which
-    # would need the sibling entries preserved.
-    return ["cooktop", "status", "vs", "0"], {"childLock": "on" if value else "off"}
 
 
 def _read_safety_shutoff(rep, _resources):
@@ -259,18 +236,12 @@ REGISTRY = Registry(
     device_class="other",
     titles={"en": "Samsung Induction Cooktop", "ko": "삼성 인덕션"},
     specs=(
-        # Two forms of the same reading, mutually exclusive: a toggle where the
-        # appliance advertises remotePowerOff, a plain reading where it does not.
-        # shared.py's CHILD_LOCK split makes the same call for the same reason.
-        Spec("localthings_power", HREF_STATUS, _on_off("power"), _write_power,
-             refusal="error.no_remote_power_on",
-             exists=_supports_remote_power_off),
-        Spec("localthings_power_state", HREF_STATUS, _on_off("power"),
-             exists=lambda rep, resources: not _supports_remote_power_off(rep, resources)),
+        Spec("localthings_power_state", HREF_STATUS, _on_off("power")),
         Spec("localthings_operation_state", HREF_STATUS,
              lambda rep, _r: rep.get("operationState")),
-        Spec("localthings_child_lock", HREF_STATUS, _on_off("childLock"),
-             _write_child_lock),
+        # Read-only, like everything else here. See the module docstring: this
+        # appliance answers 4.05 to a POST on this resource whatever the field.
+        Spec("localthings_child_lock_state", HREF_STATUS, _on_off("childLock")),
         Spec("localthings_smart_control", HREF_STATUS, _on_off("smartControlState")),
         *_burner_specs(),
         Spec("localthings_safety_shutoff", HREF_SAFETY, _read_safety_shutoff),

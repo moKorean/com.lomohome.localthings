@@ -940,10 +940,9 @@ answers none is a different case, and the living-room air conditioner here
         payload = spec.write(value, rep)
         if payload is None:
             # The device didn't advertise this value; refuse rather than send
-            # something it will silently drop. A spec that accepts one direction
-            # only supplies its own message — see Spec.refusal.
+            # something it will silently drop.
             raise RuntimeError(i18n.translate(
-                spec.refusal or "error.value_unsupported", self._language, value=value))
+                "error.value_unsupported", self._language, value=value))
 
         # A write asking for the value the device already holds is refused
         # ("controlResponse result False"), which surfaced as a spurious error

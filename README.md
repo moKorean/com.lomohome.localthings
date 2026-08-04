@@ -15,7 +15,7 @@ there is no cloud round-trip.
 > in certification for a while before it is served. Four air conditioners, an
 > induction cooktop, a range hood and three refrigerators are discovered, paired
 > and controlled on real hardware, with state arriving by CoAP OBSERVE (polling
-> continues as a five-minute safety sweep). All 87 custom capabilities are usable
+> continues as a five-minute safety sweep). All 86 custom capabilities are usable
 > in Flows. The remaining fourteen appliance types are routed and mapped but not
 > verified against hardware. Design notes
 > and measurements are in [`docs/PORTING.md`](docs/PORTING.md); unmapped resources and
@@ -158,11 +158,11 @@ homey api raw --path /api/app/com.lomohome.localthings/diagnostics
 
 ## Flow automation
 
-Homey creates Flow cards for **its own built-in capabilities only**. The 87 this app
+Homey creates Flow cards for **its own built-in capabilities only**. The 86 this app
 defines had none, so you could not switch a hood's light from a Flow or raise a
 notification from filter wear.
 
-There are now **147 cards** — 33 actions, 88 conditions, 26 triggers.
+There are now **143 cards** — 32 actions, 87 conditions, 24 triggers.
 
 | Kind | Scope |
 |---|---|
@@ -354,7 +354,7 @@ nothing.
 | Appliance | Status |
 |---|---|
 | **Air conditioner** (`RAC/PRAC/KRAC/CAC/WAC/FAC/CAWW/ARA`) | **Verified on hardware.** Power, target and current temperature, mode, fan, comfort modes, airflow, air purify, auto clean, panel and edge lighting, UV, absence power saving, humidity, power, dust, both dust filters with their own wash alarms, sound, Smart Cool Clean state and progress (44) |
-| **Induction cooktop** (`COOKTOP`) | **Verified on hardware.** Per-burner level, state, residual heat, pan detection and timer, child lock (writable), power (off only — the appliance refuses remote power-on), smart control, safety shutoff, active alarm, energy, Bluetooth probe (26) |
+| **Induction cooktop** (`COOKTOP`) | **Verified on hardware.** Per-burner level, state, residual heat, pan detection and timer, power, child lock, smart control, safety shutoff, active alarm, energy, Bluetooth probe (26). All read-only: this appliance answers 4.05 to every write, measured at the cooktop |
 | **Range hood** (`AHD`) | **Verified on hardware** (AHD-WW-TP1-22). Power, 5-step fan (writable), light on/off and 2-step brightness (writable), auto-ventilation state, filter usage and replacement alarm, air quality and PM10/2.5/1.0, periodic air sensing with its last grade and what it triggers, cumulative energy (18) |
 | **Refrigerator** (`REF`) | **Verified on hardware** (three TP2X_REF_21K Kitchen Fit units — convertible cooling, convertible freezing, fridge-only). Per-compartment current and target temperature (writable), convertible-compartment mode (read-only — the appliance refuses the change remotely, including from Samsung's own app), rapid cool (writable), door, two cumulative energy counters, instantaneous power, self check, firmware (9) |
 | Washer (`WW/WD/WF/WV/WA*`) | Unverified. Machine state, progress, remaining time, wash temperature, spin, rinse, cumulative water |
@@ -528,7 +528,7 @@ python3 -m venv .venv
 ## Languages
 
 Korean and English are supported, and **any language not declared falls back to
-English** — app name, description, 87 capabilities, 147 Flow cards, settings labels,
+English** — app name, description, 86 capabilities, 143 Flow cards, settings labels,
 three webviews and device names alike. `tests/test_i18n.py` enforces it, because adding
 a Korean string and forgetting the English one is invisible to whoever wrote it.
 

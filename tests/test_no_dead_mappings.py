@@ -66,13 +66,10 @@ ALLOWED_BLANK: dict[tuple[str, str], str] = {
     ("induction_cooktop", "measure_temperature.probe"):
         "the probe is disconnected in the dump and reads 0, which is gated out",
     ("induction_cooktop", "measure_battery.probe"): "same disconnected probe",
-    # Both gates are deliberate and both dumps of an induction are idle. See
-    # lib/registry/induction_cooktop.py: an idle hob reports a pan on every burner
-    # whether one is there or not, and a burner with no timer set reports 0.
-    **{("induction_cooktop", f"localthings_pan_detected.{i}"):
-       "gated to a running burner; the dump's hob is off" for i in range(3)},
-    **{("induction_cooktop", f"localthings_remaining_minutes.{i}"):
-       "no burner timer is set in the dump" for i in range(3)},
+    # The induction's pan and timer readings were listed here while their gates
+    # returned None. They now return False and 0 instead — a cancelled timer and a
+    # finished burner have to *clear*, not keep their last value — so they read on
+    # every dump and no longer belong in this list.
     ("oven", "localthings_target_temperature_readonly"):
         "every dump is idle with desired 0, which is treated as no setpoint",
     ("microwave", "localthings_target_temperature_readonly"): "same idle 0",

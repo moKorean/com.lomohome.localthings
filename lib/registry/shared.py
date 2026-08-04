@@ -94,13 +94,19 @@ def _read_vendor_kids_lock(rep, _resources):
 #
 #
 # Hence a capability of its own rather than the writable `localthings_child_lock`.
-# That one stays, because other appliances lock through entirely different
-# resources that do accept writes — the induction cooktop's `childLock` on
-# `/cooktop/status/vs/0`, verified on the unit here, and the water purifier's
-# `status` on `/lock/vs/0`. One shared capability would have forced a choice
-# between a toggle that errors on every kids-lock appliance and losing a control
-# that demonstrably works on the cooktop. Both carry the same title, so the split
-# is invisible to a user: one appliance shows a switch, another a reading.
+#
+# Both examples this comment used to give for keeping the writable form have since
+# been disproved, which is worth stating plainly. The induction cooktop's `childLock`
+# on `/cooktop/status/vs/0` was described here as "verified on the unit here"; it
+# answers 4.05 to a POST, measured with the owner at the appliance, and that cooktop
+# now uses the read-only form. The water purifier's lock was given as `/lock/vs/0`,
+# a resource that does not exist on that family at all.
+#
+# The split still earns its keep: the water purifier really does lock, through three
+# separate fields on `/status/lock/vs/0` with a write contract the reference carries,
+# and one shared capability would force a choice between a toggle that errors on every
+# kids-lock appliance and no control on the purifier. Both forms carry the same title,
+# so the split is invisible: one appliance shows a switch, another a reading.
 CHILD_LOCK = (
     Spec("localthings_child_lock_state", "/kidslock/0", boolean("value")),
     Spec("localthings_child_lock_state", "/kidslock/vs/0", _read_vendor_kids_lock,
