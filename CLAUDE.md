@@ -75,6 +75,29 @@ login problem. `read-resource` and `write-resource` against appliances are the
 expensive calls; a dozen in a few minutes is enough. Space them, and prefer one
 `diagnostics` call that returns every device over one call per device.
 
+`homey app publish` needs the same cloud auth, so a tripped limit blocks a release
+too — and it gets as far as `✓ Validating app...` and `✓ Pre-processed app` first,
+which makes the failure look like the upload's fault rather than the limit's.
+
+How long it lasts, measured 2026-08-05 (the only timing recorded so far):
+
+| | |
+|---|---|
+| Burst that tripped it | one `/device/0` read across all nine appliances — nine appliance reads in one call — plus two `diagnostics` and an `app install` inside ~15 min |
+| Last call to succeed | 23:37 (`app install`) |
+| Failures | 23:39, 23:44, 23:58 |
+| Cleared by | ~00:25, on the first attempt after 23:58 |
+
+So the window outlasted 19 minutes and three attempts, and was gone inside 50. An
+11-minute back-off was not enough; a 60-minute one was longer than it needed to be.
+
+**This reading cannot tell whether probing extends the window.** If each attempt
+reset a ~20-minute timer, recovery after the 23:58 failure lands at ~00:18; if the
+window is a fixed ~45 minutes from the burst, it lands at ~00:25. The successful
+attempt fits both, so the paragraph above keeps its advice — back off in one long
+wait — on the grounds that it costs nothing if probing is harmless and saves the
+release if it is not.
+
 ### An acknowledgement is not evidence
 
 These appliances accept writes for things they will not honour and answer without a
