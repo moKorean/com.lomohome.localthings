@@ -362,14 +362,14 @@ nothing.
 
 | Appliance | Status |
 |---|---|
-| **Air conditioner** (`RAC/PRAC/KRAC/CAC/WAC/FAC/CAWW/ARA`) | **Verified on hardware.** Power, target and current temperature, mode, fan, comfort modes, airflow, air purify, auto clean, panel and edge lighting, UV, absence power saving, humidity, power, dust, both dust filters with their own wash alarms, sound, Smart Cool Clean state and progress (44) |
+| **Air conditioner** (`RAC/PRAC/KRAC/CAC/WAC/FAC/CAWW/ARA`) | **Verified on hardware.** Power, target and current temperature, mode, fan, comfort modes, airflow, air purify, auto clean, panel and edge lighting, UV, absence power saving, humidity, power, dust, both dust filters with their own wash alarms, sound, Smart Cool Clean state and progress, periodic air sensing with its last grade and what it triggers (48) |
 | **Induction cooktop** (`COOKTOP`) | **Verified on hardware.** Per-burner level, state, residual heat, pan detection and timer, power, child lock, smart control, safety shutoff, active alarm, energy, Bluetooth probe (26). All read-only: this appliance answers 4.05 to every write, measured at the cooktop |
 | **Range hood** (`AHD`) | **Verified on hardware** (AHD-WW-TP1-22). Power, 5-step fan (writable), light on/off and 2-step brightness (writable), auto-ventilation state, filter usage and replacement alarm, air quality and PM10/2.5/1.0, periodic air sensing with its last grade and what it triggers, cumulative energy (18) |
 | **Refrigerator** (`REF`) | **Verified on hardware** (three TP2X_REF_21K Kitchen Fit units — convertible cooling, convertible freezing, fridge-only). Per-compartment current and target temperature (writable), convertible-compartment mode (read-only — the appliance refuses the change remotely, including from Samsung's own app), rapid cool (writable), door, two cumulative energy counters, instantaneous power, self check, firmware (9) |
 | Washer (`WW/WD/WF/WV/WA*`) | Unverified. Machine state, progress, remaining time, wash temperature, spin, rinse, cumulative water |
 | Dryer (`DV*`) | Unverified. Machine state, progress, remaining time, dry level, wrinkle prevention |
 | Dishwasher (`ADW`, `DW*`) | Unverified. Machine state, progress, sanitize, heated dry, cumulative water, sound |
-| Air purifier (`AIR/TVTL/VTWW/AVT`) | Unverified. Fan, panel light, pet filter, HEPA filter, air quality, PM10/2.5/1.0 |
+| Air purifier (`AIR/TVTL/VTWW/AVT`) | Unverified here, but **a user reports a Blue Sky 5500 working**. Which board that unit runs was not reported, so it is not known which of the four tokens carried it — see BACKLOG. Fan, panel light, pet filter, HEPA filter, air quality, PM10/2.5/1.0, periodic air sensing with its last grade and what it triggers |
 | Dehumidifier (`DHM`) | Unverified. Humidity, target humidity (writable), filter, panel display and water-tank light (both writable, on the revision that reports them) |
 | Oven, range, microwave (`OVEN/RANGE/MICROWAVE`) | Unverified. Operation state, mode, cavity and target temperature, door — **no heat control** |
 | Gas cooktop (`CT`) | Unverified. Power state, whether a burner is in use — **read-only** |
@@ -385,6 +385,14 @@ tests — but **the type has never been seen on the actual appliance.** Where th
 reference's comments left a shape ambiguous, a value may read wrongly. The shared core
 (power, child lock, alarms, energy, operation state) is the same code already working on
 the verified types.
+
+**A user report is not the same as verification**, and the air purifier row says so
+deliberately. "Verified on hardware" means someone here paired the appliance and read
+values off it, so a wrong mapping could be caught; a report that a device "works" says
+it paired and showed something, which is a genuinely useful signal but cannot tell a
+correct reading from a plausible wrong one — that is the failure this project has
+already shipped once, on a range hood whose every field was guessed wrong while the
+tests passed. What would promote the row is the reporter's `/device/0` dump.
 
 **No appliance type exposes heat control.** The reference states the principle for
 cooktops — an automation must never start heating remotely — and this port applies it to

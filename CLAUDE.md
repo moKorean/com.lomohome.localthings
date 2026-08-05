@@ -202,6 +202,16 @@ are claimed in the app description; the other fourteen are routed and mapped fro
 the reference but unverified, and that distinction is deliberate — see the support
 table in `README.md`.
 
+There is no hardware here for any of the other fourteen, so anything about them
+arrives as a report. One has: a user reports a **Blue Sky 5500 air purifier**
+working (2026-08-05). That went into the support table as a report, not as
+verification, and the air purifier stays out of the four — a report says the unit
+paired and showed something, which cannot distinguish a correct reading from a
+plausible wrong one. "블루스카이 5500" is a marketing series spanning several model
+numbers and at least two board generations, and the board token was not reported,
+so which of `AIR`/`TVTL`/`VTWW`/`AVT` carried it is unknown. `docs/BACKLOG.md` has
+what would settle it.
+
 The three refrigerators are **two different variants**, and which is which matters
 because they behave differently and half the fridge bugs have come from testing one
 and assuming the other:

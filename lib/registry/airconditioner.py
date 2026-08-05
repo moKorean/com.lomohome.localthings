@@ -40,6 +40,7 @@ HREF_SMART_COOLING = "/smartsensingcooling/vs/0"
 HREF_ALARMS = "/alarms/vs/0"
 HREF_SELFCHECK = "/selfcheck/vs/0"
 HREF_SENSORS = "/sensors/vs/0"
+HREF_AIRLEVEL = "/airlevelcheck/vs/0"
 
 HREF_ABSENCE_STATE = "/mds/absencestate/vs/0"
 HREF_ABSENCE_MONITORING = "/mds/absencemonitoring/vs/0"
@@ -588,6 +589,38 @@ REGISTRY = Registry(
         Spec("localthings_alarm_filter.pm1", HREF_PM1_FILTER, _read_filter_alarm,
              exists=_has_field("x.com.samsung.da.filterStatus"),
              titles={"en": "PM1.0 filter", "ko": "PM1.0 필터"}),
+        # Periodic air-quality sensing, the same four read-only fields the hood and
+        # the purifier bind. A divergence from the reference, which exposes this
+        # resource on neither air conditioner family and calls it scheduler
+        # plumbing there — measured 2026-08-05 against that, by reading raw
+        # /device/0 off all four units here in one call:
+        #
+        #   periodicSensingActivationState  On          (4/4)
+        #   sensingState                    NonProcessing
+        #   lastSensingLevel                Kr2, Kr2, Kr2, Kr1
+        #   autoExeState                    Alarm       (4/4)
+        #   supportedAutoExeState           [Airpurify, Alarm, Sensing]
+        #
+        # Not plumbing on this family: the schedule is what samples the dust and
+        # air-quality readings already bound above, and every unit here has an
+        # action configured rather than sitting at the inert default the
+        # reference's own CAC dump would suggest.
+        #
+        # Read-only, like both other copies. The action looks writable — this is
+        # the one family whose reported value is in its own supported list — but a
+        # write to it has never been tried on these units, and this appliance
+        # answers writes it does not honour, so the list stays a hint. Free-form
+        # strings for the same reason the hood's are: the hood reports a value its
+        # own supported list omits, so a picker built from that list is not safe
+        # to share across the three.
+        Spec("localthings_air_sensing", HREF_AIRLEVEL,
+             shared.flag("x.com.samsung.da.periodicSensingActivationState")),
+        Spec("localthings_air_sensing_state", HREF_AIRLEVEL,
+             shared.text("x.com.samsung.da.sensingState")),
+        Spec("localthings_air_sensing_level", HREF_AIRLEVEL,
+             shared.text("x.com.samsung.da.lastSensingLevel")),
+        Spec("localthings_air_sensing_action", HREF_AIRLEVEL,
+             shared.text("x.com.samsung.da.autoExeState")),
     ),
 )
 

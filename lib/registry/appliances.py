@@ -470,6 +470,29 @@ AIR_PURIFIER = Registry(
              lambda rep, _r: _sensor(rep, "Dust")),
         Spec("localthings_dust_pm1", "/sensors/vs/0",
              lambda rep, _r: _sensor(rep, "SuperFineDust")),
+        # Periodic air-quality sensing, the same four read-only fields the hood
+        # binds. Added when the reference took this resource up on the purifier
+        # (its #268), which retired the reason we had for skipping it here — see
+        # the note beside the hood's copy.
+        #
+        # Three of the reference's four purifier dumps report it and all three
+        # populate every field below; air_purifier_device.json does not host the
+        # resource at all, which is the ordinary case an absent href handles.
+        #
+        # Read-only, unlike the reference's version. It made the activation flag
+        # and the sensing action writable, but says outright that the writes were
+        # exercised on AVT-WW-TP1-23 hardware and that "the other two families get
+        # the same writes on field-shape grounds only" — and nobody here owns any
+        # purifier to check against. An acknowledgement is not evidence, so the
+        # write stays out until someone has one. docs/BACKLOG.md carries it.
+        Spec("localthings_air_sensing", "/airlevelcheck/vs/0",
+             shared.flag("x.com.samsung.da.periodicSensingActivationState")),
+        Spec("localthings_air_sensing_state", "/airlevelcheck/vs/0",
+             shared.text("x.com.samsung.da.sensingState")),
+        Spec("localthings_air_sensing_level", "/airlevelcheck/vs/0",
+             shared.text("x.com.samsung.da.lastSensingLevel")),
+        Spec("localthings_air_sensing_action", "/airlevelcheck/vs/0",
+             shared.text("x.com.samsung.da.autoExeState")),
     ),
 )
 
@@ -817,10 +840,11 @@ RANGE_HOOD = Registry(
         Spec("localthings_auto_ventilation", HREF_HOOD_FAN,
              shared.flag(FIELD_AUTO_OPERATION),
              exists=_has(FIELD_AUTO_OPERATION)),
-        # Periodic air-quality sensing. The reference exposes these for the hood and
-        # deliberately leaves the same resource unexposed on the air conditioner and
-        # air purifier, calling it scheduler plumbing there — this is the family where
-        # it drives something the user can see.
+        # Periodic air-quality sensing. Bound here first because the reference
+        # exposed the resource on the hood alone, calling it scheduler plumbing on
+        # the air conditioner and the purifier; that is no longer the reason to
+        # stop at the hood, since the reference has since taken it up on the
+        # purifier (its #268) and the purifier's copy above follows.
         #
         # All read-only, and the level and action are free-form strings rather than
         # enums for a measured reason: our unit reports autoExeState 'Sensing' while

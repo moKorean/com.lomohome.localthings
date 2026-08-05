@@ -1,5 +1,5 @@
 {
-  "_comment": "Live /device/0 dump from a Samsung induction cooktop (TP1X_DA-KS-COOKTOP-01011, NV9000D-/KO4, 3 burners). Identity and network fields are redacted. Captured 2026-07-29.",
+  "_comment": "Live /device/0 dump from a Samsung induction cooktop (TP1X_DA-KS-COOKTOP-01011, NV9000D-/KO4, 3 burners). Identity and network fields are redacted. Captured 2026-07-29. /connectionconfig/vs/0 was added 2026-08-05: this firmware sends it as the batch response's first entry, which parse_device0 discarded until then, so the original capture held 12 of the 13 entries the appliance returns.",
   "board_family_token": "COOKTOP",
   "expected_registry": "induction_cooktop",
   "model": "TP1X_DA-KS-COOKTOP-01011",
@@ -30,6 +30,36 @@
       "operationBurnerNumber": -1,
       "targetTemperature": 0,
       "temperatureUnit": "C"
+    },
+    "/connectionconfig/vs/0": {
+      "autoReconnection": "true",
+      "autoReconnectionMinVersion": "1.0",
+      "autoReconnectionProtocolType": [
+        "helper_hotspot",
+        "ble_ocf"
+      ],
+      "calmConnectionCare": {
+        "role": [
+          "things"
+        ],
+        "version": "1.0"
+      },
+      "supportedWiFiAuthType": [
+        "OPEN",
+        "WEP",
+        "WPA-PSK",
+        "WPA2-PSK",
+        "SAE"
+      ],
+      "supportedWiFiCryptoType": [
+        "TKIP",
+        "AES",
+        "WEP-64",
+        "WEP-128"
+      ],
+      "supportedWiFiFreq": [
+        "2.4G"
+      ]
     },
     "/cooktop/recipe/status/vs/0": {
       "operationBurnerNumber": 2,
