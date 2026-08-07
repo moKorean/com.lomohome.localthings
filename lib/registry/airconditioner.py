@@ -462,12 +462,26 @@ def _read_active_alarm(rep, _resources):
 #   Wind-Free set   that unit was already in Wind-Free; the write came back
 #                   `errorCode: "unchanged"` and the slot still did not move
 #
-# What survives is narrower: the slot is `_OFF` while a unit is off, and `_OFF`
-# while a unit is on but still pulling the room down (32 °C against a setpoint of
-# 30, drawing 112 W). It carries a number on units that are on and have reached
-# their setpoint (26/26 at 25 W, 28.5/28.5 at 40 W). Power is necessary and not
-# sufficient. The number itself drifts — 0003 to 0004 on two different units at
-# different times — which is the plainest evidence that this is not a fault code.
+# What it does track is whether the unit is running. Logged every 12 minutes over
+# eight hours across the four units — 152 unit-samples, 2026-08-07/08:
+#
+#   _OFF     onoff False   110 of 110
+#   a number onoff True     58 of 58
+#
+# with no exception either way. An earlier reading of this comment claimed the
+# number also required the room to have reached its setpoint; the log refutes it,
+# carrying twelve samples with a number while the room was above setpoint. That
+# claim came from one timepoint, which is the third time this slot has punished
+# exactly that.
+#
+# One case is unresolved: a unit switched on read `_OFF` about two and a half
+# minutes later, twice. Nothing in the log covers a power-on transition, so
+# whether the slot simply lags the switch is untested.
+#
+# The number itself is 0003 or 0004 and moves slowly and per unit — one sat at
+# 0003 for eight hours while another went 0004, 0003, 0004 — and nothing logged
+# (operating mode, fan, setpoint delta, watts) separates the two values. That it
+# moves at all is the plainest evidence this is not a fault code.
 #
 # It is exposed as a number with Insights so Homey keeps the history beside
 # measure_power and measure_temperature, which is what the correlation needs;
