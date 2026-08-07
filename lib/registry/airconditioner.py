@@ -452,6 +452,66 @@ def _read_active_alarm(rep, _resources):
     return "none"
 
 
+# The third alarm slot on the CAC boards, which carries a `DA_SAC_M_*` family of
+# its own. Named for what it is rather than what it means: what it means is not
+# known, and the three explanations tried so far were all refuted by measurement
+# (2026-08-07, four units).
+#
+#   mute            all four units muted, only the one without the code differed
+#   powered on      turning the odd unit on left the slot at _OFF
+#   Wind-Free set   that unit was already in Wind-Free; the write came back
+#                   `errorCode: "unchanged"` and the slot still did not move
+#
+# What survives is narrower: the slot is `_OFF` while a unit is off, and `_OFF`
+# while a unit is on but still pulling the room down (32 °C against a setpoint of
+# 30, drawing 112 W). It carries a number on units that are on and have reached
+# their setpoint (26/26 at 25 W, 28.5/28.5 at 40 W). Power is necessary and not
+# sufficient. The number itself drifts — 0003 to 0004 on two different units at
+# different times — which is the plainest evidence that this is not a fault code.
+#
+# It is exposed as a number with Insights so Homey keeps the history beside
+# measure_power and measure_temperature, which is what the correlation needs;
+# `_OFF` reads 0. docs/BACKLOG.md carries the experiment that would settle it.
+#
+# The appliance's own error channel is a different slot and reads ErrorCode_OFF
+# throughout, which is why SmartThings calls the same appliance healthy.
+_STATE_CODE_PREFIX = "DA_SAC_M"
+
+
+def _has_state_code(rep, _resources) -> bool:
+    items = rep.get("x.com.samsung.da.items")
+    if not isinstance(items, list):
+        return False
+    return any(
+        isinstance(item, dict)
+        and str(item.get("x.com.samsung.da.code", "")).startswith(_STATE_CODE_PREFIX)
+        for item in items
+    )
+
+
+def _read_state_code(rep, _resources):
+    """The numeric half of the `DA_SAC_M_*` entry, with its idle form as 0.
+
+    A suffix that is neither `OFF` nor a number returns None — the appliance has
+    only ever reported those two, and inventing a value for a third would be the
+    guess this file exists to avoid.
+    """
+    items = rep.get("x.com.samsung.da.items")
+    if not isinstance(items, list):
+        return None
+    for item in items:
+        if not isinstance(item, dict):
+            continue
+        code = str(item.get("x.com.samsung.da.code", "")).strip()
+        if not code.startswith(_STATE_CODE_PREFIX):
+            continue
+        suffix = code[len(_STATE_CODE_PREFIX):].lstrip("_")
+        if suffix.upper() == "OFF":
+            return 0
+        return as_int(suffix)
+    return None
+
+
 def _sensor_value(sensor_type: str):
     """A reading out of /sensors/vs/0's items array, which keys by `type` rather
     than position and wraps each value in a single-element list."""
@@ -573,6 +633,8 @@ REGISTRY = Registry(
 
         # Read-only sensors.
         Spec("localthings_alarm_code", HREF_ALARMS, _read_active_alarm),
+        Spec("localthings_operation_state_code", HREF_ALARMS, _read_state_code,
+             exists=_has_state_code),
         Spec("localthings_air_quality", HREF_SENSORS, _sensor_value("CleanLevel")),
         Spec("measure_pm25", HREF_SENSORS, _sensor_value("FineDust")),
         Spec("localthings_dust_pm10", HREF_SENSORS, _sensor_value("Dust")),

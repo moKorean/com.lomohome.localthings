@@ -1,0 +1,14 @@
+{
+  "type": "number",
+  "title": {
+    "en": "Operation state code",
+    "ko": "운전 상태 코드"
+  },
+  "getable": true,
+  "setable": false,
+  "uiComponent": "sensor",
+  "decimals": 0,
+  "min": 0,
+  "icon": "/assets/capabilities/mdi-counter.svg",
+  "insights": true
+}

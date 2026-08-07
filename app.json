@@ -1,7 +1,7 @@
 {
   "_comment": "This file is generated. Please edit .homeycompose/app.json instead.",
   "id": "com.lomohome.localthings",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "compatibility": ">=13.0.0",
   "sdk": 3,
   "runtime": "python",
@@ -2148,6 +2148,33 @@
           }
         ],
         "id": "odor_progress_is"
+      },
+      {
+        "title": {
+          "en": "Operation state code !{{is|is not}} at least [[value]]",
+          "ko": "운전 상태 코드 [[value]] !{{이상|미만}}"
+        },
+        "titleFormatted": {
+          "en": "Operation state code !{{is|is not}} at least [[value]]",
+          "ko": "운전 상태 코드 [[value]] !{{이상|미만}}"
+        },
+        "hint": {
+          "en": "Checks the value as the appliance last reported it.",
+          "ko": "가전이 마지막으로 보고한 값을 확인합니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_operation_state_code"
+          },
+          {
+            "name": "value",
+            "type": "number",
+            "min": 0
+          }
+        ],
+        "id": "operation_state_code_is"
       },
       {
         "title": {
@@ -5697,6 +5724,20 @@
       "setable": false,
       "uiComponent": "sensor",
       "icon": "/assets/capabilities/mdi-pot-steam.svg"
+    },
+    "localthings_operation_state_code": {
+      "type": "number",
+      "title": {
+        "en": "Operation state code",
+        "ko": "운전 상태 코드"
+      },
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "decimals": 0,
+      "min": 0,
+      "icon": "/assets/capabilities/mdi-counter.svg",
+      "insights": true
     },
     "localthings_oven_mode": {
       "type": "string",

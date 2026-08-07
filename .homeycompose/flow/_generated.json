@@ -80,6 +80,7 @@
   "conditions/mute_once_is.json",
   "conditions/odor_controller_is.json",
   "conditions/odor_progress_is.json",
+  "conditions/operation_state_code_is.json",
   "conditions/operation_state_is.json",
   "conditions/oven_mode_is.json",
   "conditions/pan_detected_is.json",
