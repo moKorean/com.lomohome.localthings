@@ -189,16 +189,33 @@ class Session:
         The device echoes the new value plus a `controlResponse.result` flag; a
         2.04 code alone is not proof the write was accepted, so callers should
         check the flag.
+
+        Reconnects and retries once when the *send* fails, the way `_get` already
+        does. Reads recovered from a session Samsung's firmware had closed between
+        polls and writes did not, so a command issued into a stale session was lost
+        with nothing but an error to show for it — the asymmetry, not the firmware,
+        was the bug.
+
+        Only a transport failure is retried. A reply carrying a non-success code is
+        the appliance answering on a live session, and re-sending it just asks a
+        second time for something already refused — the induction cooktop answers
+        4.05 to every write it will never accept.
         """
+        encoded = cbor2.dumps(body)
+
+        def post_with(session):
+            return session.post(path_segs, encoded, timeout=PROBE_GET_TIMEOUT_S)
+
         async with self._lock:
             await self._connect_unlocked()
             session = self._session
-            encoded = cbor2.dumps(body)
-
-            def do_post():
-                return session.post(path_segs, encoded, timeout=PROBE_GET_TIMEOUT_S)
-
-            code, payload = await self._run(do_post)
+            try:
+                code, payload = await self._run(post_with, session)
+            except (ConnectionError, TimeoutError) as exc:
+                self._log(f"POST /{'/'.join(path_segs)} failed ({exc}); reconnecting")
+                await self._close_unlocked()
+                await self._connect_unlocked()
+                code, payload = await self._run(post_with, self._session)
 
         if code not in (0x44, 0x45):  # 2.04 Changed / 2.05 Content
             raise ConnectionError(
