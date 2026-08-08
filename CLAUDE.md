@@ -327,5 +327,14 @@ changelog entry in both `en` and `ko`, update both READMEs, commit and push, the
 `homey app publish`. `HOMEY_HEADLESS=1` runs it non-interactively with the right
 answers (no version bump — step one already did that; changelog must pre-exist).
 
+**The changelog entry covers that version only.** Do not paste the previous entry
+underneath it. Between 1.0.3 and 1.0.6 each release prepended its news to the whole
+of the last one, and nothing objected, so 1.0.6 arrived at ten paragraphs of which
+two were about 1.0.6 — a user opening the store read the app's entire history under
+the heading of the version they were about to install. Homey shows the changelog per
+version, so the earlier text is already reachable; repeating it only costs the
+reader the ability to see what changed. `tests/test_changelog.py` enforces this,
+because "remember not to do that" lasts about two releases.
+
 Publishing uploads a build. Promoting it to the store is a separate step on the
 developer dashboard, so a version is not live just because publish succeeded.
