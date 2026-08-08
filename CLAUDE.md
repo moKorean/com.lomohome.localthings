@@ -327,14 +327,22 @@ changelog entry in both `en` and `ko`, update both READMEs, commit and push, the
 `homey app publish`. `HOMEY_HEADLESS=1` runs it non-interactively with the right
 answers (no version bump — step one already did that; changelog must pre-exist).
 
-**The changelog entry covers that version only.** Do not paste the previous entry
-underneath it. Between 1.0.3 and 1.0.6 each release prepended its news to the whole
-of the last one, and nothing objected, so 1.0.6 arrived at ten paragraphs of which
-two were about 1.0.6 — a user opening the store read the app's entire history under
-the heading of the version they were about to install. Homey shows the changelog per
-version, so the earlier text is already reachable; repeating it only costs the
-reader the ability to see what changed. `tests/test_changelog.py` enforces this,
-because "remember not to do that" lasts about two releases.
-
 Publishing uploads a build. Promoting it to the store is a separate step on the
-developer dashboard, so a version is not live just because publish succeeded.
+developer dashboard, so a version is not live just because publish succeeded — and
+**check which version is actually live before writing the changelog**, because that
+is what decides its contents.
+
+**The entry covers everything since the last live version, not since the last
+version.** The two differ whenever a build was never promoted, and then its news has
+to travel forward or nobody ever reads it: 1.0.5 sat unpromoted while 1.0.4 was
+live, so 1.0.6's entry carries 1.0.5's paragraph as well as its own. Getting this
+backwards loses a release's worth of notes silently.
+
+The opposite failure is what happened from 1.0.3 to 1.0.6, where each entry
+prepended its news to the whole of the last one regardless: 1.0.6 reached ten
+paragraphs of which two were about 1.0.6, so a user opening the store read the app's
+entire history under the heading of the version they were installing.
+`tests/test_changelog.py` holds both ends — a paragraph may repeat only from a
+version listed in its `UNPROMOTED` set, with the reason. **Take a version out of
+that set once it is promoted**, or the exception quietly becomes the accumulation
+again.
