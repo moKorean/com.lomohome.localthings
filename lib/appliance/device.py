@@ -238,6 +238,21 @@ The judgment is deliberately not made here. The initial notifications keep
         self._observe_failed = failed
         self.log(f"subscribed to {len(hrefs) - failed}/{len(hrefs)} resources")
 
+    async def _drop_to_polling(self) -> None:
+        """Stop claiming push, and make the settings say so.
+
+        Deliberately does not touch `_observe_silent_rounds` or
+        `_observe_attempted_at`: the backoff those drive is about a channel that
+        subscribes and then stays quiet, which is a different fault from a device
+        that cannot be reached at all. Widening the retry window because the
+        appliance was unplugged would leave it polling long after it came back.
+        """
+        if not (self._observing or self._observe_pending):
+            return
+        self._observing = False
+        self._observe_pending = False
+        await self._sync_settings()
+
     def _observe_retry_after(self) -> float:
         """How long to wait before subscribing again after giving up.
 
@@ -368,6 +383,16 @@ answers none is a different case, and the living-room air conditioner here
                 self.log(
                     f"poll failed ({self._failures}): {exc}; retrying in {delay:.0f}s"
                 )
+                # A failed poll never reaches `_evaluate_observe` or
+                # `_sync_settings`, so an appliance that drops off the network — off
+                # at the breaker, Wi-Fi down — used to keep claiming push for as long
+                # as it stayed away: the advanced settings read "push, 27
+                # subscriptions" and the `is_pushing` Flow condition stayed true,
+                # hours after the session it counted had gone. Nothing can be
+                # arriving by push down a channel whose reads are failing, so say so.
+                # No resubscribe is attempted here; there is no live session to
+                # register on, and `_try_observe` picks it up once polling recovers.
+                await self._drop_to_polling()
                 # Only a persistent failure reaches the user. The first few are
                 # retried quietly: a restarted app leaves the appliance holding an
                 # orphaned DTLS association and the first handshake into it is
