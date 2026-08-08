@@ -1,0 +1,34 @@
+{
+  "type": "enum",
+  "title": {
+    "en": "Edge lighting brightness",
+    "ko": "엣지 조명 밝기"
+  },
+  "getable": true,
+  "setable": true,
+  "uiComponent": "picker",
+  "icon": "/assets/capabilities/mdi-led-on.svg",
+  "values": [
+    {
+      "id": "Smart",
+      "title": {
+        "en": "Smart",
+        "ko": "자동"
+      }
+    },
+    {
+      "id": "High",
+      "title": {
+        "en": "High",
+        "ko": "강"
+      }
+    },
+    {
+      "id": "Low",
+      "title": {
+        "en": "Low",
+        "ko": "약"
+      }
+    }
+  ]
+}

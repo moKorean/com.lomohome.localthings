@@ -421,6 +421,12 @@ WIND_DIRECTIONS = ("Fix", "Left_And_Right", "All")
 POWER_SAVE_MODES = ("Eco", "Normal", "Comfort")
 WIND_TARGETS = ("Direct", "Indirect")
 LIGHT_MODES = ("Smart", "Low", "High")
+# /edgelighting/vs/0 keeps its own supported lists under plain OCF names rather
+# than the vendor-prefixed supportedModes the rest of this file uses, and the two
+# lists are ordered differently from /light/stateful/vs/0's — read them from the
+# device rather than assuming either matches LIGHT_MODES.
+EDGE_LIGHT_MODES = ("Smart", "High", "Low")
+EDGE_LIGHT_COLORS = ("3000K", "4000K", "6500K")
 
 # Codes the device reports while nothing is wrong, and the state it uses for a
 # cleared alarm.
@@ -644,6 +650,27 @@ REGISTRY = Registry(
              _read_enum("modes", WIND_TARGETS)),
         Spec("localthings_light_mode", HREF_LIGHT,
              _read_enum("mode", LIGHT_MODES)),
+        # Both confirmed on the hardware here 2026-08-08, not inferred from the
+        # resource advertising a supported list — this app has been burned by that
+        # once, on the induction cooktop. Written and read back on two units:
+        # 손님방 Smart->Low and 3000K->6500K, 거실 4000K->6500K, every original
+        # value restored afterwards.
+        #
+        # The colour needs the delayed read to see it. Its own write echoed
+        # `result: true` while the immediate read-back still showed the old value,
+        # and only the check 25s later showed it had taken — so a caller that
+        # believes the echo *or* the first read draws opposite wrong conclusions
+        # from the same working write. WRITE_SETTLE_S already covers this for the
+        # capability path.
+        Spec("localthings_edge_light_mode", HREF_EDGE_LIGHT,
+             _read_enum("mode", EDGE_LIGHT_MODES),
+             _write_enum(["edgelighting", "vs", "0"], "mode", EDGE_LIGHT_MODES,
+                         supported_field="modeSupportedList")),
+        Spec("localthings_edge_light_color", HREF_EDGE_LIGHT,
+             _read_enum("colorOption", EDGE_LIGHT_COLORS),
+             _write_enum(["edgelighting", "vs", "0"], "colorOption",
+                         EDGE_LIGHT_COLORS,
+                         supported_field="colorSupportedList")),
 
         # Read-only sensors.
         Spec("localthings_alarm_code", HREF_ALARMS, _read_active_alarm),

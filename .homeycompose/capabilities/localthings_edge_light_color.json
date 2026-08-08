@@ -1,0 +1,34 @@
+{
+  "type": "enum",
+  "title": {
+    "en": "Edge lighting colour",
+    "ko": "엣지 조명 색온도"
+  },
+  "getable": true,
+  "setable": true,
+  "uiComponent": "picker",
+  "icon": "/assets/capabilities/mdi-brightness-6.svg",
+  "values": [
+    {
+      "id": "3000K",
+      "title": {
+        "en": "Warm (3000K)",
+        "ko": "따뜻한 색 (3000K)"
+      }
+    },
+    {
+      "id": "4000K",
+      "title": {
+        "en": "Neutral (4000K)",
+        "ko": "중간 색 (4000K)"
+      }
+    },
+    {
+      "id": "6500K",
+      "title": {
+        "en": "Cool (6500K)",
+        "ko": "시원한 색 (6500K)"
+      }
+    }
+  ]
+}

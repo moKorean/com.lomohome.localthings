@@ -1676,6 +1676,55 @@
       },
       {
         "title": {
+          "en": "Edge lighting colour !{{is|is not}} [[value]]",
+          "ko": "엣지 조명 색온도 [[value]] !{{임|아님}}"
+        },
+        "titleFormatted": {
+          "en": "Edge lighting colour !{{is|is not}} [[value]]",
+          "ko": "엣지 조명 색온도 [[value]] !{{임|아님}}"
+        },
+        "hint": {
+          "en": "Checks the value as the appliance last reported it.",
+          "ko": "가전이 마지막으로 보고한 값을 확인합니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_edge_light_color"
+          },
+          {
+            "name": "value",
+            "type": "dropdown",
+            "values": [
+              {
+                "id": "3000K",
+                "title": {
+                  "en": "Warm (3000K)",
+                  "ko": "따뜻한 색 (3000K)"
+                }
+              },
+              {
+                "id": "4000K",
+                "title": {
+                  "en": "Neutral (4000K)",
+                  "ko": "중간 색 (4000K)"
+                }
+              },
+              {
+                "id": "6500K",
+                "title": {
+                  "en": "Cool (6500K)",
+                  "ko": "시원한 색 (6500K)"
+                }
+              }
+            ]
+          }
+        ],
+        "id": "edge_light_color_is"
+      },
+      {
+        "title": {
           "en": "Edge lighting !{{is|is not}} on",
           "ko": "엣지 라이팅 !{{켜짐|꺼짐}}"
         },
@@ -1695,6 +1744,55 @@
           }
         ],
         "id": "edge_light_is"
+      },
+      {
+        "title": {
+          "en": "Edge lighting brightness !{{is|is not}} [[value]]",
+          "ko": "엣지 조명 밝기 [[value]] !{{임|아님}}"
+        },
+        "titleFormatted": {
+          "en": "Edge lighting brightness !{{is|is not}} [[value]]",
+          "ko": "엣지 조명 밝기 [[value]] !{{임|아님}}"
+        },
+        "hint": {
+          "en": "Checks the value as the appliance last reported it.",
+          "ko": "가전이 마지막으로 보고한 값을 확인합니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_edge_light_mode"
+          },
+          {
+            "name": "value",
+            "type": "dropdown",
+            "values": [
+              {
+                "id": "Smart",
+                "title": {
+                  "en": "Smart",
+                  "ko": "자동"
+                }
+              },
+              {
+                "id": "High",
+                "title": {
+                  "en": "High",
+                  "ko": "강"
+                }
+              },
+              {
+                "id": "Low",
+                "title": {
+                  "en": "Low",
+                  "ko": "약"
+                }
+              }
+            ]
+          }
+        ],
+        "id": "edge_light_mode_is"
       },
       {
         "title": {
@@ -3945,6 +4043,104 @@
       },
       {
         "title": {
+          "en": "Set Edge lighting colour",
+          "ko": "엣지 조명 색온도 설정"
+        },
+        "titleFormatted": {
+          "en": "Set Edge lighting colour to [[value]]",
+          "ko": "엣지 조명 색온도 설정: [[value]]"
+        },
+        "hint": {
+          "en": "Fails the Flow if the appliance refuses the change, rather than reporting a success it did not achieve.",
+          "ko": "가전이 변경을 거부하면 플로우를 실패로 처리합니다. 이루지 못한 성공을 보고하지 않습니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_edge_light_color"
+          },
+          {
+            "name": "value",
+            "type": "dropdown",
+            "values": [
+              {
+                "id": "3000K",
+                "title": {
+                  "en": "Warm (3000K)",
+                  "ko": "따뜻한 색 (3000K)"
+                }
+              },
+              {
+                "id": "4000K",
+                "title": {
+                  "en": "Neutral (4000K)",
+                  "ko": "중간 색 (4000K)"
+                }
+              },
+              {
+                "id": "6500K",
+                "title": {
+                  "en": "Cool (6500K)",
+                  "ko": "시원한 색 (6500K)"
+                }
+              }
+            ]
+          }
+        ],
+        "id": "set_edge_light_color"
+      },
+      {
+        "title": {
+          "en": "Set Edge lighting brightness",
+          "ko": "엣지 조명 밝기 설정"
+        },
+        "titleFormatted": {
+          "en": "Set Edge lighting brightness to [[value]]",
+          "ko": "엣지 조명 밝기 설정: [[value]]"
+        },
+        "hint": {
+          "en": "Fails the Flow if the appliance refuses the change, rather than reporting a success it did not achieve.",
+          "ko": "가전이 변경을 거부하면 플로우를 실패로 처리합니다. 이루지 못한 성공을 보고하지 않습니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_edge_light_mode"
+          },
+          {
+            "name": "value",
+            "type": "dropdown",
+            "values": [
+              {
+                "id": "Smart",
+                "title": {
+                  "en": "Smart",
+                  "ko": "자동"
+                }
+              },
+              {
+                "id": "High",
+                "title": {
+                  "en": "High",
+                  "ko": "강"
+                }
+              },
+              {
+                "id": "Low",
+                "title": {
+                  "en": "Low",
+                  "ko": "약"
+                }
+              }
+            ]
+          }
+        ],
+        "id": "set_edge_light_mode"
+      },
+      {
+        "title": {
           "en": "Set Fan speed",
           "ko": "풍량 설정"
         },
@@ -5472,6 +5668,74 @@
       "setable": true,
       "uiComponent": "toggle",
       "icon": "/assets/capabilities/mdi-led-on.svg"
+    },
+    "localthings_edge_light_color": {
+      "type": "enum",
+      "title": {
+        "en": "Edge lighting colour",
+        "ko": "엣지 조명 색온도"
+      },
+      "getable": true,
+      "setable": true,
+      "uiComponent": "picker",
+      "icon": "/assets/capabilities/mdi-brightness-6.svg",
+      "values": [
+        {
+          "id": "3000K",
+          "title": {
+            "en": "Warm (3000K)",
+            "ko": "따뜻한 색 (3000K)"
+          }
+        },
+        {
+          "id": "4000K",
+          "title": {
+            "en": "Neutral (4000K)",
+            "ko": "중간 색 (4000K)"
+          }
+        },
+        {
+          "id": "6500K",
+          "title": {
+            "en": "Cool (6500K)",
+            "ko": "시원한 색 (6500K)"
+          }
+        }
+      ]
+    },
+    "localthings_edge_light_mode": {
+      "type": "enum",
+      "title": {
+        "en": "Edge lighting brightness",
+        "ko": "엣지 조명 밝기"
+      },
+      "getable": true,
+      "setable": true,
+      "uiComponent": "picker",
+      "icon": "/assets/capabilities/mdi-led-on.svg",
+      "values": [
+        {
+          "id": "Smart",
+          "title": {
+            "en": "Smart",
+            "ko": "자동"
+          }
+        },
+        {
+          "id": "High",
+          "title": {
+            "en": "High",
+            "ko": "강"
+          }
+        },
+        {
+          "id": "Low",
+          "title": {
+            "en": "Low",
+            "ko": "약"
+          }
+        }
+      ]
     },
     "localthings_fan_mode": {
       "type": "enum",
