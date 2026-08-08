@@ -938,3 +938,79 @@ capability가 없고, 커스텀으로 만들 만큼 확인된 값이 아닙니�
 ### 오븐 스위치 2종 (`#183`)
 
 `EnergySaving`, `BurnerOnAlert` 옵션 토큰. 오븐 실기기가 없습니다.
+
+## 레퍼런스 동기화 2026-08-08 (`4e47a1c` → `9228da1`, 비머지 23커밋)
+
+세 가지가 이번 검토의 결론입니다. **대부분은 우리가 앞서 있었습니다** — 8/4에 덤프를
+훑어 고친 것들을 레퍼런스가 8/7에 따라왔습니다(`/edgelighting`·`/light/stateful`·
+`/mds/absenceclean`·`/airlevelcheck` 바인딩, 인덕션 `/alarms/vs/0`, 미세먼지 Insights =
+레퍼런스의 `state_class`, 오븐 `UpperLamp` 유령 스위치는 애초에 안 묶음). 타입 라우팅도
+18종/27토큰 갭 0.
+
+이식한 것: 엣지라이팅 `mode`·`colorOption`(실측 후 쓰기 가능), 쓰기 경로의 재접속 재시도,
+폴 실패 시 push 상태 해제. 아래는 이식하지 않았거나 아직 남은 것입니다.
+
+### PEM 정규화 (`#291`) — 이식하지 않았습니다 (2026-08-08 실측)
+
+레퍼런스는 붙여넣은 PEM의 BOM·CRLF·빈 줄을 걷어내는 `_normalize_pem`을 추가했습니다.
+작고 무해해 보여서 그대로 가져올 뻔했는데, **우리 스택의 두 파서 모두 그중 무엇도
+거부하지 않습니다.**
+
+| 파서 | BOM | CRLF | CR | 빈 줄 |
+|---|---|---|---|---|
+| `cryptography` 49.0.0 `load_pem_private_key` | OK | OK | OK | OK |
+| pyOpenSSL `load_certificate`/`load_privatekey` | OK | OK | — | — |
+
+사용자가 없는 방어 코드이고, 자격증명 경로에서 사용자가 붙여넣은 바이트를 그 사용 가능
+여부를 판정하는 자리 **앞에서** 다시 쓰는 일은 공짜가 아닙니다. 인덕션 전원 토글과 같은
+판단입니다. `tests/test_pasted_pem_normalization.py`가 재개 조건을 들고 있습니다 — 파서를
+올렸을 때 그 테스트가 깨지면 그때 이식하면 됩니다.
+
+### `/settings/sound/optimization/vs/0` — 양쪽 다 안 읽습니다
+
+에어컨 4대 전부가 `{"status": "On", "supportedModes": ["On", "Off"]}`를 보고합니다.
+레퍼런스에도 없습니다. `_read_flag`/`_write_flag`로 바로 붙는 모양이지만, **무엇을
+최적화하는 설정인지가 확인되지 않았습니다.** 쓰기를 해보고 소리가 어떻게 달라지는지
+확인하면 끝나는 일입니다.
+
+### `welcomeLightStatus` — `/edgelighting/vs/0`
+
+같은 리소스에 `On`으로 살아 있고 양쪽 다 안 읽습니다. 냉장고의
+`localthings_welcome_light`(`/proximity/vs/0`)와 **이름만 같고 다른 것**이므로 capability를
+새로 만들어야 합니다. 사람이 다가올 때 켜지는 동작으로 보이지만 확인 안 됨.
+
+### 굿슬립 — CAC에는 `Comode_` 토큰이 없습니다
+
+우리 에어컨은 `/mode/vs/0` options에 `Sleep_16`을 들고 있습니다(= 8시간). 레퍼런스가
+`30bd0fd`에서 측정한 것은 **`Sleep_<n>` 단독 쓰기는 2.04를 받고 버려진다**는 것이고,
+`Comode_Sleep`과 같이 보내야 유지됩니다. 그런데 그 측정은 ARTIK051_KRAC이고,
+**우리 CAC 덤프에는 `Comode_` 토큰 자체가 없습니다.** 읽기만 붙이는 것은 가능하지만
+쓰기 계약이 이 보드에서 미확인이라 보류합니다. 판정 실험: `Comode_Sleep`+`Sleep_4`를
+보내고 +8초·+45초에 다시 읽기.
+
+### 냉장고 공기필터 — `/filter/airdustfilter/vs/0` (`#318`)
+
+레퍼런스가 TP1X_REF_21K에 추가했습니다. **우리 TP2X 3대에는 이 리소스가 없습니다.**
+레퍼런스가 덤프(`refrigerator_tp1x_ref_21k_airfilter_device.json`)를 같이 넣었으므로
+미검증 계열 커버리지로는 추가 가능하고 `test_no_dead_mappings`도 통과합니다.
+`filterUsage`가 여기서는 이미 0-100 퍼센트라 `filterCapacity`로 나누면 안 됩니다.
+
+### 제습기 물통 조명 — 막고 있던 조건이 풀렸습니다
+
+위 "제습기 물통 조명의 색상·밝기" 항목이 "레퍼런스 덤프에 목록이 들어 있으면"을 조건으로
+보류돼 있었는데, **들어 있습니다**(`dehumidifier_tp1x_dhm01001_device.json`):
+
+    colorSupportedList: WarmWhite, NaturalWhite, CoolWhite, Green, Purple, Blue, Orange, Pink
+    modeSupportedList:  High, Low
+
+엣지라이팅에서 같은 모양(`colorOption`+`colorSupportedList`)을 이번에 처리했으므로 방법도
+정해져 있습니다. 다만 제습기 실기기가 없으므로 쓰기는 미검증으로 남습니다.
+
+### 레퍼런스에 보낼 정정 — `has_extend_option_code`의 근거
+
+`registry/capabilities/airconditioner.py`의 docstring이 "모든 RAC 계열 덤프는
+`ExtendOptionCode`를 갖고 FAC/CAC 계열은 옛 맵만 갖는다"고 적었습니다. **우리 CAC 덤프도,
+레퍼런스 자신의 `airconditioner_cac_device.json`도 `ExtendOptionCode_0`을 갖고 있습니다.**
+값이 0이라 비트가 전부 0으로 읽히므로 동작 결과는 의도대로지만, 근거로 적힌 전제는
+사실과 다릅니다. 이 함수가 "이 보드가 그 비트 위치를 문서화한 계열인가"의 대리 지표로
+쓰이고 있으므로 정정할 값이 있습니다.
