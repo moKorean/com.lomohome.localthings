@@ -37,43 +37,72 @@ The method that replaced guessing:
 3. Where one dump is ambiguous, find a natural experiment — two convertible
    fridges in opposite modes settled what a single unit could not.
 
+### Reach Homey over the local API, not `homey api raw`
+
+**Do not call `homey api raw` bare.** The CLI's default mode authenticates against
+Athom's cloud on *every* invocation, and each call is a fresh process so nothing
+caches — which is what trips the rate limit described below. The neighbouring
+`../com.lomohome.homeyscript` repo already solves address resolution (mDNS →
+`homeylocal.com` HTTPS) and auth, and its helper works against this app's endpoints
+unchanged. Reuse it; the cloud-call count is zero.
+
 ```sh
-homey api raw --path /api/app/com.lomohome.localthings/diagnostics
-homey api raw --path /api/app/com.lomohome.localthings/resources        # cache; raw=1 for un-redacted
-homey api raw -X POST --path /api/app/com.lomohome.localthings/read-resource \
-  --body '{"path":"/oic/d"}'                                            # live, all appliances
-homey api raw -X POST --path /api/app/com.lomohome.localthings/write-resource \
-  --body '{"host":"…","path":"…","body":{…}}'                           # writes, then reads back
+cd ../com.lomohome.homeyscript && node -e '
+const { api, connectionInfo } = await import("./tools/lib.mjs");
+console.log(await connectionInfo());
+console.log(JSON.stringify(await api("GET", "/api/app/com.lomohome.localthings/resources")));
+'
 ```
 
-`--json` is a boolean output flag; request bodies go in `--body`. There is no
-`homey app log`. `homey app run` **replaces** the installed app and removes it when
-the run ends — use `homey app install`.
+Confirmed against this app 2026-08-08: `diagnostics` and `resources` both answer,
+`접속: https://192-168-1-133.homey.homeylocal.com (mDNS 192.168.1.133)`. `api(method,
+path, body)` parses the JSON and returns it, so the 64 KB pipe truncation below
+cannot happen either — the response never crosses a process boundary. It needs a
+local API key at `~/.homey_api_key/key`; that repo's `README.md` has the setup and
+a `--token`/`curl` form for shell one-liners.
 
-**Redirect to a file before reading a long response. Piping truncates it at ~64 KB**,
-mid-object, with no error. This produced two wrong conclusions in one day: the device
-list looked as though it contained no appliances of ours, and the insights list looked
-as though the capabilities we had just flagged were absent — which was written up as
-"the flag does not apply to existing devices" and was simply the cut. The same call
-redirected to a file returned 276 KB and every series was there.
+The endpoints, whichever transport reaches them:
+
+| | |
+|---|---|
+| `GET /api/app/com.lomohome.localthings/diagnostics` | every device in one call |
+| `GET …/resources` | this app's cache; `raw=1` for un-redacted |
+| `POST …/read-resource` `{"path":"/oic/d"}` | live, all appliances |
+| `POST …/write-resource` `{"host":"…","path":"…","body":{…}}` | writes, then reads back |
+
+`homey app install`, `homey app publish` and `homey app validate` still go through
+the CLI and still need cloud auth — the local API replaces investigation calls, not
+releases. There is no `homey app log`. `homey app run` **replaces** the installed app
+and removes it when the run ends — use `homey app install`.
+
+If you do fall back to `homey api raw`, two things bite. **Redirect to a file before
+reading a long response: piping truncates it at ~64 KB**, mid-object, with no error.
+This produced two wrong conclusions in one day — the device list looked as though it
+contained no appliances of ours, and the insights list looked as though the
+capabilities we had just flagged were absent, which was written up as "the flag does
+not apply to existing devices" and was simply the cut. The same call redirected to a
+file returned 276 KB and every series was there.
 
 ```sh
 homey api raw --path /api/manager/insights/log > /tmp/ins.json   # then read the file
 ```
 
 An absence in a truncated response is not evidence of absence. If a query returns
-nothing you expected, check the size of what you actually received first.
+nothing you expected, check the size of what you actually received first. (`--json`
+is a boolean output flag; request bodies go in `--body`.)
 
-The Homey API rate-limits hard after a burst, and polling to see whether the limit
+And the cloud rate limit: it bites hard after a burst, and polling to see whether it
 has cleared keeps it tripped. Back off in single long waits — and mean it: checking
 counts as a request, so three "has it cleared yet?" probes are three more strikes.
 
 It is Athom's **cloud** API that limits, not the Homey on the LAN, so once tripped
 **`homey app install` fails too** — with `Too many requests` from
 `getAuthenticatedUser`, several stack frames deep and easy to misread as a build or
-login problem. `read-resource` and `write-resource` against appliances are the
-expensive calls; a dozen in a few minutes is enough. Space them, and prefer one
-`diagnostics` call that returns every device over one call per device.
+login problem. Every bare `homey api raw` spends from that budget regardless of what
+it asks for, which is the reason for the local-API rule above. Appliance-side cost is
+a separate matter: `read-resource` and `write-resource` make the appliances do real
+DTLS work, so prefer one `diagnostics` call that returns every device over one call
+per device even when the transport is free.
 
 `homey app publish` needs the same cloud auth, so a tripped limit blocks a release
 too — and it gets as far as `✓ Validating app...` and `✓ Pre-processed app` first,
@@ -169,9 +198,9 @@ Three habits, in order of how much they would have saved:
   four rounds showed one switched-off unit delivering 27/27, 27/27, 27/27 and 8/27 at
   the same offset, so any one of them would have "proved" something.
 
-Repeat a round cheaply with
-`homey api raw -X POST --path /api/manager/apps/app/<id>/restart`. There is no way to
-disable an app from the CLI, and uninstalling would unpair the user's devices.
+Repeat a round cheaply with `POST /api/manager/apps/app/<id>/restart` over the local
+API. There is no way to disable an app from the CLI, and uninstalling would unpair
+the user's devices.
 
 `docs/BACKLOG.md` has the full record, including the loss mode that is still open.
 
