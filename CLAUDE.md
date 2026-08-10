@@ -342,6 +342,19 @@ developer dashboard, so a version is not live just because publish succeeded —
 **check which version is actually live before writing the changelog**, because that
 is what decides its contents.
 
+**A version number is spent the moment it is published, promoted or not.** A second
+`publish` under the same number is refused outright:
+
+    ✖ com.lomohome.localthings@1.0.6 has already been published or is currently in
+      review. Increase the version of your app.
+
+So work that lands after a build is uploaded cannot join that build — it needs the
+next number, even when the uploaded one never reached the store. Found on 2026-08-10
+by trying to fold a day's work into an already-uploaded 1.0.6; the result was 1.0.6
+sitting unpromoted with three builds and everything moving to 1.0.7. Bump *before*
+publishing anything you may still add to, and expect an abandoned version to become
+an `UNPROMOTED` entry rather than something to reuse.
+
 **The entry covers everything since the last live version, not since the last
 version.** The two differ whenever a build was never promoted, and then its news has
 to travel forward or nobody ever reads it: 1.0.5 sat unpromoted while 1.0.4 was

@@ -37,6 +37,11 @@ LANGUAGES = ("en", "ko")
 # value of the set is that it is checkable.
 UNPROMOTED = {
     "1.0.5": "build uploaded 2026-08-07, never promoted; 1.0.4 was live through 1.0.6",
+    "1.0.6": (
+        "builds 15-17 uploaded 2026-08-08/10, never promoted. Athom refuses a second "
+        "build under a version already published or in review, so work finished after "
+        "build 17 could not join it and went to 1.0.7 instead"
+    ),
 }
 
 
