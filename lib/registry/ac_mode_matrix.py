@@ -13,6 +13,16 @@ something and be told it succeeded.
     Dry             yes           no         yes          yes         yes         yes       no
     Fan             no            yes        yes          yes         yes         yes       no
 
+**Power state is a second axis and is not in this table.** A switched-off unit
+refuses `Speed` outright — measured 2026-08-09 on the 손님방 unit, `controlResponse
+result False` — and `/mode/convenient/vs/0` advertises all six comfort modes
+whether it is on or off, right through the power-on transition, so nothing here or
+on the wire predicts it. It is not encoded because it is not a property of the
+operating mode, and because the answer is timing rather than refusal: the same
+write succeeds 6-8 seconds after the power write lands. `driver._apply_step`
+handles it by retrying, which is the only thing that can work when the constraint
+is invisible until the write is attempted.
+
 Two things are deliberately *not* encoded:
 
 - Modes absent from the table (`Heat`, `Wind`). These units are cooling-only —

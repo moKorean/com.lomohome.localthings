@@ -331,7 +331,11 @@ class ApplianceDriver(driver.Driver):
     # the setting the reported Flow lost — it is the one that runs first after
     # "turn on".
     _AC_SETTLE_S = 2.5
-    _AC_ATTEMPTS = 3
+    # Four rather than three, so the last write lands past the power-on window
+    # `_apply_step` documents below: attempts leave at roughly 0s, 2.5s, 5s and
+    # 7.5s plus a re-read each, and a unit measured 2026-08-09 refused a comfort
+    # mode until 6-8s after its power write was acknowledged.
+    _AC_ATTEMPTS = 4
 
     async def _apply_step(self, device, capability: str, value, strict=True) -> bool:
         """Write one setting and confirm the appliance kept it, re-sending if not.
@@ -339,10 +343,43 @@ class ApplianceDriver(driver.Driver):
         Preferred over waiting a fixed time after powering on: how long a unit takes
         to finish restoring itself is not something this app can know, and a delay
         long enough to be safe would be charged to every Flow that does not need it.
+
+        **A refusal is retried, not raised.** It used to abort the whole card on the
+        first attempt, because a rejected write raises out of the capability
+        listener, and that is precisely what a unit that has just been switched on
+        does: measured 2026-08-09 on the 손님방 air conditioner, writing `Speed`
+        while it was off answered `controlResponse result False`, and three units
+        that succeeded in the same minute did so 6-8 seconds after their power write
+        landed. Nothing advertises this — `/mode/convenient/vs/0` lists all six
+        comfort modes whether the unit is on or off, and keeps listing them right
+        through the transition — so the supported list cannot be consulted to avoid
+        it, and the only options are to retry or to fail a Flow that asked for a
+        combination the appliance accepts a moment later.
+
+        Bounded by the same attempt budget, so a write the appliance will never take
+        still ends as an error rather than a loop; it just costs four attempts to
+        get there instead of one. The induction cooktop is the case that matters
+        for, and it does not use this path.
         """
         language = await compat.ui_language(self.homey)
         for attempt in range(self._AC_ATTEMPTS):
-            await device.trigger_capability_listener(capability, value)
+            try:
+                await device.trigger_capability_listener(capability, value)
+            except Exception as exc:
+                # Distinguished from "accepted but did not stick" only in the log:
+                # both mean the setting is not in effect, and both are answered by
+                # waiting and asking again.
+                self.log(
+                    f"{capability}={value!r} refused "
+                    f"(attempt {attempt + 1}/{self._AC_ATTEMPTS}): {exc}"
+                )
+                if attempt + 1 >= self._AC_ATTEMPTS:
+                    if not strict:
+                        return False
+                    raise
+                await asyncio.sleep(self._AC_SETTLE_S)
+                await device.refresh_now()
+                continue
             await asyncio.sleep(self._AC_SETTLE_S)
             # Re-read before deciding, and before the next step: both need to see
             # what the appliance actually holds, not what was asked for.

@@ -143,6 +143,16 @@ rejection flag. Three separate bugs have come from trusting that reply:
 
 Confirm by reading back, and re-send when the appliance takes it back.
 
+**Speed is refused while the unit is powered off**, and the refusal is not in
+`ac_mode_matrix` because it is not about the operating mode. Measured 2026-08-09 on
+the 손님방 air conditioner: `/mode/convenient/vs/0` advertises the full
+`supportedModes` (`Off Nano LongWind Speed Sleep NanoSleep`) whether the unit is on or
+off, live and in cache, and stays full right through a power-on transition — yet
+writing `Speed` to a switched-off unit answers `controlResponse result False`. So the
+supported list says nothing about power state, and a caller that powers a unit on must
+let the power-on land before setting Speed. Whether the other comfort modes behave the
+same way was not tested.
+
 ### A list of features is not a write contract
 
 The induction cooktop's `/cooktop/spec/vs/0` advertises
