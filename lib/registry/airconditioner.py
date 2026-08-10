@@ -414,7 +414,28 @@ def _write_enum(path: list, field: str, allowed: tuple, supported_field=FIELD_SU
     return write
 
 
-CONVENIENT_MODES = ("Off", "Nano", "LongWind", "Speed", "Sleep", "NanoSleep")
+# The first six are what this house's four units advertise. The rest were counted
+# across the 21 reference dumps that carry /mode/convenient/vs/0, because a value
+# missing from this tuple reads as None — which means "leave the capability alone",
+# so a unit sitting in one of them shows an empty tile forever and cannot be put
+# back into it either:
+#
+#     Off 21   Sleep 20   Quiet 16   Speed 16   Nano 14   NanoSleep 14
+#     Smart 9  MotionIndirect 4   MotionDirect 3   LongWind 2   DryComfort 2
+#
+# Quiet is on more boards than Nano, and on more than eight times as many as
+# LongWind, both of which were already here. Adding a code only widens what is
+# accepted: `_write_enum` still gates every write on the unit's own supportedModes,
+# so a board without Quiet refuses it exactly as before.
+#
+# Note the shape. On this resource `x.com.samsung.da.modes` is a bare string, not
+# the list the field name suggests and not what it is on /mode/vs/0 — 19 of 19
+# dumps that populate it, no exceptions. `_read_enum` compares the value directly,
+# so it reads a string correctly and would silently read a list as nothing.
+CONVENIENT_MODES = (
+    "Off", "Nano", "LongWind", "Speed", "Sleep", "NanoSleep",
+    "Quiet", "Smart", "MotionDirect", "MotionIndirect", "DryComfort",
+)
 # 'Fix' is what the verified unit reports while absent from its own
 # supportedModes, so it has to be accepted on read as well as offered.
 WIND_DIRECTIONS = ("Fix", "Left_And_Right", "All")

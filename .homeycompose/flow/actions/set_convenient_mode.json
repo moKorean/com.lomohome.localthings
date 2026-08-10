@@ -62,6 +62,41 @@
             "en": "Wind-Free sleep",
             "ko": "무풍 취침"
           }
+        },
+        {
+          "id": "Quiet",
+          "title": {
+            "en": "Quiet",
+            "ko": "저소음"
+          }
+        },
+        {
+          "id": "Smart",
+          "title": {
+            "en": "Smart",
+            "ko": "스마트"
+          }
+        },
+        {
+          "id": "MotionDirect",
+          "title": {
+            "en": "Motion, direct",
+            "ko": "모션 직접풍"
+          }
+        },
+        {
+          "id": "MotionIndirect",
+          "title": {
+            "en": "Motion, indirect",
+            "ko": "모션 간접풍"
+          }
+        },
+        {
+          "id": "DryComfort",
+          "title": {
+            "en": "Dry comfort",
+            "ko": "쾌적 제습"
+          }
         }
       ]
     }

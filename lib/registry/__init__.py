@@ -156,6 +156,19 @@ _OIC_TYPE_TO_KEY: dict[str, str] = {
     "oic.d.washer": "washer",
     "x.com.st.d.stickcleaner": "vacuum_station",
     "x.com.st.d.steamcloset": "air_dresser",
+    # Added when the reference did, 2026-08-09. `oic.d.range` is the oven+cooktop
+    # combo, which the reference added because that board carries no
+    # `/information/vs/0` for a board token to be read from — so for that unit this
+    # table is not a second opinion, it is the only one.
+    "oic.d.range": "range",
+    "x.com.st.d.dehumidifier": "dehumidifier",
+    # Both are the TP1X_REF_21K board wearing a different OCF type, so both route to
+    # the fridge registry. The kimchi one matters here beyond parity: kimchi is a
+    # third convertible position the owner confirms on two of this house's units
+    # (docs/BACKLOG.md), and a standalone kimchi refrigerator is ordinary in Korea,
+    # which is where this app's users are.
+    "oic.d.krefrigerator": "refrigerator",
+    "x.com.st.d.winecellar": "refrigerator",
 }
 
 
