@@ -1,0 +1,230 @@
+{
+  "title": {
+    "en": "Set Storage mode",
+    "ko": "보관 모드 설정"
+  },
+  "titleFormatted": {
+    "en": "Set Storage mode to [[value]]",
+    "ko": "보관 모드 설정: [[value]]"
+  },
+  "hint": {
+    "en": "Fails the Flow if the appliance refuses the change, rather than reporting a success it did not achieve.",
+    "ko": "가전이 변경을 거부하면 플로우를 실패로 처리합니다. 이루지 못한 성공을 보고하지 않습니다."
+  },
+  "args": [
+    {
+      "name": "device",
+      "type": "device",
+      "filter": "driver_id=appliance&capabilities=localthings_kimchi_mode"
+    },
+    {
+      "name": "value",
+      "type": "dropdown",
+      "values": [
+        {
+          "id": "KIMCHI_STORAGE_NORMAL",
+          "title": {
+            "en": "Kimchi",
+            "ko": "김치"
+          }
+        },
+        {
+          "id": "KIMCHI_STORAGE_COLD",
+          "title": {
+            "en": "Kimchi, strong",
+            "ko": "김치 강"
+          }
+        },
+        {
+          "id": "KIMCHI_STORAGE_WARM",
+          "title": {
+            "en": "Kimchi, weak",
+            "ko": "김치 약"
+          }
+        },
+        {
+          "id": "KIMCHI_STORAGE_CRUNFCH",
+          "title": {
+            "en": "Crisp kimchi",
+            "ko": "아삭 김치"
+          }
+        },
+        {
+          "id": "KIMCHI_STORAGE_BUY",
+          "title": {
+            "en": "Purchased kimchi",
+            "ko": "구입 김치"
+          }
+        },
+        {
+          "id": "KIMCHI_STORAGE_LOW_SALT_NORMAL",
+          "title": {
+            "en": "Low-salt kimchi",
+            "ko": "저염 김치"
+          }
+        },
+        {
+          "id": "KIMCHI_STORAGE_LOW_SALT_COLD",
+          "title": {
+            "en": "Low-salt kimchi, strong",
+            "ko": "저염 김치 강"
+          }
+        },
+        {
+          "id": "KIMCHI_STORAGE_LOW_SALT_WARM",
+          "title": {
+            "en": "Low-salt kimchi, weak",
+            "ko": "저염 김치 약"
+          }
+        },
+        {
+          "id": "KIMCHI_RIPE_NORMAL_TEMP",
+          "title": {
+            "en": "Kimchi ripening, room temperature",
+            "ko": "김치 상온 숙성"
+          }
+        },
+        {
+          "id": "KIMCHI_RIPE_LOW_TEMP",
+          "title": {
+            "en": "Kimchi ripening, low temperature",
+            "ko": "김치 저온 숙성"
+          }
+        },
+        {
+          "id": "KIMCHI_RIPE_KKAKDUGI",
+          "title": {
+            "en": "Kkakdugi ripening",
+            "ko": "깍두기 숙성"
+          }
+        },
+        {
+          "id": "KIMCHI_RIPE_DONGCHIMI",
+          "title": {
+            "en": "Dongchimi ripening",
+            "ko": "동치미 숙성"
+          }
+        },
+        {
+          "id": "MEAT_RIPE_NORMAL",
+          "title": {
+            "en": "Meat ripening",
+            "ko": "육류 숙성"
+          }
+        },
+        {
+          "id": "STORAGE_MEAT",
+          "title": {
+            "en": "Meat & fish",
+            "ko": "육류 및 생선"
+          }
+        },
+        {
+          "id": "STORAGE_FRIDGE",
+          "title": {
+            "en": "Fridge",
+            "ko": "냉장"
+          }
+        },
+        {
+          "id": "STORAGE_FRIDGE_NORMAL",
+          "title": {
+            "en": "Fridge",
+            "ko": "냉장"
+          }
+        },
+        {
+          "id": "STORAGE_FRIDGE_COLD",
+          "title": {
+            "en": "Fridge, strong",
+            "ko": "냉장 강"
+          }
+        },
+        {
+          "id": "STORAGE_FRIDGE_WARM",
+          "title": {
+            "en": "Fridge, weak",
+            "ko": "냉장 약"
+          }
+        },
+        {
+          "id": "STORAGE_FREEZER",
+          "title": {
+            "en": "Freezer",
+            "ko": "냉동"
+          }
+        },
+        {
+          "id": "STORAGE_FREEZER_NORMAL",
+          "title": {
+            "en": "Freezer",
+            "ko": "냉동"
+          }
+        },
+        {
+          "id": "STORAGE_FREEZER_COLD",
+          "title": {
+            "en": "Freezer, strong",
+            "ko": "냉동 강"
+          }
+        },
+        {
+          "id": "STORAGE_FREEZER_WARM",
+          "title": {
+            "en": "Freezer, weak",
+            "ko": "냉동 약"
+          }
+        },
+        {
+          "id": "STORAGE_FRIDGE_VEGETABLES_FRUIT",
+          "title": {
+            "en": "Fruit & vegetables",
+            "ko": "과일 및 채소"
+          }
+        },
+        {
+          "id": "STORAGE_FRIDGE_DRINK",
+          "title": {
+            "en": "Beverages",
+            "ko": "음료"
+          }
+        },
+        {
+          "id": "STORAGE_FRESH_CEREAL",
+          "title": {
+            "en": "Grains",
+            "ko": "곡류"
+          }
+        },
+        {
+          "id": "STORAGE_FRESH_WINE",
+          "title": {
+            "en": "Wine",
+            "ko": "와인"
+          }
+        },
+        {
+          "id": "STORAGE_FRESH_POTATO_BANANA",
+          "title": {
+            "en": "Potato & banana",
+            "ko": "감자 및 바나나"
+          }
+        },
+        {
+          "id": "NEWMODE_KIMCHI_0000",
+          "title": {
+            "en": "New mode",
+            "ko": "새 모드"
+          }
+        },
+        {
+          "id": "OFF",
+          "title": {
+            "en": "Off",
+            "ko": "끄기"
+          }
+        }
+      ]
+    }
+  ]
+}

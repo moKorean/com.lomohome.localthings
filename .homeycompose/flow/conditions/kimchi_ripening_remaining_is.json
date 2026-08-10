@@ -1,0 +1,25 @@
+{
+  "title": {
+    "en": "Ripening remaining !{{is|is not}} at least [[value]]",
+    "ko": "숙성 남은 시간 [[value]] !{{이상|미만}}"
+  },
+  "titleFormatted": {
+    "en": "Ripening remaining !{{is|is not}} at least [[value]]",
+    "ko": "숙성 남은 시간 [[value]] !{{이상|미만}}"
+  },
+  "hint": {
+    "en": "Checks the value as the appliance last reported it.",
+    "ko": "가전이 마지막으로 보고한 값을 확인합니다."
+  },
+  "args": [
+    {
+      "name": "device",
+      "type": "device",
+      "filter": "driver_id=appliance&capabilities=localthings_kimchi_ripening_remaining"
+    },
+    {
+      "name": "value",
+      "type": "number"
+    }
+  ]
+}

@@ -394,7 +394,14 @@ def _open_states(resources) -> list:
                     state = item.get("x.com.samsung.da.openState") or item.get("openState")
                     if state is not None:
                         states.append(state)
-        elif href.startswith("/door/"):
+        elif href.startswith("/door/") or href.startswith("/kimchidoors/"):
+            # `/kimchidoors/<slot>/vs/0` is a third spelling, on the
+            # three-compartment kimchi refrigerators. It was missed until
+            # 2026-08-10: the one-door variant reports `/door/onedoorkimchi/vs/0`
+            # and matched the prefix above, so the door looked covered on that
+            # family while the three-compartment one lost its only contact switch.
+            # Only the top compartment reports one; the other two appear to have
+            # none, which is why nothing here assumes a door per slot.
             state = rep.get("openState")
             if state is None:
                 state = rep.get("x.com.samsung.da.openState")

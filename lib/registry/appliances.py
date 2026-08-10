@@ -354,6 +354,99 @@ def _read_convertible_mode(rep, _resources):
     return None
 
 
+# --- kimchi refrigerator --------------------------------------------------
+#
+# A standalone kimchi refrigerator is an ordinary appliance in Korea, which is
+# where this app's users are, and one already routed here on its board token — it
+# just read almost nothing. Measured 2026-08-10 against the reference's dumps
+# before any of this existed: of 24 capabilities the fridge registry declares, a
+# kimchi unit filled 5, and they were the door contact and three power readings.
+# No temperature, no mode, no ripening.
+#
+# Each compartment keeps its own state at `/status/kimchi/<slot>/vs/0`. Two
+# layouts are on record and they do not overlap:
+#
+#     onedoor            TP1X_REF_21K-class, one compartment
+#     top/middle/bottom  TP2X_REF_20K-class, three
+#
+# So a spec per slot, each gated on its own href by `Spec.applies`, gives every
+# unit exactly the compartments it reports and needs no new machinery — the
+# reference reaches the same place with an href-prefix pattern because Home
+# Assistant builds entities dynamically, while Homey wants a declared capability
+# per compartment anyway.
+_KIMCHI_SLOTS = (
+    ("onedoor", {"en": "Kimchi", "ko": "김치실"}),
+    ("top", {"en": "Top", "ko": "상칸"}),
+    ("middle", {"en": "Middle", "ko": "중칸"}),
+    ("bottom", {"en": "Bottom", "ko": "하칸"}),
+)
+
+_KIMCHI_MODE = "x.com.samsung.da.currentMode"
+_KIMCHI_SUPPORTED = "x.com.samsung.da.supportMode"
+
+
+def _kimchi_href(slot: str) -> str:
+    return f"/status/kimchi/{slot}/vs/0"
+
+
+def _write_kimchi_mode(slot: str):
+    """Gated on the compartment's own `supportMode`, which is per compartment and
+    genuinely differs: the three-compartment unit's top slot offers freezer modes
+    its middle and bottom slots do not. A capability declared in the manifest has
+    to be the union of every board's vocabulary, so without this gate the picker
+    would offer each compartment modes it will silently drop.
+
+    **The write itself is unverified** — there is no kimchi refrigerator here, and
+    the reference marks its own write path unconfirmed too. It ships because this
+    module's rule is to follow the reference's judgments, and because the gate
+    above is the same protection the reference has. If a report says a mode change
+    does nothing, this is the first thing to suspect and `docs/BACKLOG.md` has the
+    reopening note.
+    """
+    def write(value, rep):
+        if value not in (rep.get(_KIMCHI_SUPPORTED) or ()):
+            return None
+        return ["status", "kimchi", slot, "vs", "0"], {_KIMCHI_MODE: str(value)}
+
+    return write
+
+
+def _kimchi_specs():
+    for slot, titles in _KIMCHI_SLOTS:
+        href = _kimchi_href(slot)
+        # The one-door layout takes the bare capability: there is nothing to tell
+        # it apart from, and a lone tile labelled "Kimchi — Kimchi" reads badly.
+        suffix = "" if slot == "onedoor" else f".{slot}"
+        instance = None if slot == "onedoor" else titles
+        yield Spec(
+            f"localthings_kimchi_mode{suffix}", href,
+            shared.text(_KIMCHI_MODE), _write_kimchi_mode(slot),
+            titles=instance,
+        )
+        yield Spec(
+            f"localthings_kimchi_ripening{suffix}", href,
+            shared.text("x.com.samsung.da.ripeStatus"),
+            titles=instance,
+        )
+        # Left as a bare number. `ripeStatus` reads Off on all four compartments
+        # on record, so no dump has ever carried a running timer and the unit is
+        # unconfirmed — minutes and hours are both plausible and naming one would
+        # be the guess this repo keeps paying for.
+        yield Spec(
+            f"localthings_kimchi_ripening_remaining{suffix}", href,
+            lambda rep, _r: as_int(rep.get("x.com.samsung.da.ripeRemaintime")),
+            titles=instance,
+        )
+        yield Spec(
+            f"localthings_kimchi_rack_count{suffix}", href,
+            lambda rep, _r: as_int(rep.get("x.com.samsung.da.rackCount")),
+            titles=instance,
+        )
+
+
+KIMCHI = tuple(_kimchi_specs())
+
+
 REFRIGERATOR = Registry(
     name="refrigerator",
     device_class="other",
@@ -363,6 +456,7 @@ REFRIGERATOR = Registry(
         *shared.UNIVERSAL,
         *shared.WATER_FILTER,
         *shared.DOORS,
+        *KIMCHI,
         Spec("localthings_rapid_fridge", "/refrigeration/vs/0",
              shared.flag("x.com.samsung.da.rapidFridge"),
              shared.write_flag(["refrigeration", "vs", "0"],
