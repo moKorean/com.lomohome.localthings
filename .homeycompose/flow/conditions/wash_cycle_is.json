@@ -1,0 +1,524 @@
+{
+  "title": {
+    "en": "Wash cycle !{{is|is not}} [[value]]",
+    "ko": "세탁 코스 [[value]] !{{임|아님}}"
+  },
+  "titleFormatted": {
+    "en": "Wash cycle !{{is|is not}} [[value]]",
+    "ko": "세탁 코스 [[value]] !{{임|아님}}"
+  },
+  "hint": {
+    "en": "Checks the value as the appliance last reported it.",
+    "ko": "가전이 마지막으로 보고한 값을 확인합니다."
+  },
+  "args": [
+    {
+      "name": "device",
+      "type": "device",
+      "filter": "driver_id=appliance&capabilities=localthings_wash_cycle"
+    },
+    {
+      "name": "value",
+      "type": "dropdown",
+      "values": [
+        {
+          "id": "01",
+          "title": {
+            "en": "Normal",
+            "ko": "표준세탁"
+          }
+        },
+        {
+          "id": "04",
+          "title": {
+            "en": "Quick Wash",
+            "ko": "쾌속세탁"
+          }
+        },
+        {
+          "id": "06",
+          "title": {
+            "en": "XXL Laundry",
+            "ko": "XXL 세탁"
+          }
+        },
+        {
+          "id": "08",
+          "title": {
+            "en": "Rinse+Spin",
+            "ko": "헹굼+탈수"
+          }
+        },
+        {
+          "id": "17",
+          "title": {
+            "en": "Downloaded",
+            "ko": "다운로드 코스"
+          }
+        },
+        {
+          "id": "1b",
+          "title": {
+            "en": "Cotton",
+            "ko": "면"
+          }
+        },
+        {
+          "id": "1c",
+          "title": {
+            "en": "Eco 40-60",
+            "ko": "에코 40-60"
+          }
+        },
+        {
+          "id": "1d",
+          "title": {
+            "en": "Super Speed",
+            "ko": "쾌속세탁"
+          }
+        },
+        {
+          "id": "1e",
+          "title": {
+            "en": "15' Quick Wash",
+            "ko": "15분 쾌속세탁"
+          }
+        },
+        {
+          "id": "1f",
+          "title": {
+            "en": "Intense Cold",
+            "ko": "강력 냉수 세탁"
+          }
+        },
+        {
+          "id": "20",
+          "title": {
+            "en": "Hygiene Steam",
+            "ko": "살균세탁"
+          }
+        },
+        {
+          "id": "21",
+          "title": {
+            "en": "Colors",
+            "ko": "컬러 의류"
+          }
+        },
+        {
+          "id": "22",
+          "title": {
+            "en": "Wool",
+            "ko": "울"
+          }
+        },
+        {
+          "id": "23",
+          "title": {
+            "en": "Outdoor",
+            "ko": "아웃도어"
+          }
+        },
+        {
+          "id": "24",
+          "title": {
+            "en": "Bedding",
+            "ko": "이불"
+          }
+        },
+        {
+          "id": "25",
+          "title": {
+            "en": "Synthetics",
+            "ko": "합성섬유"
+          }
+        },
+        {
+          "id": "26",
+          "title": {
+            "en": "Delicates",
+            "ko": "섬세의류"
+          }
+        },
+        {
+          "id": "27",
+          "title": {
+            "en": "Rinse+Spin",
+            "ko": "헹굼+탈수"
+          }
+        },
+        {
+          "id": "28",
+          "title": {
+            "en": "Drain/Spin",
+            "ko": "배수/탈수"
+          }
+        },
+        {
+          "id": "29",
+          "title": {
+            "en": "Drum Clean+",
+            "ko": "무세제통세척+"
+          }
+        },
+        {
+          "id": "2a",
+          "title": {
+            "en": "Jeans",
+            "ko": "청바지"
+          }
+        },
+        {
+          "id": "2b",
+          "title": {
+            "en": "AI Wash",
+            "ko": "AI 맞춤세탁"
+          }
+        },
+        {
+          "id": "2d",
+          "title": {
+            "en": "Silent Wash",
+            "ko": "조용히 세탁"
+          }
+        },
+        {
+          "id": "2e",
+          "title": {
+            "en": "Baby Care",
+            "ko": "아기옷"
+          }
+        },
+        {
+          "id": "2f",
+          "title": {
+            "en": "Activewear",
+            "ko": "피트니스"
+          }
+        },
+        {
+          "id": "30",
+          "title": {
+            "en": "Cloudy Day",
+            "ko": "흐린 날"
+          }
+        },
+        {
+          "id": "32",
+          "title": {
+            "en": "Shirts",
+            "ko": "셔츠"
+          }
+        },
+        {
+          "id": "33",
+          "title": {
+            "en": "Towels",
+            "ko": "타월"
+          }
+        },
+        {
+          "id": "34",
+          "title": {
+            "en": "Mixed",
+            "ko": "혼합"
+          }
+        },
+        {
+          "id": "35",
+          "title": {
+            "en": "E Cotton",
+            "ko": "에코 면"
+          }
+        },
+        {
+          "id": "36",
+          "title": {
+            "en": "Wash+Dry",
+            "ko": "세탁+건조"
+          }
+        },
+        {
+          "id": "37",
+          "title": {
+            "en": "Air Wash",
+            "ko": "에어워시"
+          }
+        },
+        {
+          "id": "38",
+          "title": {
+            "en": "Cotton Dry",
+            "ko": "면 건조"
+          }
+        },
+        {
+          "id": "39",
+          "title": {
+            "en": "Synthetics Dry",
+            "ko": "합성섬유 건조"
+          }
+        },
+        {
+          "id": "3a",
+          "title": {
+            "en": "Drum Clean",
+            "ko": "무세제통세척"
+          }
+        },
+        {
+          "id": "52",
+          "title": {
+            "en": "Eco Cold",
+            "ko": "에코 냉수 세탁"
+          }
+        },
+        {
+          "id": "53",
+          "title": {
+            "en": "Heavy Duty",
+            "ko": "강력세탁"
+          }
+        },
+        {
+          "id": "54",
+          "title": {
+            "en": "Towels",
+            "ko": "타월"
+          }
+        },
+        {
+          "id": "55",
+          "title": {
+            "en": "Activewear",
+            "ko": "피트니스"
+          }
+        },
+        {
+          "id": "57",
+          "title": {
+            "en": "Delicate",
+            "ko": "섬세의류"
+          }
+        },
+        {
+          "id": "5e",
+          "title": {
+            "en": "Rinse+Spin",
+            "ko": "헹굼+탈수"
+          }
+        },
+        {
+          "id": "60",
+          "title": {
+            "en": "Self Clean+",
+            "ko": "통세척+"
+          }
+        },
+        {
+          "id": "65",
+          "title": {
+            "en": "Colors",
+            "ko": "컬러 의류"
+          }
+        },
+        {
+          "id": "66",
+          "title": {
+            "en": "Denim",
+            "ko": "데님"
+          }
+        },
+        {
+          "id": "69",
+          "title": {
+            "en": "AI Wash",
+            "ko": "AI 맞춤세탁"
+          }
+        },
+        {
+          "id": "6a",
+          "title": {
+            "en": "Wool",
+            "ko": "울"
+          }
+        },
+        {
+          "id": "6b",
+          "title": {
+            "en": "Denim",
+            "ko": "데님"
+          }
+        },
+        {
+          "id": "6c",
+          "title": {
+            "en": "Blouses",
+            "ko": "블라우스"
+          }
+        },
+        {
+          "id": "6d",
+          "title": {
+            "en": "Delicates",
+            "ko": "섬세의류"
+          }
+        },
+        {
+          "id": "6e",
+          "title": {
+            "en": "Active Wear",
+            "ko": "운동복"
+          }
+        },
+        {
+          "id": "6f",
+          "title": {
+            "en": "Bedding",
+            "ko": "이불"
+          }
+        },
+        {
+          "id": "70",
+          "title": {
+            "en": "Towels",
+            "ko": "타월"
+          }
+        },
+        {
+          "id": "71",
+          "title": {
+            "en": "Quick Wash",
+            "ko": "쾌속세탁"
+          }
+        },
+        {
+          "id": "72",
+          "title": {
+            "en": "Shirts",
+            "ko": "셔츠"
+          }
+        },
+        {
+          "id": "73",
+          "title": {
+            "en": "Sanitize",
+            "ko": "살균"
+          }
+        },
+        {
+          "id": "74",
+          "title": {
+            "en": "Drum Clean",
+            "ko": "무세제통세척"
+          }
+        },
+        {
+          "id": "75",
+          "title": {
+            "en": "Outdoor",
+            "ko": "아웃도어"
+          }
+        },
+        {
+          "id": "76",
+          "title": {
+            "en": "Baby Care",
+            "ko": "아기옷"
+          }
+        },
+        {
+          "id": "77",
+          "title": {
+            "en": "Cottons",
+            "ko": "면"
+          }
+        },
+        {
+          "id": "78",
+          "title": {
+            "en": "Rinse + Spin",
+            "ko": "헹굼+탈수"
+          }
+        },
+        {
+          "id": "79",
+          "title": {
+            "en": "Spin Only",
+            "ko": "탈수만"
+          }
+        },
+        {
+          "id": "7c",
+          "title": {
+            "en": "Whites",
+            "ko": "흰옷"
+          }
+        },
+        {
+          "id": "7d",
+          "title": {
+            "en": "Bedding/Waterproof",
+            "ko": "이불/방수 의류"
+          }
+        },
+        {
+          "id": "7e",
+          "title": {
+            "en": "Self-Clean",
+            "ko": "통세척"
+          }
+        },
+        {
+          "id": "7f",
+          "title": {
+            "en": "Wool/Delicate",
+            "ko": "울/섬세"
+          }
+        },
+        {
+          "id": "86",
+          "title": {
+            "en": "Deep Wash",
+            "ko": "찌든 때 세탁"
+          }
+        },
+        {
+          "id": "87",
+          "title": {
+            "en": "Download",
+            "ko": "다운로드"
+          }
+        },
+        {
+          "id": "88",
+          "title": {
+            "en": "Pet Care",
+            "ko": "펫케어"
+          }
+        },
+        {
+          "id": "8f",
+          "title": {
+            "en": "Intense Cold",
+            "ko": "강력 냉수 세탁"
+          }
+        },
+        {
+          "id": "96",
+          "title": {
+            "en": "Less Microfiber",
+            "ko": "미세플라스틱저감"
+          }
+        },
+        {
+          "id": "a0",
+          "title": {
+            "en": "15' Quick Wash",
+            "ko": "15분 쾌속세탁"
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,202 @@
+{
+  "type": "enum",
+  "title": {
+    "en": "Dry cycle",
+    "ko": "건조 코스"
+  },
+  "getable": true,
+  "setable": false,
+  "uiComponent": "sensor",
+  "icon": "/assets/capabilities/mdi-tumble-dryer.svg",
+  "values": [
+    {
+      "id": "01",
+      "title": {
+        "en": "Normal",
+        "ko": "표준건조"
+      }
+    },
+    {
+      "id": "06",
+      "title": {
+        "en": "Time dry",
+        "ko": "시간건조"
+      }
+    },
+    {
+      "id": "16",
+      "title": {
+        "en": "Cotton",
+        "ko": "면의류"
+      }
+    },
+    {
+      "id": "17",
+      "title": {
+        "en": "Super Speed",
+        "ko": "쾌속건조"
+      }
+    },
+    {
+      "id": "18",
+      "title": {
+        "en": "Synthetics",
+        "ko": "합성섬유"
+      }
+    },
+    {
+      "id": "19",
+      "title": {
+        "en": "Delicates",
+        "ko": "섬세의류"
+      }
+    },
+    {
+      "id": "1a",
+      "title": {
+        "en": "Wool",
+        "ko": "울"
+      }
+    },
+    {
+      "id": "1b",
+      "title": {
+        "en": "Bedding",
+        "ko": "이불"
+      }
+    },
+    {
+      "id": "1c",
+      "title": {
+        "en": "Shirts",
+        "ko": "셔츠"
+      }
+    },
+    {
+      "id": "1d",
+      "title": {
+        "en": "Towels",
+        "ko": "타월"
+      }
+    },
+    {
+      "id": "1e",
+      "title": {
+        "en": "Outdoor",
+        "ko": "아웃도어"
+      }
+    },
+    {
+      "id": "1f",
+      "title": {
+        "en": "Mixed load",
+        "ko": "혼합"
+      }
+    },
+    {
+      "id": "20",
+      "title": {
+        "en": "Iron dry",
+        "ko": "다림질건조"
+      }
+    },
+    {
+      "id": "21",
+      "title": {
+        "en": "Hygiene Care",
+        "ko": "살균건조"
+      }
+    },
+    {
+      "id": "22",
+      "title": {
+        "en": "Silent Dry",
+        "ko": "조용히 건조"
+      }
+    },
+    {
+      "id": "23",
+      "title": {
+        "en": "Quick Dry 35'",
+        "ko": "쾌속건조 35분"
+      }
+    },
+    {
+      "id": "24",
+      "title": {
+        "en": "Cool air",
+        "ko": "송풍건조"
+      }
+    },
+    {
+      "id": "25",
+      "title": {
+        "en": "Warm air",
+        "ko": "온풍건조"
+      }
+    },
+    {
+      "id": "26",
+      "title": {
+        "en": "Air wash",
+        "ko": "송풍"
+      }
+    },
+    {
+      "id": "27",
+      "title": {
+        "en": "Time dry",
+        "ko": "시간건조"
+      }
+    },
+    {
+      "id": "29",
+      "title": {
+        "en": "AI Dry",
+        "ko": "AI 맞춤건조"
+      }
+    },
+    {
+      "id": "2a",
+      "title": {
+        "en": "Hygiene Care+",
+        "ko": "살균건조+"
+      }
+    },
+    {
+      "id": "2b",
+      "title": {
+        "en": "Self Tub Dry",
+        "ko": "통 건조"
+      }
+    },
+    {
+      "id": "4c",
+      "title": {
+        "en": "Air Refresh",
+        "ko": "에어 리프레시"
+      }
+    },
+    {
+      "id": "4e",
+      "title": {
+        "en": "Self Dry",
+        "ko": "자체 건조"
+      }
+    },
+    {
+      "id": "51",
+      "title": {
+        "en": "Eco Cotton",
+        "ko": "에코 면"
+      }
+    },
+    {
+      "id": "53",
+      "title": {
+        "en": "AI Dry+",
+        "ko": "AI 맞춤건조+"
+      }
+    }
+  ]
+}

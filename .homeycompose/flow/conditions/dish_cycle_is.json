@@ -1,0 +1,160 @@
+{
+  "title": {
+    "en": "Dishwasher cycle !{{is|is not}} [[value]]",
+    "ko": "식기세척 코스 [[value]] !{{임|아님}}"
+  },
+  "titleFormatted": {
+    "en": "Dishwasher cycle !{{is|is not}} [[value]]",
+    "ko": "식기세척 코스 [[value]] !{{임|아님}}"
+  },
+  "hint": {
+    "en": "Checks the value as the appliance last reported it.",
+    "ko": "가전이 마지막으로 보고한 값을 확인합니다."
+  },
+  "args": [
+    {
+      "name": "device",
+      "type": "device",
+      "filter": "driver_id=appliance&capabilities=localthings_dish_cycle"
+    },
+    {
+      "name": "value",
+      "type": "dropdown",
+      "values": [
+        {
+          "id": "07",
+          "title": {
+            "en": "Pre blast",
+            "ko": "애벌 세척"
+          }
+        },
+        {
+          "id": "0c",
+          "title": {
+            "en": "Express",
+            "ko": "급속"
+          }
+        },
+        {
+          "id": "0d",
+          "title": {
+            "en": "Self clean",
+            "ko": "내부 세척"
+          }
+        },
+        {
+          "id": "0e",
+          "title": {
+            "en": "AI Wash",
+            "ko": "AI 맞춤 세척"
+          }
+        },
+        {
+          "id": "80",
+          "title": {
+            "en": "Delicate",
+            "ko": "섬세"
+          }
+        },
+        {
+          "id": "82",
+          "title": {
+            "en": "Auto",
+            "ko": "자동"
+          }
+        },
+        {
+          "id": "83",
+          "title": {
+            "en": "Normal",
+            "ko": "표준"
+          }
+        },
+        {
+          "id": "84",
+          "title": {
+            "en": "Heavy",
+            "ko": "강력"
+          }
+        },
+        {
+          "id": "85",
+          "title": {
+            "en": "Delicate",
+            "ko": "섬세"
+          }
+        },
+        {
+          "id": "86",
+          "title": {
+            "en": "Express 60",
+            "ko": "급속 60분"
+          }
+        },
+        {
+          "id": "88",
+          "title": {
+            "en": "Self Clean",
+            "ko": "내부 세척"
+          }
+        },
+        {
+          "id": "8a",
+          "title": {
+            "en": "Normal",
+            "ko": "표준"
+          }
+        },
+        {
+          "id": "8c",
+          "title": {
+            "en": "Extra Silence",
+            "ko": "저소음"
+          }
+        },
+        {
+          "id": "8d",
+          "title": {
+            "en": "Pots and pans",
+            "ko": "냄비 및 팬"
+          }
+        },
+        {
+          "id": "8e",
+          "title": {
+            "en": "Plastic",
+            "ko": "플라스틱"
+          }
+        },
+        {
+          "id": "8f",
+          "title": {
+            "en": "Baby Care",
+            "ko": "젖병 살균"
+          }
+        },
+        {
+          "id": "90",
+          "title": {
+            "en": "Self clean",
+            "ko": "내부 세척"
+          }
+        },
+        {
+          "id": "a7",
+          "title": {
+            "en": "Heavy",
+            "ko": "강력"
+          }
+        },
+        {
+          "id": "a8",
+          "title": {
+            "en": "Express",
+            "ko": "급속"
+          }
+        }
+      ]
+    }
+  ]
+}

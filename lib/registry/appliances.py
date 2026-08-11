@@ -16,8 +16,106 @@ switch, so does this; where it deliberately leaves something read-only under its
 don't-guess rule, so does this. Nothing that applies heat is writable.
 """
 
-from . import shared
+from . import courses, shared
 from .base import Registry, Spec, as_float, as_int
+
+# --- the running cycle ----------------------------------------------------
+#
+# `/course/vs/0`'s options[] carries the selected cycle as `Course_<hex>`, and the
+# hex is only meaningful together with the course table it came from: a washer and
+# a dryer share twenty codes and not one of them agrees (`1d` is Super Speed or
+# Towels). The appliance names its own table in `/st/washercourse/vs/0` or
+# `/st/dryercourse/vs/0`, so that is what picks the catalog — not the registry the
+# device was routed to. Measured: `washer_dryer_onebody_awm` is a washer that
+# reports `dryercourse`/Table_03, and labelling it from the washer catalog would
+# have renamed every one of its cycles.
+#
+# One capability per catalog rather than one shared one, because Homey carries the
+# translated names as declared enum values and the three vocabularies are
+# genuinely different lists. A board whose table nobody has labelled — FlexWash
+# reports Table_00 — binds none of them and shows no cycle, which is the intended
+# outcome: a borrowed label would be confidently wrong, and this keying exists to
+# prevent exactly that.
+
+HREF_COURSE = "/course/vs/0"
+HREF_WASHER_COURSE = "/st/washercourse/vs/0"
+HREF_DRYER_COURSE = "/st/dryercourse/vs/0"
+
+
+def _course_code(rep) -> str | None:
+    """The selected cycle's hex code, from the `Course_<hex>` options token."""
+    for option in (rep or {}).get("x.com.samsung.da.options") or ():
+        if isinstance(option, str) and option.startswith("Course_"):
+            return option.split("_", 1)[1]
+    return None
+
+
+def _read_mode_cycle(field: str, family: str):
+    """Read `Table_02_Course_1C` — the table and the cycle in one self-describing
+    field, which is what makes this preferable to correlating `/course/vs/0`'s bare
+    `Course_` token with a separate `courseTable`.
+
+    The one-body washer-dryer is why it matters rather than being a tidiness
+    preference. It reports **both** resources — washer Table_02_Course_01 and dryer
+    Table_03_Course_01 — two independent units whose codes happen to coincide and
+    whose names do not (Normal wash, Normal dry). `/course/vs/0` carries a single
+    `Course_01` for the pair, so anything reading it has to guess which unit that
+    belongs to, and the first version of this code guessed wrong: it labelled the
+    machine's dryer cycle from the washer catalog.
+
+    The two agree wherever both exist — ten dumps, no exception — so nothing is
+    lost by preferring the specific one.
+    """
+    def read(rep, _resources):
+        raw = (rep or {}).get(field)
+        if not isinstance(raw, str):
+            return None
+        table, _, code = raw.partition("_Course_")
+        catalog = courses.BY_TABLE.get((family, table.lower()))
+        if catalog is None or not code:
+            # An untranslated table (FlexWash reports Table_00) reads as nothing
+            # rather than borrowing another generation's names, which is the whole
+            # reason the table is part of the key.
+            return None
+        return code.lower() if code.lower() in catalog else None
+
+    return read
+
+
+def _has_mode_cycle(field: str, family: str):
+    read = _read_mode_cycle(field, family)
+
+    def exists(rep, resources):
+        return read(rep, resources) is not None
+
+    return exists
+
+
+# The dishwasher has no course-table resource at all and no evidence its codes vary
+# the way the washer's and dryer's do, so it reads /course/vs/0 directly.
+def _read_dish_cycle(rep, _resources):
+    code = _course_code(rep)
+    return code.lower() if code and code.lower() in courses.DISHWASHER else None
+
+
+_WASHER_MODE = "x.com.samsung.da.st.washerMode"
+_DRYER_MODE = "x.com.samsung.da.st.dryerMode"
+
+# Both are offered to washers and dryers alike: which binds is decided by the
+# resources the appliance reports, and a one-body machine legitimately binds both.
+WASH_CYCLE = (
+    Spec("localthings_wash_cycle", HREF_WASHER_COURSE,
+         _read_mode_cycle(_WASHER_MODE, "washercourse"),
+         exists=_has_mode_cycle(_WASHER_MODE, "washercourse")),
+    Spec("localthings_dry_cycle", HREF_DRYER_COURSE,
+         _read_mode_cycle(_DRYER_MODE, "dryercourse"),
+         exists=_has_mode_cycle(_DRYER_MODE, "dryercourse")),
+)
+
+DISH_CYCLE = (
+    Spec("localthings_dish_cycle", HREF_COURSE, _read_dish_cycle,
+         exists=lambda rep, _r: _read_dish_cycle(rep, None) is not None),
+)
 
 # --- washer ---------------------------------------------------------------
 
@@ -32,6 +130,7 @@ WASHER = Registry(
         *shared.UNIVERSAL,
         *shared.OPERATIONAL,
         *shared.WATER_METER,
+        *WASH_CYCLE,
         Spec("localthings_wash_temperature", HREF_WASHER,
              shared.text("x.com.samsung.da.waterTemperature")),
         Spec("localthings_spin_speed", HREF_WASHER,
@@ -51,6 +150,7 @@ DRYER = Registry(
         *shared.POWER,
         *shared.UNIVERSAL,
         *shared.OPERATIONAL,
+        *WASH_CYCLE,
         Spec("localthings_dry_level", HREF_WASHER,
              shared.text("x.com.samsung.da.dryLevel")),
         # A wrinkle-prevention tumble, not a heat control — writable per the
@@ -75,6 +175,7 @@ DISHWASHER = Registry(
         *shared.UNIVERSAL,
         *shared.OPERATIONAL,
         *shared.WATER_METER,
+        *DISH_CYCLE,
         *shared.SOUND,
         Spec("localthings_sanitize", HREF_DISHWASHER,
              shared.flag("x.com.samsung.da.sanitize"),
