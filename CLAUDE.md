@@ -340,7 +340,18 @@ answers (no version bump — step one already did that; changelog must pre-exist
 Publishing uploads a build. Promoting it to the store is a separate step on the
 developer dashboard, so a version is not live just because publish succeeded — and
 **check which version is actually live before writing the changelog**, because that
-is what decides its contents.
+is what decides its contents. The public store page is the authority and needs no
+auth:
+
+```
+https://homey.app/a/com.lomohome.localthings/     # shows the live version and its notes
+```
+
+**Ask it every time; do not carry the answer forward.** Promotion happens on the
+dashboard without touching this repo, so nothing here changes when a version goes
+live and a remembered answer goes stale silently. On 2026-08-11 a release position
+was written up from a "live is 1.0.4" mentioned days earlier — 1.0.7 had been live
+for a day, with the notes right there on that page.
 
 **A version number is spent the moment it is published, promoted or not.** A second
 `publish` under the same number is refused outright:
