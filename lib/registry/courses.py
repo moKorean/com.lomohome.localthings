@@ -1,22 +1,45 @@
 """Wash, dry and dishwasher cycle names, keyed by the appliance's own course table.
 
 The appliance reports the running cycle as a hex code in `/course/vs/0`'s options[]
-(`Course_1C`), and **the same code means different things on different boards**. A
-washer and a dryer share twenty codes and not one of them agrees: `01` is Normal
-wash or Normal dry, `1d` is Quick wash or Towels. So a code is only meaningful
+(`Course_1C`), and **the same code means different things on different boards** — not
+only between a washer and a dryer, but between board generations of the same
+appliance. Washer Table_00 and Table_02 share eleven codes and ten of them disagree
+(`70` is Heavy Duty on one and Towels on the other). So a code is only meaningful
 together with the table it came from, which the appliance names itself in
-`/st/washercourse/vs/0` or `/st/dryercourse/vs/0`'s `courseTable`.
+`/st/washercourse/vs/0` or `/st/dryercourse/vs/0`.
 
-Only the tables somebody has actually seen labelled are here. A board reporting
-`Table_00` (FlexWash) or a table nobody has translated gets its raw code shown
-rather than a label borrowed from another generation — which is the failure this
-keying exists to prevent, not a limitation of it.
+That is why there is one Homey capability per table rather than one per appliance.
+Homey declares an enum's values, with their names, in the manifest — so a single id
+cannot carry two tables' meanings, and prefixing ids by table would have meant
+renaming values already published in 1.0.8. For the reference this is a
+translations-only concern because Home Assistant resolves labels at runtime; here it
+is structural.
 
-Both catalogs come from the reference integration, which built them from reporters'
-own SmartThings screenshots. They are transcribed here rather than re-derived; where
-a code is missing, the raw code is displayed and that is a gap in the catalog rather
-than a wrong reading.
+Only tables somebody has actually confirmed are here. A board reporting a table
+nobody has named gets no cycle rather than a label borrowed from another generation
+— the FlexWash reports `Table_00_Course_A5`, and `a5` is a dryer Table_00 code, not
+a washer one, so it stays blank.
+
+Both catalogs come from the reference, which built Table_02/Table_03 from reporters'
+SmartThings screenshots and Table_00 from a reporter selecting each cycle on a
+WF45R6300 washer and DVE45R6300 dryer and reading back the raw code. Transcribed
+here rather than re-derived; a missing code shows as no cycle, which is a gap in the
+catalog rather than a wrong reading.
 """
+
+WASHER_TABLE_00 = {
+    "01": {"en": "Normal", "ko": "표준세탁"},
+    "55": {"en": "Whites", "ko": "흰옷"},
+    "57": {"en": "Self Clean+", "ko": "통세척+"},
+    "70": {"en": "Heavy Duty", "ko": "강력세탁"},
+    "71": {"en": "Bedding", "ko": "이불"},
+    "72": {"en": "Sanitize", "ko": "살균"},
+    "73": {"en": "Rinse + Spin", "ko": "헹굼+탈수"},
+    "74": {"en": "Active Wear", "ko": "운동복"},
+    "75": {"en": "Delicates", "ko": "섬세의류"},
+    "77": {"en": "Perm Press", "ko": "구김방지"},
+    "78": {"en": "Quick Wash", "ko": "쾌속세탁"},
+}
 
 WASHER_TABLE_02 = {
     "01": {"en": "Normal", "ko": "표준세탁"},
@@ -92,6 +115,20 @@ WASHER_TABLE_02 = {
     "a0": {"en": "15' Quick Wash", "ko": "15분 쾌속세탁"},
 }
 
+DRYER_TABLE_00 = {
+    "01": {"en": "Normal", "ko": "표준건조"},
+    "27": {"en": "Refresh", "ko": "리프레시"},
+    "9b": {"en": "Steam Sanitize+", "ko": "스팀살균+"},
+    "9c": {"en": "Heavy Duty", "ko": "강력건조"},
+    "9e": {"en": "Perm Press", "ko": "구김방지"},
+    "a0": {"en": "Air Fluff", "ko": "송풍"},
+    "a2": {"en": "Delicates", "ko": "섬세의류"},
+    "a3": {"en": "Active Wear", "ko": "운동복"},
+    "a4": {"en": "Time Dry", "ko": "시간건조"},
+    "a5": {"en": "Bedding", "ko": "이불"},
+    "a6": {"en": "Quick Dry", "ko": "쾌속건조"},
+}
+
 DRYER_TABLE_03 = {
     "01": {"en": "Normal", "ko": "표준건조"},
     "06": {"en": "Time dry", "ko": "시간건조"},
@@ -144,12 +181,13 @@ DISHWASHER = {
     "a8": {"en": "Express", "ko": "급속"},
 }
 
-# Which catalog a device's own `courseTable` selects. Keyed by (resource, table id)
-# because the resource names the family and the id names the generation; a
-# washer-dryer combo reports `dryercourse` and is labelled from the dryer catalog,
-# which is measured rather than assumed — `washer_dryer_onebody_awm` does exactly
-# that.
+# (resource, table id) -> the catalog and the Homey capability that carries it.
+# Keyed by the resource because that names the family and by the id because that
+# names the generation. A one-body washer-dryer reports both resources and binds
+# both capabilities, which is measured rather than assumed.
 BY_TABLE = {
-    ("washercourse", "table_02"): WASHER_TABLE_02,
-    ("dryercourse", "table_03"): DRYER_TABLE_03,
+    ("washercourse", "table_00"): ("localthings_wash_cycle_t00", WASHER_TABLE_00),
+    ("washercourse", "table_02"): ("localthings_wash_cycle", WASHER_TABLE_02),
+    ("dryercourse", "table_00"): ("localthings_dry_cycle_t00", DRYER_TABLE_00),
+    ("dryercourse", "table_03"): ("localthings_dry_cycle", DRYER_TABLE_03),
 }

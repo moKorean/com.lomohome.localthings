@@ -1,0 +1,90 @@
+{
+  "type": "enum",
+  "title": {
+    "en": "Wash cycle",
+    "ko": "세탁 코스"
+  },
+  "getable": true,
+  "setable": false,
+  "uiComponent": "sensor",
+  "icon": "/assets/capabilities/mdi-washing-machine.svg",
+  "values": [
+    {
+      "id": "01",
+      "title": {
+        "en": "Normal",
+        "ko": "표준세탁"
+      }
+    },
+    {
+      "id": "55",
+      "title": {
+        "en": "Whites",
+        "ko": "흰옷"
+      }
+    },
+    {
+      "id": "57",
+      "title": {
+        "en": "Self Clean+",
+        "ko": "통세척+"
+      }
+    },
+    {
+      "id": "70",
+      "title": {
+        "en": "Heavy Duty",
+        "ko": "강력세탁"
+      }
+    },
+    {
+      "id": "71",
+      "title": {
+        "en": "Bedding",
+        "ko": "이불"
+      }
+    },
+    {
+      "id": "72",
+      "title": {
+        "en": "Sanitize",
+        "ko": "살균"
+      }
+    },
+    {
+      "id": "73",
+      "title": {
+        "en": "Rinse + Spin",
+        "ko": "헹굼+탈수"
+      }
+    },
+    {
+      "id": "74",
+      "title": {
+        "en": "Active Wear",
+        "ko": "운동복"
+      }
+    },
+    {
+      "id": "75",
+      "title": {
+        "en": "Delicates",
+        "ko": "섬세의류"
+      }
+    },
+    {
+      "id": "77",
+      "title": {
+        "en": "Perm Press",
+        "ko": "구김방지"
+      }
+    },
+    {
+      "id": "78",
+      "title": {
+        "en": "Quick Wash",
+        "ko": "쾌속세탁"
+      }
+    }
+  ]
+}

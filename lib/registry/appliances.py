@@ -30,12 +30,16 @@ from .base import Registry, Spec, as_float, as_int
 # reports `dryercourse`/Table_03, and labelling it from the washer catalog would
 # have renamed every one of its cycles.
 #
-# One capability per catalog rather than one shared one, because Homey carries the
-# translated names as declared enum values and the three vocabularies are
-# genuinely different lists. A board whose table nobody has labelled — FlexWash
-# reports Table_00 — binds none of them and shows no cycle, which is the intended
-# outcome: a borrowed label would be confidently wrong, and this keying exists to
-# prevent exactly that.
+# The disagreement is not only washer-versus-dryer. Washer Table_00 and Table_02 are
+# the same appliance two generations apart and share eleven codes, of which ten mean
+# something else (`70` is Heavy Duty on one, Towels on the other). So there is one
+# capability per *table*, not per appliance: Homey declares an enum's values and
+# their names in the manifest, so one id cannot carry two tables' meanings.
+#
+# A code the table's catalog does not name reads as nothing rather than borrowing
+# another generation's label. The FlexWash is the case in point — it reports
+# `Table_00_Course_A5` on the washer resource, and `a5` is a *dryer* Table_00 code,
+# so it stays blank instead of being named out of the wrong catalog.
 
 HREF_COURSE = "/course/vs/0"
 HREF_WASHER_COURSE = "/st/washercourse/vs/0"
@@ -50,46 +54,34 @@ def _course_code(rep) -> str | None:
     return None
 
 
-def _read_mode_cycle(field: str, family: str):
-    """Read `Table_02_Course_1C` — the table and the cycle in one self-describing
-    field, which is what makes this preferable to correlating `/course/vs/0`'s bare
-    `Course_` token with a separate `courseTable`.
+def _read_table_cycle(field: str, family: str, table_id: str, catalog: dict):
+    """Read the cycle only when the appliance's own table is this spec's table.
 
-    The one-body washer-dryer is why it matters rather than being a tidiness
-    preference. It reports **both** resources — washer Table_02_Course_01 and dryer
-    Table_03_Course_01 — two independent units whose codes happen to coincide and
-    whose names do not (Normal wash, Normal dry). `/course/vs/0` carries a single
-    `Course_01` for the pair, so anything reading it has to guess which unit that
-    belongs to, and the first version of this code guessed wrong: it labelled the
-    machine's dryer cycle from the washer catalog.
-
-    The two agree wherever both exist — ten dumps, no exception — so nothing is
-    lost by preferring the specific one.
+    One spec per table, because the tables are disjoint vocabularies: washer
+    Table_00 and Table_02 share eleven codes and ten disagree. Comparing the table
+    id here is what keeps a Table_00 machine from being labelled out of Table_02's
+    catalog, which would be confidently wrong rather than blank.
     """
     def read(rep, _resources):
         raw = (rep or {}).get(field)
         if not isinstance(raw, str):
             return None
         table, _, code = raw.partition("_Course_")
-        catalog = courses.BY_TABLE.get((family, table.lower()))
-        if catalog is None or not code:
-            # An untranslated table (FlexWash reports Table_00) reads as nothing
-            # rather than borrowing another generation's names, which is the whole
-            # reason the table is part of the key.
+        if table.lower() != table_id or not code:
             return None
         return code.lower() if code.lower() in catalog else None
 
     return read
 
 
-def _has_mode_cycle(field: str, family: str):
-    read = _read_mode_cycle(field, family)
-
-    def exists(rep, resources):
-        return read(rep, resources) is not None
-
-    return exists
-
+# The `Table_02_Course_1C` field is preferred over `/course/vs/0`'s bare `Course_`
+# token because it is self-describing — table and cycle together. The one-body
+# washer-dryer is why that matters rather than being tidiness: it reports **both**
+# resources (washer Table_02_Course_01, dryer Table_03_Course_01), two units whose
+# codes coincide and whose names do not, while `/course/vs/0` carries one `Course_01`
+# for the pair. The first version of this code read that token, guessed which unit it
+# belonged to, and labelled the dry cycle from the washer catalog. The two sources
+# agree on all ten dumps carrying both, so preferring the specific one costs nothing.
 
 # The dishwasher has no course-table resource at all and no evidence its codes vary
 # the way the washer's and dryer's do, so it reads /course/vs/0 directly.
@@ -98,19 +90,25 @@ def _read_dish_cycle(rep, _resources):
     return code.lower() if code and code.lower() in courses.DISHWASHER else None
 
 
-_WASHER_MODE = "x.com.samsung.da.st.washerMode"
-_DRYER_MODE = "x.com.samsung.da.st.dryerMode"
+_MODE_FIELD = {
+    "washercourse": ("x.com.samsung.da.st.washerMode", HREF_WASHER_COURSE),
+    "dryercourse": ("x.com.samsung.da.st.dryerMode", HREF_DRYER_COURSE),
+}
 
-# Both are offered to washers and dryers alike: which binds is decided by the
-# resources the appliance reports, and a one-body machine legitimately binds both.
-WASH_CYCLE = (
-    Spec("localthings_wash_cycle", HREF_WASHER_COURSE,
-         _read_mode_cycle(_WASHER_MODE, "washercourse"),
-         exists=_has_mode_cycle(_WASHER_MODE, "washercourse")),
-    Spec("localthings_dry_cycle", HREF_DRYER_COURSE,
-         _read_mode_cycle(_DRYER_MODE, "dryercourse"),
-         exists=_has_mode_cycle(_DRYER_MODE, "dryercourse")),
-)
+
+def _cycle_specs():
+    """One spec per confirmed course table, built from the catalog rather than
+    listed by hand so that adding a table is a courses.py change."""
+    for (family, table_id), (capability, catalog) in courses.BY_TABLE.items():
+        field, href = _MODE_FIELD[family]
+        read = _read_table_cycle(field, family, table_id, catalog)
+        yield Spec(capability, href, read,
+                   exists=lambda rep, resources, _r=read: _r(rep, resources) is not None)
+
+
+# Offered to washers and dryers alike: which of them binds is decided by the
+# resources the appliance reports, and a one-body machine legitimately binds two.
+WASH_CYCLE = tuple(_cycle_specs())
 
 DISH_CYCLE = (
     Spec("localthings_dish_cycle", HREF_COURSE, _read_dish_cycle,

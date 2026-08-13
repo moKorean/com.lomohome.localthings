@@ -1,0 +1,104 @@
+{
+  "title": {
+    "en": "Dry cycle !{{is|is not}} [[value]]",
+    "ko": "건조 코스 [[value]] !{{임|아님}}"
+  },
+  "titleFormatted": {
+    "en": "Dry cycle !{{is|is not}} [[value]]",
+    "ko": "건조 코스 [[value]] !{{임|아님}}"
+  },
+  "hint": {
+    "en": "Checks the value as the appliance last reported it.",
+    "ko": "가전이 마지막으로 보고한 값을 확인합니다."
+  },
+  "args": [
+    {
+      "name": "device",
+      "type": "device",
+      "filter": "driver_id=appliance&capabilities=localthings_dry_cycle_t00"
+    },
+    {
+      "name": "value",
+      "type": "dropdown",
+      "values": [
+        {
+          "id": "01",
+          "title": {
+            "en": "Normal",
+            "ko": "표준건조"
+          }
+        },
+        {
+          "id": "27",
+          "title": {
+            "en": "Refresh",
+            "ko": "리프레시"
+          }
+        },
+        {
+          "id": "9b",
+          "title": {
+            "en": "Steam Sanitize+",
+            "ko": "스팀살균+"
+          }
+        },
+        {
+          "id": "9c",
+          "title": {
+            "en": "Heavy Duty",
+            "ko": "강력건조"
+          }
+        },
+        {
+          "id": "9e",
+          "title": {
+            "en": "Perm Press",
+            "ko": "구김방지"
+          }
+        },
+        {
+          "id": "a0",
+          "title": {
+            "en": "Air Fluff",
+            "ko": "송풍"
+          }
+        },
+        {
+          "id": "a2",
+          "title": {
+            "en": "Delicates",
+            "ko": "섬세의류"
+          }
+        },
+        {
+          "id": "a3",
+          "title": {
+            "en": "Active Wear",
+            "ko": "운동복"
+          }
+        },
+        {
+          "id": "a4",
+          "title": {
+            "en": "Time Dry",
+            "ko": "시간건조"
+          }
+        },
+        {
+          "id": "a5",
+          "title": {
+            "en": "Bedding",
+            "ko": "이불"
+          }
+        },
+        {
+          "id": "a6",
+          "title": {
+            "en": "Quick Dry",
+            "ko": "쾌속건조"
+          }
+        }
+      ]
+    }
+  ]
+}

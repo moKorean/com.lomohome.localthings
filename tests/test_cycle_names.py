@@ -34,7 +34,9 @@ pytestmark = pytest.mark.skipif(
 
 CATALOGS = {
     "localthings_wash_cycle": courses.WASHER_TABLE_02,
+    "localthings_wash_cycle_t00": courses.WASHER_TABLE_00,
     "localthings_dry_cycle": courses.DRYER_TABLE_03,
+    "localthings_dry_cycle_t00": courses.DRYER_TABLE_00,
     "localthings_dish_cycle": courses.DISHWASHER,
 }
 
@@ -93,14 +95,23 @@ def test_the_one_body_machine_reads_both_of_its_units():
     assert courses.DRYER_TABLE_03["01"]["ko"] == "표준건조"
 
 
-def test_an_untranslated_table_shows_nothing_rather_than_a_borrowed_name():
-    """FlexWash reports Table_00, which nobody has labelled. Its code A5 exists in
-    Table_02 as a different cycle entirely, so falling back to the washer catalog
-    would put a confident, wrong name on the tile."""
+def test_an_uncatalogued_code_shows_nothing_rather_than_a_borrowed_name():
+    """FlexWash reads blank, and the reason changed once Table_00 was named.
+
+    It is no longer "nobody has labelled that table" — the reference confirmed
+    washer Table_00 in the meantime. FlexWash reports `Table_00_Course_A5`, and `a5`
+    is in neither washer catalog. It is in the *dryer* Table_00 one, which is the
+    trap worth pinning: the two families share the table id, so pooling catalogs by
+    id alone would have named this washer's cycle 이불 out of a dryer's list.
+    """
     assert _cycles("washer_flexwash_device.json") == {}
     resources = _flatten("washer_flexwash_device.json")
     assert resources["/st/washercourse/vs/0"][
-        "x.com.samsung.da.st.washerMode"].startswith("Table_00_")
+        "x.com.samsung.da.st.washerMode"] == "Table_00_Course_A5"
+
+    assert "a5" not in courses.WASHER_TABLE_00
+    assert "a5" not in courses.WASHER_TABLE_02
+    assert courses.DRYER_TABLE_00["a5"]["ko"] == "이불"
 
 
 def test_the_two_sources_agree_wherever_both_exist():
@@ -160,3 +171,72 @@ def test_the_catalogs_do_not_share_a_meaning():
     same = [c for c in shared
             if courses.WASHER_TABLE_02[c]["ko"] == courses.DRYER_TABLE_03[c]["ko"]]
     assert not same, f"codes that mean the same on both tables: {same}"
+
+
+# --- Table_00 -------------------------------------------------------------
+#
+# No dump on record uses it, so these are synthetic reps built from the field the
+# real dumps do carry. The catalog itself is not synthetic: the reference confirmed
+# it by having a reporter select each cycle on a WF45R6300 washer and DVE45R6300
+# dryer and read back the raw code.
+
+
+def _spec(capability, resources):
+    from lib.registry.appliances import WASHER
+    return next(s for s in WASHER.specs if s.capability == capability)
+
+
+def _rep(field, value):
+    return {field: value}
+
+
+WASHER_MODE = "x.com.samsung.da.st.washerMode"
+DRYER_MODE = "x.com.samsung.da.st.dryerMode"
+
+
+def test_a_table_00_washer_reads_from_the_table_00_catalog():
+    resources = {"/st/washercourse/vs/0": _rep(WASHER_MODE, "Table_00_Course_70")}
+    spec = _spec("localthings_wash_cycle_t00", resources)
+    assert spec.applies(resources)
+    assert spec.read(resources[spec.href], resources) == "70"
+    assert courses.WASHER_TABLE_00["70"]["ko"] == "강력세탁"
+
+
+def test_the_same_code_is_a_different_cycle_on_the_two_washer_tables():
+    """The reason each table gets its own capability. `70` is Heavy Duty on Table_00
+    and Towels on Table_02 — one enum id could not carry both names, and a machine
+    labelled from the wrong generation would be confidently wrong."""
+    assert courses.WASHER_TABLE_00["70"]["ko"] != courses.WASHER_TABLE_02["70"]["ko"]
+
+    for table, capability, other in (
+        ("Table_00", "localthings_wash_cycle_t00", "localthings_wash_cycle"),
+        ("Table_02", "localthings_wash_cycle", "localthings_wash_cycle_t00"),
+    ):
+        resources = {"/st/washercourse/vs/0": _rep(WASHER_MODE, f"{table}_Course_70")}
+        mine = _spec(capability, resources)
+        theirs = _spec(other, resources)
+        assert mine.read(resources[mine.href], resources) == "70"
+        assert theirs.read(resources[theirs.href], resources) is None, (
+            f"{other} claimed a {table} cycle")
+
+
+def test_a_washer_code_is_not_read_from_the_dryer_table_of_the_same_generation():
+    """FlexWash is the live case: it reports Table_00_Course_A5 on the *washer*
+    resource, and `a5` exists in the dryer Table_00 catalog and not the washer one.
+    The two must not be pooled just because they share a table id."""
+    assert "a5" in courses.DRYER_TABLE_00
+    assert "a5" not in courses.WASHER_TABLE_00
+
+    resources = {"/st/washercourse/vs/0": _rep(WASHER_MODE, "Table_00_Course_A5")}
+    for capability in ("localthings_wash_cycle_t00", "localthings_dry_cycle_t00"):
+        spec = _spec(capability, resources)
+        assert not spec.applies(resources), f"{capability} bound to a washer's A5"
+
+
+def test_an_unconfirmed_table_still_reads_nothing():
+    """Table_00 being named does not mean every table is. A board reporting one
+    nobody has confirmed must stay blank rather than fall back to a neighbour."""
+    resources = {"/st/washercourse/vs/0": _rep(WASHER_MODE, "Table_99_Course_01")}
+    for capability in ("localthings_wash_cycle", "localthings_wash_cycle_t00"):
+        spec = _spec(capability, resources)
+        assert not spec.applies(resources)
