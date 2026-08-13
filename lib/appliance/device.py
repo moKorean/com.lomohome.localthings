@@ -42,6 +42,38 @@ ITEMS_FIELD = "x.com.samsung.da.items"
 ITEM_ID = "x.com.samsung.da.id"
 
 
+def _replaces_on_notify(href: str) -> bool:
+    """Whether a pushed update for `href` replaces the cached rep instead of
+    merging into it.
+
+    Merging is the right default: a notification can carry only the fields that
+    changed, so an absent key means "unchanged, keep what we had". `/alarms/vs/0`
+    is the resource where that reasoning runs backwards, because **its empty state
+    is an empty rep**. Measured here, not inferred: all three refrigerators report
+
+        "/alarms/vs/0": {}
+
+    with nothing wrong, so `{}` is what the board says when it has no alarm to
+    report. Merged, that is a no-op — the alarm that was there stays in the cache
+    for as long as the app runs, surviving the appliance clearing it and every
+    power cycle, because only a poll rebuilds the rep wholesale and a device on
+    push polls just a summary sweep.
+
+    Deliberately narrow. "An empty rep always replaces" would be the tempting
+    generalisation and it is not supported: nothing has been measured about what an
+    empty notification means on any other resource, and guessing would blank a tile
+    on the strength of a keep-alive. One resource, one measurement, one rule.
+
+    Matched on the whole `alarms` segment rather than a suffix. A suffix test reads
+    the same and quietly claims anything ending in those letters — no
+    `/kimchialarms/vs/0` exists on any dump, so that would have been a misfire
+    waiting for a resource nobody has measured, on the one code path whose job is
+    to throw the cache away.
+    """
+    segments = href.strip("/").split("/")
+    return len(segments) >= 3 and segments[-3:-1] == ["alarms", "vs"]
+
+
 def _fold_write_into(cached: dict, body: dict) -> None:
     """Apply a write payload to the cached representation, in place, without
     discarding the fields the payload did not mention.
@@ -349,8 +381,11 @@ answers none is a different case, and the living-room air conditioner here
             # Mid-settle after a write: the device may still be reporting the old
             # value, which would undo the optimistic one.
             return
-        merged = self._resources.setdefault(href, {})
-        merged.update(rep)
+        if _replaces_on_notify(href):
+            self._resources[href] = dict(rep)
+        else:
+            merged = self._resources.setdefault(href, {})
+            merged.update(rep)
         # A callback, not a coroutine the loop awaits — so the task is kept in a set
         # and discarded on completion rather than left unreferenced.
         task = asyncio.create_task(self._apply_href(href))
