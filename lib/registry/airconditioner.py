@@ -212,6 +212,52 @@ def _write_mode(value, rep):
     return ["mode", "vs", "0"], {FIELD_MODES: [value]}
 
 
+# Outdoor temperature, from `/mode/vs/0`'s `OutdoorTemp_<n>` token minus 55.
+#
+# The offset is the reference's, which field-validated it over 48 hours against a
+# weather feed (r=0.92) on boards declaring Celsius. Ours declare Celsius, so the
+# gate below holds, and the four units here read 84-87 → 29-32°C.
+#
+# **The one independent check available did not confirm it and is recorded rather
+# than buried.** A spot query to wttr.in for Seoul answered 13°C at the same
+# moment, which cannot be reconciled with a -55 offset (that would need about
+# -72). Two things argue the appliances rather than the feed: all four units were
+# actively cooling rooms sitting at 28.5-30.5°C, which is not what a 13°C day looks
+# like, and r=0.92 is a correlation, so it would not by itself have caught a
+# constant offset error upstream either. Treated as unresolved: the reading is
+# exposed because a wrong constant still tracks the real curve and is obvious to a
+# user who compares it with a window, and docs/BACKLOG.md carries the experiment
+# that would settle it.
+#
+# Enabled without the reference's opt-in. It disables this by default because a
+# multi-split reports one condenser's token on every indoor head, which would make
+# N identical sensors. That is not this hardware: the four units read 87/85/84/85
+# at one moment, so they are not echoing a single shared value.
+_OUTDOOR_TEMP_OFFSET = 55
+
+
+def _reports_celsius(resources) -> bool:
+    """Whether the board declares Celsius on its own `/temperatures/vs/0`.
+
+    Guards the offset rather than the token. The constant was validated on
+    Celsius-locale boards only, and nothing says a Fahrenheit board uses the same
+    additive constant — or reports degrees F through it at all.
+    """
+    unit = first_item(resources.get(HREF_TEMPS) or {}).get("x.com.samsung.da.unit")
+    return unit is None or str(unit).strip().lower().startswith("celsius")
+
+
+def _read_outdoor_temp(rep, resources):
+    if not _reports_celsius(resources):
+        return None
+    raw = as_float(_option_token(rep, "OutdoorTemp"))
+    return None if raw is None else raw - _OUTDOOR_TEMP_OFFSET
+
+
+def _has_outdoor_temp(rep, resources):
+    return _read_outdoor_temp(rep, resources) is not None
+
+
 def _read_target_temp(rep, _resources):
     return as_float(first_item(rep).get("x.com.samsung.da.desired"))
 
@@ -588,6 +634,9 @@ REGISTRY = Registry(
         Spec("target_temperature", HREF_TEMPS, _read_target_temp, _write_target_temp,
              options=_setpoint_options),
         Spec("measure_temperature", HREF_TEMPS, _read_current_temp),
+        Spec("measure_temperature.outdoor", HREF_MODE, _read_outdoor_temp,
+             exists=_has_outdoor_temp,
+             titles={"en": "Outdoor", "ko": "실외"}),
         Spec("localthings_ac_mode", HREF_MODE, _read_mode, _write_mode),
         # Smart Cool Clean, the odor-controller self-clean. Both tokens are
         # present on all four units here (SmartCoolClean_Off,

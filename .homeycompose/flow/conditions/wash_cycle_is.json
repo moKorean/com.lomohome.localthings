@@ -29,6 +29,20 @@
           }
         },
         {
+          "id": "02",
+          "title": {
+            "en": "Extra Heavy Duty",
+            "ko": "초강력세탁"
+          }
+        },
+        {
+          "id": "03",
+          "title": {
+            "en": "Super Eco Wash",
+            "ko": "초절약세탁"
+          }
+        },
+        {
           "id": "04",
           "title": {
             "en": "Quick Wash",
@@ -36,10 +50,24 @@
           }
         },
         {
+          "id": "05",
+          "title": {
+            "en": "Wool/Lingerie",
+            "ko": "울/란제리"
+          }
+        },
+        {
           "id": "06",
           "title": {
-            "en": "XXL Laundry",
-            "ko": "XXL 세탁"
+            "en": "Bedding",
+            "ko": "이불"
+          }
+        },
+        {
+          "id": "07",
+          "title": {
+            "en": "Outdoor",
+            "ko": "아웃도어"
           }
         },
         {
@@ -50,10 +78,129 @@
           }
         },
         {
+          "id": "09",
+          "title": {
+            "en": "Drum Clean",
+            "ko": "무세제통세척"
+          }
+        },
+        {
+          "id": "0a",
+          "title": {
+            "en": "Towels",
+            "ko": "타월"
+          }
+        },
+        {
+          "id": "0b",
+          "title": {
+            "en": "Boil Wash",
+            "ko": "삶음세탁"
+          }
+        },
+        {
+          "id": "0c",
+          "title": {
+            "en": "Baby Care",
+            "ko": "아기옷"
+          }
+        },
+        {
+          "id": "0d",
+          "title": {
+            "en": "Spin Only",
+            "ko": "탈수단독"
+          }
+        },
+        {
+          "id": "0e",
+          "title": {
+            "en": "Cloudy Day",
+            "ko": "흐린날세탁"
+          }
+        },
+        {
+          "id": "0f",
+          "title": {
+            "en": "Pure Wash",
+            "ko": "청정세탁"
+          }
+        },
+        {
+          "id": "10",
+          "title": {
+            "en": "Spin Dry",
+            "ko": "건조탈수"
+          }
+        },
+        {
+          "id": "11",
+          "title": {
+            "en": "Summer Bedding",
+            "ko": "여름이불"
+          }
+        },
+        {
+          "id": "12",
+          "title": {
+            "en": "Cottons",
+            "ko": "면의류"
+          }
+        },
+        {
+          "id": "13",
+          "title": {
+            "en": "Black Cottons",
+            "ko": "검은면의류"
+          }
+        },
+        {
+          "id": "14",
+          "title": {
+            "en": "Delicate Underwear",
+            "ko": "섬세속옷"
+          }
+        },
+        {
+          "id": "15",
+          "title": {
+            "en": "Activewear",
+            "ko": "피트니스"
+          }
+        },
+        {
+          "id": "16",
+          "title": {
+            "en": "Blouses",
+            "ko": "블라우스"
+          }
+        },
+        {
           "id": "17",
           "title": {
             "en": "Downloaded",
             "ko": "다운로드 코스"
+          }
+        },
+        {
+          "id": "18",
+          "title": {
+            "en": "Soft Bubble",
+            "ko": "소프트버블"
+          }
+        },
+        {
+          "id": "19",
+          "title": {
+            "en": "AI Wash",
+            "ko": "AI 맞춤세탁"
+          }
+        },
+        {
+          "id": "1a",
+          "title": {
+            "en": "Shirts",
+            "ko": "셔츠"
           }
         },
         {
@@ -516,6 +663,13 @@
           "title": {
             "en": "15' Quick Wash",
             "ko": "15분 쾌속세탁"
+          }
+        },
+        {
+          "id": "b0",
+          "title": {
+            "en": "Mixed Load",
+            "ko": "혼합 세탁"
           }
         }
       ]
