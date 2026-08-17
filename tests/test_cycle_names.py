@@ -159,15 +159,19 @@ def test_the_catalogs_do_not_share_a_meaning():
     """The premise of keying by table. If washer and dryer agreed on every shared
     code, one capability would do and this would be over-built.
 
-    Asserted on the Korean names, because the English ones are not decisive: the
-    twenty shared codes disagree nineteen times in English and twenty in Korean.
-    The odd one out is `01`, which English calls "Normal" for both while Korean
-    distinguishes 표준세탁 from 표준건조 — the same-looking label is a shortcoming of
-    the English catalog, not evidence the two tables mean the same thing, and on a
-    one-body machine it would put "Normal" on both tiles.
+    Asserted on the Korean names, because the English ones are not decisive: `01`
+    is "Normal" on both in English while Korean distinguishes 표준세탁 from 표준건조.
+    The same-looking label is a shortcoming of the English catalog, not evidence the
+    tables agree, and on a one-body machine it would put "Normal" on both tiles.
+
+    The size of the overlap is deliberately not pinned. It was, at twenty, and the
+    next upstream sync took it to thirty-nine and failed the test for saying so —
+    which is noise: the catalogs grow whenever somebody reports codes, and none of
+    that bears on whether the two tables mean different things. Only a floor, so
+    that a catalog failing to load cannot pass this by having nothing to compare.
     """
     shared = set(courses.WASHER_TABLE_02) & set(courses.DRYER_TABLE_03)
-    assert len(shared) == 20, f"expected 20 shared codes, got {len(shared)}"
+    assert len(shared) >= 20, f"only {len(shared)} shared codes — did a catalog load?"
     same = [c for c in shared
             if courses.WASHER_TABLE_02[c]["ko"] == courses.DRYER_TABLE_03[c]["ko"]]
     assert not same, f"codes that mean the same on both tables: {same}"

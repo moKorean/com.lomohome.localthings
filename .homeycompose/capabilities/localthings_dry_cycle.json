@@ -17,10 +17,80 @@
       }
     },
     {
+      "id": "02",
+      "title": {
+        "en": "AI Dry",
+        "ko": "AI 맞춤건조"
+      }
+    },
+    {
+      "id": "03",
+      "title": {
+        "en": "Super Speed",
+        "ko": "쾌속건조"
+      }
+    },
+    {
+      "id": "05",
+      "title": {
+        "en": "Bedding",
+        "ko": "이불"
+      }
+    },
+    {
       "id": "06",
       "title": {
         "en": "Time dry",
         "ko": "시간건조"
+      }
+    },
+    {
+      "id": "07",
+      "title": {
+        "en": "Delicates",
+        "ko": "섬세의류"
+      }
+    },
+    {
+      "id": "09",
+      "title": {
+        "en": "Shirts",
+        "ko": "셔츠"
+      }
+    },
+    {
+      "id": "0b",
+      "title": {
+        "en": "Padding Care",
+        "ko": "패딩케어"
+      }
+    },
+    {
+      "id": "0c",
+      "title": {
+        "en": "Outdoor Water-Repellent Care",
+        "ko": "아웃도어발수케어"
+      }
+    },
+    {
+      "id": "0e",
+      "title": {
+        "en": "Towels",
+        "ko": "타월"
+      }
+    },
+    {
+      "id": "0f",
+      "title": {
+        "en": "Wool",
+        "ko": "울"
+      }
+    },
+    {
+      "id": "11",
+      "title": {
+        "en": "Cool air",
+        "ko": "송풍건조"
       }
     },
     {
@@ -150,6 +220,13 @@
       }
     },
     {
+      "id": "28",
+      "title": {
+        "en": "Interior Hot Air Sanitize",
+        "ko": "열풍내부살균"
+      }
+    },
+    {
       "id": "29",
       "title": {
         "en": "AI Dry",
@@ -168,6 +245,55 @@
       "title": {
         "en": "Self Tub Dry",
         "ko": "통 건조"
+      }
+    },
+    {
+      "id": "37",
+      "title": {
+        "en": "Blouses",
+        "ko": "블라우스"
+      }
+    },
+    {
+      "id": "38",
+      "title": {
+        "en": "Iron dry",
+        "ko": "다림질건조"
+      }
+    },
+    {
+      "id": "39",
+      "title": {
+        "en": "Room Dehumidify",
+        "ko": "공간제습"
+      }
+    },
+    {
+      "id": "3a",
+      "title": {
+        "en": "Hygiene Care",
+        "ko": "살균건조"
+      }
+    },
+    {
+      "id": "3b",
+      "title": {
+        "en": "Bedding/Dust Off",
+        "ko": "이불/먼지털기"
+      }
+    },
+    {
+      "id": "3c",
+      "title": {
+        "en": "Activewear",
+        "ko": "피트니스"
+      }
+    },
+    {
+      "id": "3d",
+      "title": {
+        "en": "Denim",
+        "ko": "데님"
       }
     },
     {
