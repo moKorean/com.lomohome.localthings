@@ -809,11 +809,20 @@ answers none is a different case, and the living-room air conditioner here
         Done here rather than only at creation so a device paired before a fix picks
         the corrected bounds up on its next start — a slider whose range came from
         Homey's defaults instead of the appliance offers values the device refuses.
+
+        `ui_language`, not `language`. The latter asks Homey's Python i18n, which
+        resolves the *app's* language and answers 'en' whatever the user has set
+        (docs/PORTING.md section 8) — the exact reason `ui_language` exists. Using it
+        here meant every sub-capability title shipped in English on a Korean Homey:
+        the refrigerator's compartments read "Fridge" and "Freezer" beside other
+        apps' 냉방 온도, and the Korean strings in the specs were never reachable.
+        Measured on the running app, where diagnostics report i18n.get_language 'en'
+        and ui_language 'ko' side by side.
         """
         setter = getattr(self, "set_capability_options", None)
         if not callable(setter):
             return
-        language = await compat.language(self.homey)
+        language = await compat.ui_language(self.homey)
         options = self._registry.capability_options(self._resources, language)
         own = set(self.get_capabilities())
         for capability, values in options.items():

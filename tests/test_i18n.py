@@ -182,3 +182,29 @@ def test_every_placeholder_a_message_declares_is_actually_filled():
         # And it must format without raising when given what the callers pass.
         i18n.translate(f"error.{key}", "en", **{n: "x" for n in
                                                 set(re.findall(r"\{(\w+)\}", template))})
+
+
+def test_nothing_user_facing_asks_homey_for_the_app_s_language():
+    """`compat.language` resolves the *app's* language and answers 'en' whatever the
+    user has set (docs/PORTING.md section 8). `compat.ui_language` is the workaround,
+    and anything a user reads has to go through it.
+
+    This is not hypothetical tidiness. `_sync_capability_options` used the wrong one,
+    so every sub-capability title shipped in English on a Korean Homey — the
+    refrigerator's compartments read "Fridge" and "Freezer", and the Korean strings
+    sitting in the specs were unreachable. The running app reports i18n.get_language
+    'en' and ui_language 'ko' side by side, so the two are visibly different and the
+    wrong one fails silently, which is why a test holds it rather than a comment.
+    """
+    import re
+    from pathlib import Path
+
+    root = Path(__file__).parent.parent
+    for rel in ("lib/appliance/driver.py", "lib/appliance/device.py"):
+        source = (root / rel).read_text()
+        # `ui_language` contains `language`, so match the call site precisely.
+        bare = re.findall(r"compat\.language\(", source)
+        assert not bare, (
+            f"{rel} calls compat.language() directly; user-facing text and "
+            f"per-device titles must use compat.ui_language()"
+        )
