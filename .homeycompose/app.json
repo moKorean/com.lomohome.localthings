@@ -6,7 +6,7 @@
   "runtime": "python",
   "pythonVersion": "3.14",
   "pythonPackages": [
-    "smartthings-local>=0.1.2"
+    "smartthings-local>=0.1.8"
   ],
   "platforms": [
     "local"

@@ -7,7 +7,7 @@
   "runtime": "python",
   "pythonVersion": "3.14",
   "pythonPackages": [
-    "smartthings-local>=0.1.2"
+    "smartthings-local>=0.1.8"
   ],
   "platforms": [
     "local"
@@ -1764,6 +1764,32 @@
           }
         ],
         "id": "dish_cycle_is"
+      },
+      {
+        "title": {
+          "en": "Washes until drum clean !{{is|is not}} at least [[value]]",
+          "ko": "통세척까지 남은 횟수 [[value]] !{{이상|미만}}"
+        },
+        "titleFormatted": {
+          "en": "Washes until drum clean !{{is|is not}} at least [[value]]",
+          "ko": "통세척까지 남은 횟수 [[value]] !{{이상|미만}}"
+        },
+        "hint": {
+          "en": "Checks the value as the appliance last reported it.",
+          "ko": "가전이 마지막으로 보고한 값을 확인합니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_drum_clean_remaining"
+          },
+          {
+            "name": "value",
+            "type": "number"
+          }
+        ],
+        "id": "drum_clean_remaining_is"
       },
       {
         "title": {
@@ -7815,6 +7841,19 @@
       "setable": true,
       "uiComponent": "toggle",
       "icon": "/assets/capabilities/mdi-led-on.svg"
+    },
+    "localthings_drum_clean_remaining": {
+      "type": "number",
+      "title": {
+        "en": "Washes until drum clean",
+        "ko": "통세척까지 남은 횟수"
+      },
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "icon": "/assets/capabilities/mdi-counter.svg",
+      "decimals": 0,
+      "insights": true
     },
     "localthings_dry_cycle": {
       "type": "enum",

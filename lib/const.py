@@ -132,12 +132,27 @@ OBSERVE_SUCCESS_FRACTION = 0.8
 # in docs/BACKLOG.md ruled out two other explanations and established only that
 # delivery is variable, which a burst alone does not account for either.
 #
-# Kept regardless, on grounds that do not depend on which it is: 1.35 s per device,
-# and it matches what the library itself does in `refresh_observes()`, its own paced
-# bulk path. Deliberately not the 0.2 s that `pace()` would impose — this app
-# subscribes nine appliances at once, and 27 x 0.2 s each would occupy the shared
-# executor for five seconds per device at every start.
-OBSERVE_SUBSCRIBE_SPACING_S = 0.05
+# **Raised from 0.05 on 2026-08-19, and the evidence came from outside.** Upstream
+# issue #396 reports the same unpaced burst from the library side with hardware
+# measurement this app never had: a firmware ceiling of roughly 14 requests per
+# second on the reporter's dryer, and a bridge pacing at exactly 50 ms — 20 rps, the
+# value below — wedging it at connect. Their trace shows the appliance answering the
+# subscribe round, then timing out every poll from ten seconds on until a forced
+# reconnect. So 0.05 was not a safe floor with an unproven benefit; it was above the
+# only ceiling anybody has measured.
+#
+# 0.1 is 10 rps, under that ceiling with margin. It costs 2.7 s per device instead of
+# 1.35 s, which is wall-clock and not executor time — `_try_observe` waits with
+# `asyncio.sleep`, so the nine appliances still subscribe concurrently. That is what
+# makes the old objection to `pace()`'s 0.2 s ("would occupy the shared executor for
+# five seconds per device") not apply here either; it was reasoning about the wrong
+# resource.
+#
+# This does not yet close the loss mode above. A ceiling measured on one reporter's
+# dryer is not this hardware's ceiling, and the four rounds in docs/BACKLOG.md remain
+# the open question — but it moves the value off a number now known to be too fast
+# somewhere.
+OBSERVE_SUBSCRIBE_SPACING_S = 0.1
 
 OBSERVE_RETRY_S = 600.0
 # Summary sweep interval while push is healthy. Still polled, because a missed

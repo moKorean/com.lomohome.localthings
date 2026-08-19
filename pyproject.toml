@@ -13,8 +13,20 @@ authors = [{ name = "Geunwon Mo", email = "mokorean@gmail.com" }]
 # Runtime dependencies are declared in app.json's `pythonPackages`, which is
 # what Homey actually installs. Kept in sync here so local dev and tests can
 # `pip install -e .` and import the same versions.
+#
+# The 0.1.8 floor is load-bearing rather than housekeeping: it fixes blockwise
+# OBSERVE corruption, where a multi-block resource could arrive truncated or with
+# its blocks out of order (upstream #377, the likely cause of the `poll cbor decode`
+# errors reported against `/mode/vs/0` in #361). This app takes every appliance
+# update over OBSERVE, and `/mode/vs/0` is its widest resource — 26 option tokens on
+# the units here — so it is exactly the one that needs more than one block.
+#
+# The floor was `>=0.1.2` while `python_packages/` held a locally cached 0.1.1,
+# below our own declared minimum. That cache is gitignored and not shipped, so
+# production was resolving something newer at install time, but it meant local runs
+# tested against an older library than users get.
 dependencies = [
-    "smartthings-local>=0.1.2",
+    "smartthings-local>=0.1.8",
 ]
 
 [project.optional-dependencies]

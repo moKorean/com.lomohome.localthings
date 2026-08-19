@@ -996,13 +996,36 @@ def test_registrations_are_spaced():
     assert "time.sleep" not in body
 
 
-def test_the_spacing_matches_the_librarys_own_bulk_path_and_not_its_rate_limit():
-    """0.05 s is what `refresh_observes()` uses between subscribes. `pace()`'s 0.2 s
-    would occupy the shared executor for 27 x 0.2 s per device, and this app starts
-    nine of them together."""
+# The lowest request rate any appliance has been measured to tolerate: roughly 14
+# per second, on the dryer in upstream issue #396. Anything faster is above the only
+# ceiling on record.
+_MEASURED_CEILING_RPS = 14
+
+
+def test_the_subscribe_spacing_stays_under_the_measured_firmware_ceiling():
+    """This used to assert exactly 0.05 s, on the grounds that it matched the
+    library's own `refresh_observes()` and beat `pace()`'s 0.2 s.
+
+    Both halves of that turned out to be the wrong test. 0.05 s is 20 requests per
+    second, and upstream #396 measured a firmware ceiling near 14 — with a bridge
+    pacing at exactly 50 ms wedging the appliance at connect, every poll timing out
+    until a forced reconnect. So the old value was above the ceiling and the test
+    was holding it there.
+
+    Pinned as a property now, not a number: fast enough to be above the ceiling
+    fails, and so does a round so slow it delays a device's first readings. Matching
+    the library's internal constant is not a goal — it was never measured against
+    hardware either.
+    """
     from lib.const import OBSERVE_SUBSCRIBE_SPACING_S
-    assert OBSERVE_SUBSCRIBE_SPACING_S == 0.05
-    assert 27 * OBSERVE_SUBSCRIBE_SPACING_S < 2.0, "a subscribe round got expensive"
+    assert OBSERVE_SUBSCRIBE_SPACING_S >= 1 / _MEASURED_CEILING_RPS, (
+        f"{OBSERVE_SUBSCRIBE_SPACING_S}s is faster than the "
+        f"{_MEASURED_CEILING_RPS} rps ceiling measured in upstream #396"
+    )
+    # Wall clock, not executor time: _try_observe waits with asyncio.sleep, so the
+    # nine appliances subscribe concurrently. The bound is about how long one device
+    # takes to come alive, not about contention.
+    assert 27 * OBSERVE_SUBSCRIBE_SPACING_S < 4.0, "a subscribe round got expensive"
 
 
 def test_the_first_registration_is_not_delayed():
