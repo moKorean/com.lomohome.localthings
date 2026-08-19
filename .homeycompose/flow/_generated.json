@@ -65,6 +65,7 @@
   "conditions/convertible_mode_is.json",
   "conditions/cycle_active_is.json",
   "conditions/dish_cycle_is.json",
+  "conditions/drum_clean_remaining_is.json",
   "conditions/dry_cycle_is.json",
   "conditions/dry_cycle_t00_is.json",
   "conditions/dry_level_is.json",

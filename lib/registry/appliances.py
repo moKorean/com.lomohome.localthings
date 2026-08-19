@@ -46,12 +46,17 @@ HREF_WASHER_COURSE = "/st/washercourse/vs/0"
 HREF_DRYER_COURSE = "/st/dryercourse/vs/0"
 
 
-def _course_code(rep) -> str | None:
-    """The selected cycle's hex code, from the `Course_<hex>` options token."""
+def _course_option(rep, prefix: str) -> str | None:
+    """The value half of a `<prefix>_<value>` entry in `/course/vs/0`'s options[]."""
     for option in (rep or {}).get("x.com.samsung.da.options") or ():
-        if isinstance(option, str) and option.startswith("Course_"):
+        if isinstance(option, str) and option.startswith(f"{prefix}_"):
             return option.split("_", 1)[1]
     return None
+
+
+def _course_code(rep) -> str | None:
+    """The selected cycle's hex code, from the `Course_<hex>` options token."""
+    return _course_option(rep, "Course")
 
 
 def _read_table_cycle(field: str, family: str, table_id: str, catalog: dict):
@@ -110,6 +115,38 @@ def _cycle_specs():
 # resources the appliance reports, and a one-body machine legitimately binds two.
 WASH_CYCLE = tuple(_cycle_specs())
 
+# Washes remaining before the appliance recommends a drum clean. Two counters in
+# `/course/vs/0`'s options[]: `DrumCleanProposal_<n>` is the recommended interval and
+# `WashingTimes_<n>` the count since the last clean, so the difference is what the
+# appliance's own app shows.
+#
+# Clamped at zero, which is the reference's choice and the dumps say why: an air
+# dresser reports 58 washes against a 30-cycle interval, so the raw difference is
+# -28. "Overdue by 28" and "due now" are the same instruction, and a negative count
+# of things remaining reads as a bug.
+#
+# Present on twelve dumps spanning washers, dryers, a dishwasher and air dressers,
+# which is why it is bound on all four rather than to the family it was reported
+# against. `DrumCleanLog_` is deliberately not read: the reference bound it, then
+# dropped it (#398) after a live dump showed its newest entry moving every 30-90
+# seconds on its own, long after any cycle had finished.
+_DRUM_PROPOSAL = "DrumCleanProposal"
+_DRUM_WASHED = "WashingTimes"
+
+
+def _read_drum_clean_remaining(rep, _resources):
+    proposal = as_int(_course_option(rep, _DRUM_PROPOSAL))
+    washed = as_int(_course_option(rep, _DRUM_WASHED))
+    if proposal is None or washed is None:
+        return None
+    return max(proposal - washed, 0)
+
+
+DRUM_CLEAN = (
+    Spec("localthings_drum_clean_remaining", HREF_COURSE, _read_drum_clean_remaining,
+         exists=lambda rep, _r: _read_drum_clean_remaining(rep, None) is not None),
+)
+
 DISH_CYCLE = (
     Spec("localthings_dish_cycle", HREF_COURSE, _read_dish_cycle,
          exists=lambda rep, _r: _read_dish_cycle(rep, None) is not None),
@@ -129,6 +166,7 @@ WASHER = Registry(
         *shared.OPERATIONAL,
         *shared.WATER_METER,
         *WASH_CYCLE,
+        *DRUM_CLEAN,
         Spec("localthings_wash_temperature", HREF_WASHER,
              shared.text("x.com.samsung.da.waterTemperature")),
         Spec("localthings_spin_speed", HREF_WASHER,
@@ -149,6 +187,7 @@ DRYER = Registry(
         *shared.UNIVERSAL,
         *shared.OPERATIONAL,
         *WASH_CYCLE,
+        *DRUM_CLEAN,
         Spec("localthings_dry_level", HREF_WASHER,
              shared.text("x.com.samsung.da.dryLevel")),
         # A wrinkle-prevention tumble, not a heat control — writable per the
@@ -174,6 +213,7 @@ DISHWASHER = Registry(
         *shared.OPERATIONAL,
         *shared.WATER_METER,
         *DISH_CYCLE,
+        *DRUM_CLEAN,
         *shared.SOUND,
         Spec("localthings_sanitize", HREF_DISHWASHER,
              shared.flag("x.com.samsung.da.sanitize"),
@@ -1270,6 +1310,7 @@ AIR_DRESSER = Registry(
         *shared.POWER,
         *shared.UNIVERSAL,
         *shared.OPERATIONAL,
+        *DRUM_CLEAN,
         # `/airdresser/vs/0` does not exist. Three reference dumps of this family
         # (TP1_21, TP2_20 and the original) put sanitize on its own option resource
         # and the appliance's settings on `/washer/vs/0` — an AirDresser answers as a
