@@ -1389,3 +1389,42 @@ FlexWash는 여전히 비어 있고, 이유가 바뀌었습니다. 전에는 "�
   확인한 결과 그 세탁기는 **로컬 리스너 없이 AWS로 아웃바운드만** 씁니다. 우리 `probe.py`도
   같은 결론을 내겠지만, 실패 메시지가 "이 기기는 로컬 제어를 지원하지 않는다"를 구분해 주면
   더 나을 자리입니다.
+
+## 진단 리포트 2026-08-20 — 앱이 아니라 Homey 런타임 (`uv_pipe_chmod EINVAL`)
+
+사용자 제보: "Will not finish installing." 앱 v1.1.0, Homey v13.4.1,
+**Homey Self-Hosted Server (`shs`)**. 같은 크래시가 네 번 반복됩니다.
+
+```
+Error: uv_pipe_chmod EINVAL
+    at Server.listen (node:net:2390:15)
+    at AppLocal.createUnixDomainSocket (homey-local/lib/AppLocal.mts:1389:22)
+    at async AppLocal.executeStart (…:1298:7)
+```
+
+**우리 코드가 아닙니다.** 근거 넷:
+
+1. 실패 지점이 `homey-local` 패키지의 `AppLocal.createUnixDomainSocket`입니다. 앱의 Python
+   프로세스와 통신할 IPC 소켓을 **우리 코드가 실행되기 전에** Homey가 만드는 자리입니다.
+2. `stdout: n/a` — 우리 앱은 아무것도 출력하지 못했습니다. `on_init`에 도달조차 못 했습니다.
+3. 우리는 Unix 도메인 소켓을 만들지 않습니다. `lib/` 안의 소켓은 전부 **바깥으로 나가는**
+   것뿐입니다(삼성 게이트웨이 TLS, 탐색·프로브 UDP). `listen()` 호출이 없습니다.
+4. `platforms: ["local"]`이라 Python 앱으로 별도 프로세스에서 돌고, 그 프로세스와의 채널이
+   바로 실패한 그 소켓입니다.
+
+`uv_pipe_chmod`는 Node가 파이프에 `listen()`할 때 권한을 맞추려고 부르는 libuv 함수이고,
+EINVAL은 **그 경로의 파일시스템이 소켓 chmod를 받지 않는다**는 뜻입니다. 자가호스팅 SHS라면
+앱 데이터 디렉터리가 host bind mount일 때(Windows/macOS 호스트의 9p·virtiofs·SMB, 일부 네트워크
+스토리지) 이렇게 됩니다.
+
+**가설이지 확정이 아닙니다.** 판정 실험은 싸고 결정적입니다 — **같은 SHS에서 다른 Python 기반
+Homey 앱이 시작되는지** 보면 됩니다. 하나도 안 되면 플랫폼·파일시스템 문제이고, 우리 앱만
+안 되면 그때 우리 쪽을 봅니다.
+
+**할 수 있는 코드 변경이 없습니다.** 소켓을 만드는 주체가 우리가 아니고, `platforms`는
+`local`/`cloud`뿐이어서 "SHS 제외"를 선언할 방법도 없습니다(선언할 수 있어도 파일시스템이
+멀쩡한 SHS 사용자를 막게 됩니다). 그래서 **아무것도 고치지 않았습니다** — 원인을 모르는 채
+코드를 만지는 것이 이 저장소가 반복해서 대가를 치른 방식입니다.
+
+**다시 열 조건**: 다른 Python 앱은 되는데 우리만 안 된다는 확인, 또는 `pythonPackages` 설치가
+개입한다는 증거(현재 로그는 소켓 단계에서 끝나므로 pip은 무관합니다).
