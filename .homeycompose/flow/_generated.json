@@ -130,12 +130,14 @@
   "conditions/wind_direction_is.json",
   "conditions/wind_target_is.json",
   "conditions/wrinkle_prevent_is.json",
+  "triggers/localthings_ac_mode_changed.json",
   "triggers/localthings_alarm_dustbag_false.json",
   "triggers/localthings_alarm_dustbag_true.json",
   "triggers/localthings_alarm_hot_surface_false.json",
   "triggers/localthings_alarm_hot_surface_true.json",
   "triggers/localthings_burner_any_active_false.json",
   "triggers/localthings_burner_any_active_true.json",
+  "triggers/localthings_fan_mode_changed.json",
   "triggers/localthings_firmware_update_false.json",
   "triggers/localthings_firmware_update_true.json",
   "triggers/localthings_machine_state_changed.json",
@@ -146,5 +148,6 @@
   "triggers/localthings_remaining_minutes_changed.json",
   "triggers/localthings_safety_shutoff_false.json",
   "triggers/localthings_safety_shutoff_true.json",
-  "triggers/localthings_selfcheck_changed.json"
+  "triggers/localthings_selfcheck_changed.json",
+  "triggers/localthings_wind_direction_changed.json"
 ]

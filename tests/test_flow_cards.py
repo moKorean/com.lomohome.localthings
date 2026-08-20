@@ -1046,3 +1046,46 @@ def test_every_mode_in_the_table_is_offered_by_the_card():
     modes = {a for arg in _ac_card()["args"] if arg["name"] == "mode"
              for a in [v["id"] for v in arg["values"]]}
     assert ac_mode_matrix.known_modes() <= modes
+
+
+def test_a_writable_setting_s_changed_trigger_admits_it_cannot_tell_who_changed_it():
+    """Requested 2026-08-20 by a user who wanted to notice somebody using the remote
+    and hold their own automation off for a while.
+
+    The cards can carry that, but not on their own: Homey fires a capability's
+    changed-trigger for every change, including the ones this app makes, so a Flow
+    that reacts to "mode changed" by overriding the mode retriggers itself forever.
+    The hint has to say so, because the request is precisely the case where the
+    difference is the entire point.
+
+    Asserted for every writable capability that has a trigger, rather than for the
+    three that prompted it — the trap belongs to writability, not to those cards.
+    """
+    import json
+    caps = {p.stem: json.loads(p.read_text()) for p in CAPS.glob("*.json")}
+    checked = 0
+    for path in (FLOW / "triggers").glob("*_changed.json"):
+        capability = path.stem[: -len("_changed")]
+        if not caps.get(capability, {}).get("setable"):
+            continue
+        hint = json.loads(path.read_text())["hint"]
+        assert "cannot tell who" in hint["en"], f"{path.name} omits the caveat"
+        assert "구분하지 못합니다" in hint["ko"], f"{path.name} omits the caveat (ko)"
+        checked += 1
+    assert checked >= 3, f"only {checked} writable changed-triggers found"
+
+
+def test_the_three_settings_a_user_asked_to_watch_have_triggers():
+    """Mode, fan speed and wind direction — the request that changed the policy.
+    Named explicitly so removing one is a decision rather than a regeneration."""
+    for capability in ("localthings_ac_mode", "localthings_fan_mode",
+                       "localthings_wind_direction"):
+        card = FLOW / "triggers" / f"{capability}_changed.json"
+        assert card.is_file(), f"{capability} has no changed-trigger"
+        import json
+        tokens = json.loads(card.read_text()).get("tokens") or []
+        assert [t["name"] for t in tokens] == [capability], (
+            f"{capability}'s trigger carries no value token, so a Flow cannot "
+            f"compare the new value against what it last set"
+        )
+

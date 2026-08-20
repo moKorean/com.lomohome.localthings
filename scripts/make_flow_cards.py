@@ -44,6 +44,13 @@ HAND_WRITTEN = {"localthings_display_light"}
 
 # Capabilities whose change is an event a Flow would wait for. Everything else gets
 # no trigger: a settings toggle changing is not an event.
+#
+# That rule had an unstated assumption — that this app is the only thing that changes
+# a setting. It is not: these appliances have a physical remote and a panel, so a
+# setting moving is genuinely an external event. A user asked for exactly this
+# (2026-08-20), wanting to notice somebody picking up the remote and hold their own
+# automation off for a while before taking back over. The three air-conditioner
+# settings below are the ones that request named.
 EVENT_LIKE = {
     "localthings_alarm_hot_surface",
     "localthings_alarm_dustbag",
@@ -56,6 +63,10 @@ EVENT_LIKE = {
     "localthings_operation_state",
     "localthings_progress",
     "localthings_remaining_minutes",
+    # Writable, unlike everything above — see the note on the hint in `_trigger`.
+    "localthings_ac_mode",
+    "localthings_fan_mode",
+    "localthings_wind_direction",
 }
 
 # Already covered by hand-written triggers; adding a generic one would fire twice
@@ -223,15 +234,27 @@ def trigger_cards(capability: str, definition: dict) -> dict:
 
 
 def _trigger(capability: str, definition: dict, title: dict, token: bool = False) -> dict:
+    hint_en = ("Fires on a change, not on every reading that repeats the same "
+               "value.")
+    hint_ko = ("값이 바뀔 때만 실행됩니다. 같은 값을 다시 읽을 때는 실행되지 "
+               "않습니다.")
+    # A writable setting can be changed by this app, by the remote, or on the
+    # appliance's own panel, and the card cannot tell which. Said on the card
+    # because the obvious use for it — noticing that somebody picked up the remote
+    # — is the one case where that difference is the whole point, and a Flow built
+    # without knowing it would retrigger on its own writes forever.
+    if definition.get("setable"):
+        hint_en += (" It cannot tell who made the change: a Flow of your own, the "
+                    "remote, and the appliance's panel all look the same here. To "
+                    "act only on someone else's change, compare the value against "
+                    "what your Flow last set.")
+        hint_ko += (" 누가 바꿨는지는 구분하지 못합니다 — 내 Flow, 리모컨, 가전 "
+                    "본체 조작이 모두 똑같이 보입니다. 남이 바꾼 것에만 반응하려면 "
+                    "내 Flow가 마지막으로 지정한 값과 비교하세요.")
     card = {
         "title": title,
         "titleFormatted": title,
-        "hint": {
-            "en": "Fires on a change, not on every reading that repeats the same "
-                  "value.",
-            "ko": "값이 바뀔 때만 실행됩니다. 같은 값을 다시 읽을 때는 실행되지 "
-                  "않습니다.",
-        },
+        "hint": {"en": hint_en, "ko": hint_ko},
         "args": [device_arg(capability)],
     }
     if token:

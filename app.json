@@ -129,6 +129,38 @@
     "triggers": [
       {
         "title": {
+          "en": "Mode changed",
+          "ko": "운전 모드 변경됨"
+        },
+        "titleFormatted": {
+          "en": "Mode changed",
+          "ko": "운전 모드 변경됨"
+        },
+        "hint": {
+          "en": "Fires on a change, not on every reading that repeats the same value. It cannot tell who made the change: a Flow of your own, the remote, and the appliance's panel all look the same here. To act only on someone else's change, compare the value against what your Flow last set.",
+          "ko": "값이 바뀔 때만 실행됩니다. 같은 값을 다시 읽을 때는 실행되지 않습니다. 누가 바꿨는지는 구분하지 못합니다 — 내 Flow, 리모컨, 가전 본체 조작이 모두 똑같이 보입니다. 남이 바꾼 것에만 반응하려면 내 Flow가 마지막으로 지정한 값과 비교하세요."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_ac_mode"
+          }
+        ],
+        "tokens": [
+          {
+            "name": "localthings_ac_mode",
+            "type": "string",
+            "title": {
+              "en": "Mode",
+              "ko": "운전 모드"
+            }
+          }
+        ],
+        "id": "localthings_ac_mode_changed"
+      },
+      {
+        "title": {
           "en": "An alarm was raised",
           "ko": "알람이 발생했을 때"
         },
@@ -425,6 +457,38 @@
       },
       {
         "title": {
+          "en": "Fan speed changed",
+          "ko": "풍량 변경됨"
+        },
+        "titleFormatted": {
+          "en": "Fan speed changed",
+          "ko": "풍량 변경됨"
+        },
+        "hint": {
+          "en": "Fires on a change, not on every reading that repeats the same value. It cannot tell who made the change: a Flow of your own, the remote, and the appliance's panel all look the same here. To act only on someone else's change, compare the value against what your Flow last set.",
+          "ko": "값이 바뀔 때만 실행됩니다. 같은 값을 다시 읽을 때는 실행되지 않습니다. 누가 바꿨는지는 구분하지 못합니다 — 내 Flow, 리모컨, 가전 본체 조작이 모두 똑같이 보입니다. 남이 바꾼 것에만 반응하려면 내 Flow가 마지막으로 지정한 값과 비교하세요."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_fan_mode"
+          }
+        ],
+        "tokens": [
+          {
+            "name": "localthings_fan_mode",
+            "type": "string",
+            "title": {
+              "en": "Fan speed",
+              "ko": "풍량"
+            }
+          }
+        ],
+        "id": "localthings_fan_mode_changed"
+      },
+      {
+        "title": {
           "en": "Firmware update available turned off",
           "ko": "펌웨어 업데이트 있음 꺼짐"
         },
@@ -714,6 +778,38 @@
           }
         ],
         "id": "localthings_selfcheck_changed"
+      },
+      {
+        "title": {
+          "en": "Airflow direction changed",
+          "ko": "풍향 변경됨"
+        },
+        "titleFormatted": {
+          "en": "Airflow direction changed",
+          "ko": "풍향 변경됨"
+        },
+        "hint": {
+          "en": "Fires on a change, not on every reading that repeats the same value. It cannot tell who made the change: a Flow of your own, the remote, and the appliance's panel all look the same here. To act only on someone else's change, compare the value against what your Flow last set.",
+          "ko": "값이 바뀔 때만 실행됩니다. 같은 값을 다시 읽을 때는 실행되지 않습니다. 누가 바꿨는지는 구분하지 못합니다 — 내 Flow, 리모컨, 가전 본체 조작이 모두 똑같이 보입니다. 남이 바꾼 것에만 반응하려면 내 Flow가 마지막으로 지정한 값과 비교하세요."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_wind_direction"
+          }
+        ],
+        "tokens": [
+          {
+            "name": "localthings_wind_direction",
+            "type": "string",
+            "title": {
+              "en": "Airflow direction",
+              "ko": "풍향"
+            }
+          }
+        ],
+        "id": "localthings_wind_direction_changed"
       }
     ],
     "conditions": [
