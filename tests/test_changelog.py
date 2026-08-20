@@ -42,6 +42,10 @@ UNPROMOTED = {
         "build under a version already published or in review, so work finished after "
         "build 17 could not join it and went to 1.0.7 instead"
     ),
+    "1.1.1": (
+        "build 22 uploaded 2026-08-19, never promoted; the store page still showed "
+        "1.1.0 on 2026-08-20, so its news travels into 1.2.0"
+    ),
     "1.0.9": (
         "build 20 uploaded 2026-08-13, never promoted; the store page still showed "
         "1.0.8 on 2026-08-17, so its news travels into 1.1.0"
