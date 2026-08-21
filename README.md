@@ -253,6 +253,13 @@ Action cards go through `trigger_capability_listener`, not `set_capability_value
 latter moves Homey's copy without touching the appliance and does not raise when the
 appliance refuses — which would have a Flow report a success it never got.
 
+A write is also refused before it is sent when the unit's own supported-value list
+lacks the value, and **that refusal names the list**. The two are worth telling apart:
+the appliance refusing a value it received is a different problem from this app
+declining to send one, and the message used to read the same either way. Naming the
+list is what makes the difference legible afterwards — a refused write sends nothing,
+so there is no traffic to inspect and nothing else records what the gate saw.
+
 ## What lands in the timeline
 
 Homey writes a timeline line by itself when a **boolean** capability carrying insight

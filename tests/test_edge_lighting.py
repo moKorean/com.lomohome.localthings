@@ -34,6 +34,7 @@ from pathlib import Path
 import pytest
 
 from lib.registry.airconditioner import REGISTRY
+from lib.registry.base import ValueNotAdvertised
 
 FIXTURE = (
     Path(__file__).parent / "fixtures" / "airconditioner_TP1X_DA-AC-CAC-01001.json"
@@ -83,15 +84,24 @@ def test_each_field_reads_its_own_supported_list():
     """The two lists are ordered differently — modeSupportedList is
     Smart/High/Low, colorSupportedList is 3000K/4000K/6500K — and neither is the
     vendor-prefixed supportedModes the rest of this registry uses. Crossing them
-    would gate each field on the other's vocabulary and refuse every write."""
+    would gate each field on the other's vocabulary and refuse every write.
+
+    The refusal carries the list it consulted, which is what pins this down: an
+    `is None` could not tell which of the two fields had been read, so crossing
+    them would have satisfied it.
+    """
     rep = {
         "mode": "Smart",
         "colorOption": "4000K",
         "modeSupportedList": ["Smart"],
         "colorSupportedList": ["4000K"],
     }
-    assert spec("localthings_edge_light_mode").write("Low", rep) is None
-    assert spec("localthings_edge_light_color").write("6500K", rep) is None
+    with pytest.raises(ValueNotAdvertised) as mode:
+        spec("localthings_edge_light_mode").write("Low", rep)
+    assert mode.value.supported == ["Smart"]
+    with pytest.raises(ValueNotAdvertised) as colour:
+        spec("localthings_edge_light_color").write("6500K", rep)
+    assert colour.value.supported == ["4000K"]
     assert spec("localthings_edge_light_mode").write("Smart", rep) is not None
     assert spec("localthings_edge_light_color").write("4000K", rep) is not None
 

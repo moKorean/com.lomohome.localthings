@@ -11,7 +11,7 @@ explicitly avoids.
 """
 
 from . import shared
-from .base import Registry, Spec, as_float, as_int, first_item
+from .base import Registry, Spec, ValueNotAdvertised, as_float, as_int, first_item
 
 HREF_POWER = "/power/vs/0"
 HREF_MODE = "/mode/vs/0"
@@ -454,7 +454,10 @@ def _write_enum(path: list, field: str, allowed: tuple, supported_field=FIELD_SU
             return None
         supported = (rep or {}).get(supported_field)
         if isinstance(supported, list) and supported and value not in supported:
-            return None
+            # Raise rather than return None so the message can name the list this
+            # saw. The two gates are indistinguishable after the fact otherwise,
+            # and a refused write leaves no log line to fall back on.
+            raise ValueNotAdvertised(value, supported)
         return path, {field: value}
 
     return write

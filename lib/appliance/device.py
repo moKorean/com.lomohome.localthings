@@ -35,6 +35,7 @@ from lib.const import (
     UNAVAILABLE_AFTER_FAILURES,
     WRITE_SETTLE_S,
 )
+from lib.registry.base import ValueNotAdvertised
 from lib.resources import read_serial
 from lib.session import Session
 
@@ -1006,10 +1007,22 @@ answers none is a different case, and the living-room air conditioner here
                 "error.not_writable", self._language, capability=self._label(capability)))
 
         rep = self._resources.get(spec.href) or {}
-        payload = spec.write(value, rep)
+        try:
+            payload = spec.write(value, rep)
+        except ValueNotAdvertised as refused:
+            # The unit's own supported-value list lacks it. Name that list: it is
+            # the only record of what the gate saw, and a refused write sends
+            # nothing so there is no log line either. See ValueNotAdvertised.
+            self.log(
+                f"write {capability}={value!r} refused by {spec.href} "
+                f"supportedModes {refused.supported!r}")
+            raise RuntimeError(i18n.translate(
+                "error.value_not_advertised", self._language, value=value,
+                supported=", ".join(str(item) for item in refused.supported))
+            ) from refused
         if payload is None:
-            # The device didn't advertise this value; refuse rather than send
-            # something it will silently drop.
+            # This app never declared the value; refuse rather than send
+            # something the appliance will silently drop.
             raise RuntimeError(i18n.translate(
                 "error.value_unsupported", self._language, value=value))
 

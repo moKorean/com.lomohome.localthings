@@ -11,6 +11,7 @@ import pytest
 
 from lib import registry
 from lib.registry import airconditioner
+from lib.registry.base import ValueNotAdvertised
 
 FIXTURE = (
     Path(__file__).parent
@@ -247,6 +248,40 @@ def test_wind_direction_accepts_a_value_absent_from_supported_modes(resources):
     rep = resources["/wind/direction/vs/0"]
     assert "Fix" not in rep["x.com.samsung.da.supportedModes"]
     assert _read(reg_of(resources), resources, "localthings_wind_direction") == "Fix"
+
+
+def test_a_refused_value_carries_the_list_the_gate_saw(resources):
+    """Two gates end in the same sentence and there is no way back afterwards: a
+    refused write sends nothing, so it leaves no log line either. On 2026-08-20 an
+    air conditioner refused `wind_direction=All` nine times over 163 seconds, and
+    by the time anyone looked the list read Left_And_Right, All again — All
+    included. Reproducing it on 2026-08-21 failed. So the list has to travel with
+    the refusal rather than be looked up later.
+
+    'Fix' is the natural case for this: declared by the app, reported by the unit,
+    and absent from the unit's own supportedModes.
+    """
+    reg = reg_of(resources)
+    spec = reg.spec_for("localthings_wind_direction")
+    rep = resources[spec.href]
+    assert "Fix" not in rep["x.com.samsung.da.supportedModes"]
+    with pytest.raises(ValueNotAdvertised) as refused:
+        spec.write("Fix", rep)
+    assert refused.value.value == "Fix"
+    assert refused.value.supported == rep["x.com.samsung.da.supportedModes"]
+    # An advertised value still goes through untouched.
+    assert spec.write("All", rep) == (
+        ["wind", "direction", "vs", "0"], {"x.com.samsung.da.modes": "All"})
+
+
+def test_the_app_s_own_vocabulary_gate_stays_a_quiet_none(resources):
+    """Only the device gate raises. A value this app never declared is a mistake in
+    this repository, not something an appliance did, and it has no list to report —
+    keeping it a None is what makes the raise mean "the unit said no".
+    """
+    reg = reg_of(resources)
+    spec = reg.spec_for("localthings_wind_direction")
+    assert spec.write("Sideways", resources[spec.href]) is None
 
 
 def test_enum_writes_refuse_undeclared_values(resources):

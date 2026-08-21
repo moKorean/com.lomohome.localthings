@@ -12,6 +12,32 @@ from dataclasses import dataclass
 from typing import Any
 
 
+class ValueNotAdvertised(Exception):
+    """A write was refused because the unit's own supported-value list lacks it.
+
+    Distinct from the app's static list refusing a value it never declared. Both
+    end as "this appliance does not support X", and telling them apart afterwards
+    was impossible: a refused write sends nothing, so it leaves no log line and
+    the message names only the value.
+
+    That cost a diagnosis. On 2026-08-20 an air conditioner refused
+    `wind_direction=All` nine times over 163 seconds, and by the time anyone
+    looked the list read `["Left_And_Right","All"]` again — All included. The list
+    can only have come from the appliance (a pushed update merges, an optimistic
+    post-write update touches only the keys sent, and an absent list passes the
+    gate), but which list the gate actually saw was gone.
+
+    So the write path carries it up and the message names it. The next occurrence
+    answers the question by itself instead of needing a reproduction that, tried
+    on 2026-08-21, did not reproduce.
+    """
+
+    def __init__(self, value, supported):
+        super().__init__(f"{value!r} not in {supported!r}")
+        self.value = value
+        self.supported = supported
+
+
 @dataclass(frozen=True)
 class Spec:
     """One Homey capability backed by one OCF resource.
