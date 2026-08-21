@@ -500,33 +500,11 @@ EDGE_LIGHT_COLORS = ("3000K", "4000K", "6500K")
 
 # Codes the device reports while nothing is wrong, and the state it uses for a
 # cleared alarm.
-_ALARM_IDLE_CODES = {"errorcode_off", "ct_e_off", "none", ""}
-_ALARM_CLEARED_STATES = {"deleted", "cleared"}
-
-
-def _read_active_alarm(rep, _resources):
-    """The first alarm the device still considers active, or 'none'.
-
-    The items array keeps cleared entries around — the verified unit lists a
-    deleted ErrorCode_OFF alongside a live FilterAlarm — so reporting items[0]
-    blindly would show a stale or idle code as if it were current.
-    """
-    items = rep.get("x.com.samsung.da.items")
-    if not isinstance(items, list):
-        return None
-    for item in items:
-        if not isinstance(item, dict):
-            continue
-        state = str(item.get("x.com.samsung.da.state", "")).strip().lower()
-        code = str(item.get("x.com.samsung.da.code", "")).strip()
-        if state in _ALARM_CLEARED_STATES:
-            continue
-        if code.lower() in _ALARM_IDLE_CODES:
-            continue
-        if code:
-            return code
-    return "none"
-
+# The alarm reader lives in shared.py and is used by all eighteen registries. This
+# module had a near-copy of it, and the two drifted exactly as duplication invites:
+# both hardcoded the same two idle spellings, so both reported `_OFF` sentinels from
+# other families as faults, and fixing one would have left the other. See
+# `shared.read_active_alarm` for what the codes mean and what was measured.
 
 # The third alarm slot on the CAC boards, which carries a `DA_SAC_M_*` family of
 # its own. Named for what it is rather than what it means: what it means is not
@@ -746,7 +724,7 @@ REGISTRY = Registry(
                          supported_field="colorSupportedList")),
 
         # Read-only sensors.
-        Spec("localthings_alarm_code", HREF_ALARMS, _read_active_alarm),
+        Spec("localthings_alarm_code", HREF_ALARMS, shared.read_active_alarm),
         Spec("localthings_operation_state_code", HREF_ALARMS, _read_state_code,
              exists=_has_state_code),
         Spec("localthings_air_quality", HREF_SENSORS, _sensor_value("CleanLevel")),

@@ -127,28 +127,69 @@ REMOTE_CONTROL = (
 
 # --- alarms ---------------------------------------------------------------
 
-_ALARM_IDLE = {"errorcode_off", "ct_e_off", "none", ""}
+# Codes that mean "nothing wrong" rather than a fault. The explicit entries are
+# spellings that carry no suffix; everything else is caught by the `_OFF` rule
+# below.
+_ALARM_IDLE = {"none", ""}
 _ALARM_CLEARED = {"deleted", "cleared"}
+
+# Samsung marks a slot's idle state by suffixing the family name with `_OFF`, and
+# this reader used to know only two of those spellings by hand. Measured against the
+# reference dumps before the rule changed: of 49 dumps that bind this capability, 18
+# reported an alarm and **13 of those were `_OFF` sentinels** — `OV_E_OFF` on every
+# oven, range and microwave dump (7), `AC_V_0002_OFF` (4), `FilterAlarm_OFF` (2).
+#
+# Our own units only escaped it because they also set `state: Deleted` on those
+# entries; boards that send no state at all did not.
+#
+# What makes the suffix rule safe rather than a guess is the four dumps reporting a
+# bare `FilterAlarm` — same family, no suffix, a genuine alarm. The suffix is the
+# discriminator, not the family name.
+_ALARM_IDLE_SUFFIX = "_OFF"
+
+# Not a fault, and not this capability's business: the third slot on the CAC boards
+# carries a `DA_SAC_M_*` code that tracks whether the unit is *running* — measured
+# over eight hours across four units, `_OFF` on 110 of 110 samples with the unit off
+# and a number on 58 of 58 with it on. It is exposed on its own as
+# `localthings_operation_state_code`, so leaving it here reports a healthy running
+# appliance as alarming, which is what a user reported.
+_ALARM_NOT_FAULTS = ("DA_SAC_M",)
+
+
+def _is_idle_code(code: str) -> bool:
+    lowered = code.strip().lower()
+    return (
+        lowered in _ALARM_IDLE
+        or lowered.endswith(_ALARM_IDLE_SUFFIX.lower())
+        or code.strip().startswith(_ALARM_NOT_FAULTS)
+    )
 
 
 def read_active_alarm(rep, _resources):
-    """First alarm the device still considers active, or 'none'.
+    """Every alarm the device still considers active, or 'none'.
 
     Cleared entries stay in the array, so items[0] would report a stale code as
     current — observed directly on the air conditioner.
+
+    **All active codes, not the first one.** Reporting only the first made the tile
+    depend on slots that have nothing to do with each other: a user saw a running
+    air conditioner's state code presented as its alarm, and the reason it surfaced
+    was that it was the only slot on that unit not marked Deleted. Joining them is
+    what the reference does too, and it means one slot can no longer hide another.
     """
     items = rep.get("x.com.samsung.da.items")
     if not isinstance(items, list):
         return None
+    active = []
     for item in items:
         if not isinstance(item, dict):
             continue
         if str(item.get("x.com.samsung.da.state", "")).strip().lower() in _ALARM_CLEARED:
             continue
         code = str(item.get("x.com.samsung.da.code", "")).strip()
-        if code and code.lower() not in _ALARM_IDLE:
-            return code
-    return "none"
+        if code and not _is_idle_code(code) and code not in active:
+            active.append(code)
+    return ", ".join(active) if active else "none"
 
 
 ALARMS = (Spec("localthings_alarm_code", "/alarms/vs/0", read_active_alarm),)
