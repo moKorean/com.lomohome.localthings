@@ -259,7 +259,16 @@ of it:
 ## Verified hardware
 
 Four air conditioners (`TP1X_DA-AC-CAC-01001`), one induction cooktop, one range
-hood (`AHD-WW-TP1-22`), three refrigerators (`TP2X_REF_21K`). Only these four types
+hood (`AHD-WW-TP1-22`), three refrigerators (`TP2X_REF_21K`).
+
+**거실 is a larger-capacity unit than the other three air conditioners**, and it is
+worth knowing before reading anything into a difference between them. Measured
+2026-08-24: all four report the same `modelNum` head and the same 51 resources, and
+the app binds the same 52 capabilities on each. Only three things differ — a byte in
+`modelNum`'s capability bitmap (`…0748…` against `…0717…`), the serial prefix
+(`BWJ8P3HYB` against `BWHYP3FL`), and one extra field, `cumulativeDateUTC` on
+`/energy/consumption/vs/0`. Everything else that looks different between them is a
+*value*, not an attribute: settings and live state, which of course differ per room. Only these four types
 are claimed in the app description; the other fourteen are routed and mapped from
 the reference but unverified, and that distinction is deliberate — see the support
 table in `README.md`.
