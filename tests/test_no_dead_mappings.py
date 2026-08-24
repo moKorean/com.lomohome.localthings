@@ -53,6 +53,11 @@ ALLOWED_UNSEEN: dict[str, str] = {}
 # (type, capability) pairs that legitimately read nothing on every dump, each with the
 # reason. Anything not listed here is a bug — that is the point of the list.
 ALLOWED_BLANK: dict[tuple[str, str], str] = {
+    ("air_purifier", "measure_co2"): (
+        "no purifier dump lists a CO2 sensor type; the air monitor's does, and a "
+        "reporter's purifier carries one (reference #387/#390). Gated on the type "
+        "being present in items[], so a board without it gets no tile"
+    ),
     ("air_dresser", "measure_power"): "dumps carry cumulativePower only, no instantaneous",
     ("dishwasher", "measure_power"): "dumps carry cumulativePower only",
     ("dryer", "measure_power"): "dumps carry cumulativePower only",

@@ -399,8 +399,7 @@ def _device_report(homey) -> list:
             # means the second. Only the silent ones are listed: on a healthy
             # appliance that is empty, and listing all 27 would bloat every report.
             ("observe_silent_hrefs", lambda d=device: sorted(
-                (getattr(d, "_observe_hrefs", None) or set())
-                - (getattr(d, "_notified", None) or set())
+                d.silent_hrefs() if hasattr(d, "silent_hrefs") else ()
             )),
             ("observe_silent_rounds",
              lambda d=device: getattr(d, "_observe_silent_rounds", None)),

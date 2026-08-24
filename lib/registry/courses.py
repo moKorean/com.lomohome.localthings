@@ -140,6 +140,13 @@ WASHER_TABLE_02 = {
 DRYER_TABLE_00 = {
     "01": {"en": "Normal", "ko": "표준건조"},
     "27": {"en": "Refresh", "ko": "리프레시"},
+    "7f": {"en": "Time Dry", "ko": "시간건조"},
+    "93": {"en": "Iron Dry", "ko": "다림질건조"},
+    "96": {"en": "Cool Air", "ko": "송풍건조"},
+    "97": {"en": "Warm Air", "ko": "온풍건조"},
+    "98": {"en": "Quick Dry 35", "ko": "쾌속건조 35분"},
+    "99": {"en": "Mixed Load", "ko": "혼합"},
+    "9a": {"en": "Cotton", "ko": "면의류"},
     "9b": {"en": "Steam Sanitize+", "ko": "스팀살균+"},
     "9c": {"en": "Heavy Duty", "ko": "강력건조"},
     "9e": {"en": "Perm Press", "ko": "구김방지"},
@@ -149,6 +156,12 @@ DRYER_TABLE_00 = {
     "a4": {"en": "Time Dry", "ko": "시간건조"},
     "a5": {"en": "Bedding", "ko": "이불"},
     "a6": {"en": "Quick Dry", "ko": "쾌속건조"},
+    "b5": {"en": "Wool", "ko": "울"},
+    "b6": {"en": "Synthetics", "ko": "합성섬유"},
+    "ca": {"en": "Air Wash", "ko": "송풍"},
+    "d7": {"en": "Outdoor Care", "ko": "아웃도어케어"},
+    "db": {"en": "Super Speed", "ko": "쾌속건조"},
+    "eb": {"en": "Delicates", "ko": "섬세의류"},
 }
 
 DRYER_TABLE_03 = {

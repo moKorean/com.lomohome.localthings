@@ -1045,16 +1045,32 @@ def test_diagnostics_names_the_resources_that_did_not_answer():
     from "the channel is unreliable". The refrigerator answers 4 then 6 of 9 across
     rounds while three air conditioners answer 24-27 of 27, and without the hrefs
     there is no way to tell which of those two it is — so the quorum cannot be
-    judged without guessing."""
+    judged without guessing.
+
+    This asserted that api.py's source mentioned `_observe_hrefs` and `_notified`,
+    which pinned where the subtraction was written rather than that the report is
+    right. Moving the rule into `ApplianceDevice.silent_hrefs` — so the poll cadence
+    and the report cannot drift apart — broke the test without changing the report.
+    Asserted through the report now.
+    """
     import ast
     source = (Path(__file__).parent.parent / "api.py").read_text()
     function = next(
         node for node in ast.walk(ast.parse(source))
         if isinstance(node, ast.FunctionDef) and node.name == "_device_report"
     )
-    body = ast.unparse(function)
-    assert "observe_silent_hrefs" in body
-    assert "_observe_hrefs" in body and "_notified" in body, (
+    assert "observe_silent_hrefs" in ast.unparse(function)
+
+    class Stub:
+        def __init__(self):
+            self._observe_hrefs = {"/a", "/b", "/c"}
+            self._notified = {"/a"}
+
+        def silent_hrefs(self):
+            from lib.appliance.device import ApplianceDevice
+            return ApplianceDevice.silent_hrefs(self)
+
+    assert sorted(Stub().silent_hrefs()) == ["/b", "/c"], (
         "the silent set must be the subscribed set minus what answered"
     )
 

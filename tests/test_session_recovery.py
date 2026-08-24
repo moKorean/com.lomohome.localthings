@@ -99,3 +99,40 @@ def test_a_write_that_fails_twice_still_raises(monkeypatch):
 
     assert len(first.posts) == 1
     assert len(second.posts) == 1
+
+
+def test_a_failed_handshake_is_not_retried_as_if_a_session_had_broken():
+    """Upstream issue #269/#402: a switched-off appliance fails in the handshake, not
+    in a request. Treating that like any other failure ran the reconnect — close the
+    session, pause, try again — but there is no session to close, so the retry was
+    the identical handshake a moment later. That cost them 29 of every 30 seconds and
+    an ERROR per cycle for a state the app is built to sit through.
+
+    This app is already shaped correctly: `_connect_unlocked()` is called *outside*
+    the try in both `_get` and `write`, so a handshake failure propagates on the
+    first attempt. That is a structural property and a one-line edit away from being
+    lost — widening the try to include the connect would reintroduce it silently,
+    with no test failing — so it is asserted here against the source.
+    """
+    import ast
+    from pathlib import Path
+
+    source = (Path(__file__).parent.parent / "lib" / "session.py").read_text()
+    tree = ast.parse(source)
+
+    checked = 0
+    for name in ("_get", "write"):
+        function = next(
+            node for node in ast.walk(tree)
+            if isinstance(node, ast.AsyncFunctionDef) and node.name == name
+        )
+        for handler in ast.walk(function):
+            if not isinstance(handler, ast.Try):
+                continue
+            body = ast.unparse(ast.Module(body=handler.body, type_ignores=[]))
+            assert "_connect_unlocked" not in body, (
+                f"session.{name} has the connect inside its retried block, so a "
+                f"dark appliance's handshake would be attempted twice per poll"
+            )
+            checked += 1
+    assert checked >= 2, f"only {checked} retried blocks inspected"

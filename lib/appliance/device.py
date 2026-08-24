@@ -197,8 +197,33 @@ class ApplianceDevice(device.Device):
 
     # --- polling ----------------------------------------------------------
 
+    def silent_hrefs(self) -> set:
+        """Subscribed resources that have never sent a notification.
+
+        One definition, used by the poll cadence below and by the diagnostics
+        report. It was written out twice before — the alarm reader had just been
+        bitten by exactly that, two copies of one rule drifting apart — so this is
+        the method both call.
+        """
+        return (self._observe_hrefs or set()) - (self._notified or set())
+
     def _poll_interval(self) -> float:
-        if self._observing:
+        # Push mode slows polling to a summary sweep, and that is only safe for
+        # resources that actually push. A resource can be subscribed and never
+        # notify: this app enters push mode on a quorum, so up to a fifth of the
+        # subscribed set can be silent while the verdict still passes.
+        #
+        # Those readings were then refreshed only by the sweep — up to 300 s stale,
+        # on values like power and the setpoint. Upstream hit the same thing
+        # (issue #92) with a 30 s window; ours is ten times worse because the sweep
+        # is that much slower.
+        #
+        # Staying on the normal interval is the cheap fix rather than sub-polling
+        # each silent href: a poll here reads `/device/0` as one batch, so refreshing
+        # everything costs one GET while N per-href GETs would cost N. Push still
+        # earns its keep on a device whose channel is complete — the interval only
+        # stays fast while something is actually missing.
+        if self._observing and not self.silent_hrefs():
             return OBSERVE_SWEEP_INTERVAL_S
         try:
             return float(self.get_settings().get("poll_interval") or POLL_INTERVAL_S)

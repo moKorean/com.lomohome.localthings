@@ -125,3 +125,61 @@ def test_a_device_already_polling_is_not_re_synced(Device):
     stub = _Stub()
     _drop(Device, stub)
     assert stub.synced == 0
+
+
+# --- silent hrefs keep the poll fast --------------------------------------
+#
+# Push mode drops polling to a 300s summary sweep, which is only safe for
+# resources that actually push. Entering push on a quorum means up to a fifth of
+# the subscribed set can be silent and still pass the verdict, and those readings
+# were then refreshed only by the sweep. Upstream hit the same thing as issue #92
+# with a 30s window; ours was ten times worse.
+
+
+class _Cadence:
+    """Just what _poll_interval and silent_hrefs touch."""
+
+    def __init__(self, observing, subscribed, notified):
+        self._observing = observing
+        self._observe_hrefs = set(subscribed)
+        self._notified = set(notified)
+
+    def get_settings(self):
+        return {"poll_interval": 30}
+
+
+def _interval(Device, observing, subscribed, notified):
+    stub = _Cadence(observing, subscribed, notified)
+    stub.silent_hrefs = lambda: Device.silent_hrefs(stub)
+    return Device._poll_interval(stub)
+
+
+def test_push_slows_the_poll_only_when_every_href_answered(Device):
+    fast = _interval(Device, True, {"/a", "/b"}, {"/a", "/b"})
+    from lib.const import OBSERVE_SWEEP_INTERVAL_S
+    assert fast == OBSERVE_SWEEP_INTERVAL_S
+
+
+def test_a_silent_href_keeps_the_normal_cadence(Device):
+    """The bug: subscribed, never notified, so nothing refreshed it for up to the
+    whole sweep — on values like power and the setpoint."""
+    assert _interval(Device, True, {"/a", "/b"}, {"/a"}) == 30
+
+
+def test_polling_mode_is_unaffected(Device):
+    assert _interval(Device, False, {"/a"}, {"/a"}) == 30
+
+
+def test_the_silent_set_is_the_subscribed_set_minus_what_answered(Device):
+    stub = _Cadence(True, {"/a", "/b", "/c"}, {"/b"})
+    assert sorted(Device.silent_hrefs(stub)) == ["/a", "/c"]
+
+
+def test_nothing_subscribed_yet_does_not_look_silent(Device):
+    """Before the first subscribe round there is no evidence either way, and an
+    empty subscribed set must not read as "everything is silent" and pin a
+    pushing device to the fast cadence forever."""
+    stub = _Cadence(True, set(), set())
+    assert Device.silent_hrefs(stub) == set()
+    from lib.const import OBSERVE_SWEEP_INTERVAL_S
+    assert _interval(Device, True, set(), set()) == OBSERVE_SWEEP_INTERVAL_S

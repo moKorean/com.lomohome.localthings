@@ -703,6 +703,16 @@ AIR_PURIFIER = Registry(
              lambda rep, _r: _sensor(rep, "Dust")),
         Spec("localthings_dust_pm1", "/sensors/vs/0",
              lambda rep, _r: _sensor(rep, "SuperFineDust")),
+        # CO2, which some purifiers carry and none of the four dumps does — added
+        # when the reference took a reporter's word for it (its #387/#390) and gated
+        # the same way: the reading is a `CO2` entry in the same items[] array, so a
+        # board without one reads None and never gets the tile. Same reader the air
+        # monitor already uses, so there is nothing family-specific being guessed.
+        #
+        # Blank on every dump of this type by construction, which is what
+        # ALLOWED_BLANK in tests/test_no_dead_mappings.py exists to make somebody
+        # say out loud rather than let pass.
+        Spec("measure_co2", "/sensors/vs/0", lambda rep, _r: _sensor(rep, "CO2")),
         # Periodic air-quality sensing, the same four read-only fields the hood
         # binds. Added when the reference took this resource up on the purifier
         # (its #268), which retired the reason we had for skipping it here — see

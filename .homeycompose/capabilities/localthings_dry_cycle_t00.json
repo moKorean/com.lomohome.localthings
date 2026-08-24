@@ -24,6 +24,55 @@
       }
     },
     {
+      "id": "7f",
+      "title": {
+        "en": "Time Dry",
+        "ko": "시간건조"
+      }
+    },
+    {
+      "id": "93",
+      "title": {
+        "en": "Iron Dry",
+        "ko": "다림질건조"
+      }
+    },
+    {
+      "id": "96",
+      "title": {
+        "en": "Cool Air",
+        "ko": "송풍건조"
+      }
+    },
+    {
+      "id": "97",
+      "title": {
+        "en": "Warm Air",
+        "ko": "온풍건조"
+      }
+    },
+    {
+      "id": "98",
+      "title": {
+        "en": "Quick Dry 35",
+        "ko": "쾌속건조 35분"
+      }
+    },
+    {
+      "id": "99",
+      "title": {
+        "en": "Mixed Load",
+        "ko": "혼합"
+      }
+    },
+    {
+      "id": "9a",
+      "title": {
+        "en": "Cotton",
+        "ko": "면의류"
+      }
+    },
+    {
       "id": "9b",
       "title": {
         "en": "Steam Sanitize+",
@@ -84,6 +133,48 @@
       "title": {
         "en": "Quick Dry",
         "ko": "쾌속건조"
+      }
+    },
+    {
+      "id": "b5",
+      "title": {
+        "en": "Wool",
+        "ko": "울"
+      }
+    },
+    {
+      "id": "b6",
+      "title": {
+        "en": "Synthetics",
+        "ko": "합성섬유"
+      }
+    },
+    {
+      "id": "ca",
+      "title": {
+        "en": "Air Wash",
+        "ko": "송풍"
+      }
+    },
+    {
+      "id": "d7",
+      "title": {
+        "en": "Outdoor Care",
+        "ko": "아웃도어케어"
+      }
+    },
+    {
+      "id": "db",
+      "title": {
+        "en": "Super Speed",
+        "ko": "쾌속건조"
+      }
+    },
+    {
+      "id": "eb",
+      "title": {
+        "en": "Delicates",
+        "ko": "섬세의류"
       }
     }
   ]
