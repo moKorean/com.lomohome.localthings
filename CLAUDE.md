@@ -212,7 +212,22 @@ Repeat a round cheaply with `POST /api/manager/apps/app/<id>/restart` over the l
 API. There is no way to disable an app from the CLI, and uninstalling would unpair
 the user's devices.
 
-`docs/BACKLOG.md` has the full record, including the loss mode that is still open.
+That method settled it, on 2026-08-24. Three rounds recording the silent href
+**list** per device rather than its length: all nine devices produced a different
+list each round, and not as a subset — one air conditioner was silent on
+`/power/vs/0`, `/sensors/vs/0` and the sound settings in one round and on
+`/wind/direction` and `/wind/strength` alone in another. **The channel is lossy; the
+boards are not selectively silent.** A fixed unsupported-resource hypothesis needs
+the same hrefs missing every time, and no device obliged.
+
+The confound is worth carrying: appliances remember observer registrations across
+sessions, so restarts two minutes apart let later rounds inherit earlier ones, and
+round three did score better throughout. That trend proves nothing — but the
+conclusion does not rest on it, since accumulated registrations cannot explain a
+*different* set falling silent each time.
+
+`docs/BACKLOG.md` has the full record, including what would separate the remaining
+candidates for *why* it is lossy.
 
 ### A mapping that reads nothing looks exactly like one that works
 
