@@ -401,6 +401,14 @@ def _device_report(homey) -> list:
             ("observe_silent_hrefs", lambda d=device: sorted(
                 d.silent_hrefs() if hasattr(d, "silent_hrefs") else ()
             )),
+            # The cadence this device is actually on. It used to be derivable from
+            # `observing` alone — push meant the sweep interval, full stop — and it
+            # stopped being so when a silent href started holding the poll at the
+            # normal interval. Two devices both reporting `observing: true` can now
+            # be polling five minutes apart or thirty seconds apart, and this is the
+            # only thing that says which.
+            ("poll_interval_s", lambda d=device: (
+                round(d._poll_interval()) if hasattr(d, "_poll_interval") else None)),
             ("observe_silent_rounds",
              lambda d=device: getattr(d, "_observe_silent_rounds", None)),
             ("observe_retry_after_s", lambda d=device: (
