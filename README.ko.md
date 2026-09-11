@@ -104,6 +104,29 @@ OUT_DIR=./certs TARGET_IP=192.168.1.90 .venv/bin/python setup_cert.py --test
 homey api raw --path /api/app/com.lomohome.localthings/diagnostics
 ```
 
+#### 셀프 호스티드 서버에서 `Could not mount /dev/random`
+
+시작하자마자 앱이 다음과 같이 죽는다면
+
+```
+Error: Could not mount /dev/random : 32
+    at file:///app/packages/homey-local/lib/AppLocal.mts:1115:25
+```
+
+이 앱의 문제가 아닙니다. 스택 전체가 Homey 런타임이고, 앱 컨테이너를 준비하는
+`AppLocal.start` 안에서 실패합니다 — 파이썬이 실행되기 전이라 보고서에 stdout이
+남지 않습니다. `homey app create`로 만든 손대지 않은 앱에서도 그대로 재현되므로
+이 앱이 아니라 **파이썬 런타임 Homey 앱 전반**의 문제입니다.
+
+보고된 원인은 **unprivileged LXC 컨테이너가 `/dev/random`을 마운트할 수 없다**는
+것이고, 공식 Proxmox 설치 스크립트가 만드는 것이 바로 그 형태입니다.
+[해당 스레드](https://community.homey.app/t/homey-self-hosted-server-on-proxmox-megathread/146439/58)의
+우회책은 컨테이너를 백업한 뒤 privileged로 복원하는 것입니다. `homey app install`은
+실패하지만 `homey app run`은 동작한다는 보고도 함께 있습니다.
+
+Proxmox가 *아닌* 환경에서 이 증상을 만났다면 Athom에 알릴 가치가 있습니다. 같은
+마운트 실패가 다른 구성에도 미친다는 뜻이기 때문입니다.
+
 ## 플로우 자동화
 
 Homey는 **시스템 capability에만** 플로우 카드를 만들어 줍니다. 이 앱이 직접 정의한 87개는

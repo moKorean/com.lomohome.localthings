@@ -156,6 +156,31 @@ You can inspect an installed app without development mode:
 homey api raw --path /api/app/com.lomohome.localthings/diagnostics
 ```
 
+#### On Self-Hosted Server: `Could not mount /dev/random`
+
+If the app crashes on startup with
+
+```
+Error: Could not mount /dev/random : 32
+    at file:///app/packages/homey-local/lib/AppLocal.mts:1115:25
+```
+
+that failure is not in this app. Every frame is Homey's own runtime, and it fails
+inside `AppLocal.start` while the app container is still being set up — before any
+Python runs, which is why the report carries no stdout. It reproduces with an
+unmodified app straight out of `homey app create`, so it affects **Python-runtime
+Homey apps generally**, not this one.
+
+The reported cause is that an **unprivileged LXC container cannot mount
+`/dev/random`**, which is what the official Proxmox install script creates by
+default. The workaround in
+[that thread](https://community.homey.app/t/homey-self-hosted-server-on-proxmox-megathread/146439/58)
+is to back the container up and restore it as privileged. `homey app run` has been
+reported to work while `homey app install` fails.
+
+If you hit this on a host that is *not* Proxmox, it is worth reporting to Athom —
+that would mean the same mount failure reaches another setup too.
+
 ## Flow automation
 
 Homey creates Flow cards for **its own built-in capabilities only**. The 86 this app
