@@ -31,6 +31,25 @@ WASHER_TABLE_00 = {
     "01": {"en": "Normal", "ko": "표준세탁"},
     "55": {"en": "Whites", "ko": "흰옷"},
     "57": {"en": "Self Clean+", "ko": "통세척+"},
+    # The WW6500's fourteen codes (DA_WM_A51_20_COMMON), contributed to the
+    # reference by an owner who listed the temperature, rinse count and spin
+    # speed each course ran at and matched them against the model's manual —
+    # not read off a screenshot. Disjoint from the eleven above, so nothing
+    # here relabels an existing code. Adopted 2026-09-12.
+    "5b": {"en": "Cotton", "ko": "면"},
+    "5c": {"en": "Extra Speed", "ko": "초고속세탁"},
+    "5d": {"en": "Super Eco Wash", "ko": "초절약세탁"},
+    "5e": {"en": "Delicates", "ko": "섬세의류"},
+    "5f": {"en": "Baby Care", "ko": "아기옷"},
+    "60": {"en": "Outdoor", "ko": "아웃도어"},
+    "61": {"en": "Dark Garment", "ko": "검은색 의류"},
+    "63": {"en": "Drum Clean", "ko": "무세제통세척"},
+    "64": {"en": "Rinse + Spin", "ko": "헹굼+탈수"},
+    "65": {"en": "Wool", "ko": "울"},
+    "66": {"en": "Bedding", "ko": "이불"},
+    "67": {"en": "Synthetics", "ko": "합성섬유"},
+    "68": {"en": "E Cotton", "ko": "에코 면"},
+    "6b": {"en": "Spin Only", "ko": "탈수단독"},
     "70": {"en": "Heavy Duty", "ko": "강력세탁"},
     "71": {"en": "Bedding", "ko": "이불"},
     "72": {"en": "Sanitize", "ko": "살균"},

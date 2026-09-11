@@ -4873,6 +4873,104 @@
                 }
               },
               {
+                "id": "5b",
+                "title": {
+                  "en": "Cotton",
+                  "ko": "면"
+                }
+              },
+              {
+                "id": "5c",
+                "title": {
+                  "en": "Extra Speed",
+                  "ko": "초고속세탁"
+                }
+              },
+              {
+                "id": "5d",
+                "title": {
+                  "en": "Super Eco Wash",
+                  "ko": "초절약세탁"
+                }
+              },
+              {
+                "id": "5e",
+                "title": {
+                  "en": "Delicates",
+                  "ko": "섬세의류"
+                }
+              },
+              {
+                "id": "5f",
+                "title": {
+                  "en": "Baby Care",
+                  "ko": "아기옷"
+                }
+              },
+              {
+                "id": "60",
+                "title": {
+                  "en": "Outdoor",
+                  "ko": "아웃도어"
+                }
+              },
+              {
+                "id": "61",
+                "title": {
+                  "en": "Dark Garment",
+                  "ko": "검은색 의류"
+                }
+              },
+              {
+                "id": "63",
+                "title": {
+                  "en": "Drum Clean",
+                  "ko": "무세제통세척"
+                }
+              },
+              {
+                "id": "64",
+                "title": {
+                  "en": "Rinse + Spin",
+                  "ko": "헹굼+탈수"
+                }
+              },
+              {
+                "id": "65",
+                "title": {
+                  "en": "Wool",
+                  "ko": "울"
+                }
+              },
+              {
+                "id": "66",
+                "title": {
+                  "en": "Bedding",
+                  "ko": "이불"
+                }
+              },
+              {
+                "id": "67",
+                "title": {
+                  "en": "Synthetics",
+                  "ko": "합성섬유"
+                }
+              },
+              {
+                "id": "68",
+                "title": {
+                  "en": "E Cotton",
+                  "ko": "에코 면"
+                }
+              },
+              {
+                "id": "6b",
+                "title": {
+                  "en": "Spin Only",
+                  "ko": "탈수단독"
+                }
+              },
+              {
                 "id": "70",
                 "title": {
                   "en": "Heavy Duty",
@@ -10390,6 +10488,104 @@
           "title": {
             "en": "Self Clean+",
             "ko": "통세척+"
+          }
+        },
+        {
+          "id": "5b",
+          "title": {
+            "en": "Cotton",
+            "ko": "면"
+          }
+        },
+        {
+          "id": "5c",
+          "title": {
+            "en": "Extra Speed",
+            "ko": "초고속세탁"
+          }
+        },
+        {
+          "id": "5d",
+          "title": {
+            "en": "Super Eco Wash",
+            "ko": "초절약세탁"
+          }
+        },
+        {
+          "id": "5e",
+          "title": {
+            "en": "Delicates",
+            "ko": "섬세의류"
+          }
+        },
+        {
+          "id": "5f",
+          "title": {
+            "en": "Baby Care",
+            "ko": "아기옷"
+          }
+        },
+        {
+          "id": "60",
+          "title": {
+            "en": "Outdoor",
+            "ko": "아웃도어"
+          }
+        },
+        {
+          "id": "61",
+          "title": {
+            "en": "Dark Garment",
+            "ko": "검은색 의류"
+          }
+        },
+        {
+          "id": "63",
+          "title": {
+            "en": "Drum Clean",
+            "ko": "무세제통세척"
+          }
+        },
+        {
+          "id": "64",
+          "title": {
+            "en": "Rinse + Spin",
+            "ko": "헹굼+탈수"
+          }
+        },
+        {
+          "id": "65",
+          "title": {
+            "en": "Wool",
+            "ko": "울"
+          }
+        },
+        {
+          "id": "66",
+          "title": {
+            "en": "Bedding",
+            "ko": "이불"
+          }
+        },
+        {
+          "id": "67",
+          "title": {
+            "en": "Synthetics",
+            "ko": "합성섬유"
+          }
+        },
+        {
+          "id": "68",
+          "title": {
+            "en": "E Cotton",
+            "ko": "에코 면"
+          }
+        },
+        {
+          "id": "6b",
+          "title": {
+            "en": "Spin Only",
+            "ko": "탈수단독"
           }
         },
         {

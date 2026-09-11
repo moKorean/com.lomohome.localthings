@@ -11,9 +11,48 @@ Where a resource exists in both an OCF-standard and a vendor form, both are decl
 and presence-gated: a given board carries one or the other, so only one binds.
 """
 
+from ..resources import is_stub_rep
 from .base import Spec, as_float, as_int
 
 # --- helpers ---------------------------------------------------------------
+
+
+def has_sensor_type(sensor_type: str):
+    """Presence gate for a reading inside `/sensors/vs/0`'s items[] array.
+
+    Without this the capability binds whenever the *resource* exists, which is not
+    the same question: `/sensors/vs/0` is one resource carrying a variable list, and
+    a board that reports only a CleanLevel was still given dust, fine dust, super
+    fine dust and CO2 tiles, every one of them blank forever. `None` from a reader
+    means "leave the capability alone", so nothing raised and the suite stayed green
+    — the exact shape `tests/test_no_dead_mappings.py` was written for, except that
+    this one is per-unit and so invisible to a check run over dump files.
+
+    Adopted from the reference on 2026-09-12 (its #414, an AVT-WW-TP1-22-TOUCHOTN
+    purifier listing a single sensor type).
+
+    **Listing a type is not proof the hardware behind it is real.** The reference
+    records a board (its #166) that lists all five and reports permanent zeros on
+    units the owner confirms have no such sensor. That is a different problem and
+    not one worth hiding a working reading over; this gate only ever removes a
+    reading the appliance never mentions at all.
+
+    The stub carve-out is what keeps a not-yet-populated `/device/0` from dropping
+    every sensor on the device: an echoed `{"href": ...}` has no items[] to look in,
+    and treating that as "the board has no sensors" would unbind them on first sight
+    and leave them unbound.
+    """
+
+    def exists(rep, _resources) -> bool:
+        if is_stub_rep(rep):
+            return True
+        return any(
+            isinstance(item, dict)
+            and str(item.get("x.com.samsung.da.type")) == sensor_type
+            for item in (rep.get("x.com.samsung.da.items") or ())
+        )
+
+    return exists
 
 
 def flag(field: str, on: str = "On"):
@@ -307,6 +346,12 @@ def _machine_state(rep, _resources):
     return text("x.com.samsung.da.state")(rep, _resources)
 
 
+def _state_is_active(rep) -> bool:
+    """Whether `state` names a running cycle. Shared by the three readings below
+    so they cannot disagree about what "running" means."""
+    return str(rep.get("x.com.samsung.da.state") or "").strip().lower() in _ACTIVE_STATES
+
+
 def _cycle_active(rep, _resources):
     state = str(rep.get("x.com.samsung.da.state") or "").strip().lower()
     if not state:
@@ -318,8 +363,20 @@ def _cycle_active(rep, _resources):
 
 
 def _progress_percent(rep, _resources):
+    """Percent through the cycle, 0 whenever one is not running.
+
+    The idle clamp is the reference's rule, adopted 2026-09-12 (its commit
+    "Read an idle oven's progress as 0"). Range firmware **parks
+    `progressPercentage` at 1 while Ready** — on every range dump it has and on
+    the TP2X wall oven — and still reads 1 a second into a timed bake, so the raw
+    field passed through meant an idle oven permanently showing 1% and a real
+    bake looking identical to it. The board's own number is used unchanged while
+    a cycle is active; this only overrides the parked value.
+    """
     if str(rep.get("x.com.samsung.da.progress") or "") == "Finish":
         return 100
+    if not _state_is_active(rep):
+        return 0
     return as_int(rep.get("x.com.samsung.da.progressPercentage"))
 
 
@@ -336,6 +393,14 @@ def _remaining_minutes(rep, _resources):
     The bare-digit branch is kept because it costs one line and some board may yet
     send it, but nothing has been seen to.
     """
+    # The firmware freezes `remainingTime` at '00:01:00' after a cycle ends
+    # rather than clearing it, so a finished machine reported "1 minute left"
+    # for as long as it sat there. `progress` reaching Finish is the signal the
+    # reference keys on, and it is narrower than "not running": it fires on the
+    # exact quirk without suppressing a genuine reading from a board whose state
+    # field lags. Adopted 2026-09-12 from its `_completion_minutes`.
+    if str(rep.get("x.com.samsung.da.progress") or "") == "Finish":
+        return 0
     raw = str(rep.get("x.com.samsung.da.remainingTime")
               or rep.get("remainingTime") or "").strip()
     if not raw:

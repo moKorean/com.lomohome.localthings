@@ -153,6 +153,13 @@ _OIC_TYPE_TO_KEY: dict[str, str] = {
     "oic.d.dishwasher": "dishwasher",
     "oic.d.dryer": "dryer",
     "oic.d.oven": "oven",
+    # Reference #433, adopted 2026-09-12. Unlike `oic.d.range` below this is a
+    # second opinion rather than the only one — the board that reports it
+    # (`TP1X_DA-KS-MICROWAVE-0102X`) also carries the `MICROWAVE` token we
+    # already route on. It is here for the case the token is missing or spelled
+    # in a way the tokeniser cannot see, which is the whole reason this table
+    # takes precedence over the model string.
+    "oic.d.microwave": "microwave",
     "oic.d.washer": "washer",
     "x.com.st.d.stickcleaner": "vacuum_station",
     "x.com.st.d.steamcloset": "air_dresser",

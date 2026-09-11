@@ -53,11 +53,6 @@ ALLOWED_UNSEEN: dict[str, str] = {}
 # (type, capability) pairs that legitimately read nothing on every dump, each with the
 # reason. Anything not listed here is a bug — that is the point of the list.
 ALLOWED_BLANK: dict[tuple[str, str], str] = {
-    ("air_purifier", "measure_co2"): (
-        "no purifier dump lists a CO2 sensor type; the air monitor's does, and a "
-        "reporter's purifier carries one (reference #387/#390). Gated on the type "
-        "being present in items[], so a board without it gets no tile"
-    ),
     ("air_dresser", "measure_power"): "dumps carry cumulativePower only, no instantaneous",
     ("dishwasher", "measure_power"): "dumps carry cumulativePower only",
     ("dryer", "measure_power"): "dumps carry cumulativePower only",
@@ -75,6 +70,18 @@ ALLOWED_BLANK: dict[tuple[str, str], str] = {
     # returned None. They now return False and 0 instead — a cancelled timer and a
     # finished burner have to *clear*, not keep their last value — so they read on
     # every dump and no longer belong in this list.
+    # The cavity readings go blank for the same reason as the setpoints below them:
+    # the whole corpus is idle. Wall ovens park `current` at 0 and ranges at Bake's
+    # 175 °F minimum, and neither is a measurement. Unlike the usual entry in this
+    # list, these three are not unconfirmable — the rule that blanks them is pinned
+    # on real values in tests/test_oven_idle_cavity.py. What is missing is a dump of
+    # an oven that is actually *cooking*, which is the only thing that could show the
+    # reading working.
+    ("oven", "measure_temperature.cavity"):
+        "every dump is idle; wall ovens park current at 0",
+    ("microwave", "measure_temperature.cavity"): "same idle corpus",
+    ("range", "measure_temperature.cavity"):
+        "every range dump is idle with current parked at Bake's 175 °F minimum",
     ("oven", "localthings_target_temperature_readonly"):
         "every dump is idle with desired 0, which is treated as no setpoint",
     ("microwave", "localthings_target_temperature_readonly"): "same idle 0",
@@ -240,8 +247,13 @@ def test_the_six_broken_types_now_read_their_real_resources(dumps):
             "localthings_oven_mode": "NoOperation",
             "alarm_contact": False,
         },
-        # The Fahrenheit board, and the only dump with a live cavity reading: 175 °F.
-        "range_device.json": {"measure_temperature.cavity": 79.4},
+        # 175 °F on this board is **not** a cavity reading, which is what this
+        # expectation used to say. Four range dumps — this one, ne63a6511,
+        # nx60t8311ss and ne8300d — all sit at exactly current=175/desired=0 with
+        # state Ready. Four kitchens do not independently rest at 79.4 °C; that is
+        # Bake's own minimum, parked while the oven is idle. It now reads nothing,
+        # per the idle floor in `_oven_temperature`.
+        "range_device.json": {"measure_temperature.cavity": None},
         # 03:02:00 — the form that used to return None for every appliance.
         "dryer_device.json": {"localthings_remaining_minutes": 182},
     }

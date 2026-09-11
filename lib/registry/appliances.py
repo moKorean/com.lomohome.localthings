@@ -16,6 +16,7 @@ switch, so does this; where it deliberately leaves something read-only under its
 don't-guess rule, so does this. Nothing that applies heat is writable.
 """
 
+from ..resources import is_stub_rep
 from . import courses, shared
 from .base import Registry, Spec, as_float, as_int
 
@@ -700,22 +701,29 @@ AIR_PURIFIER = Registry(
         Spec("localthings_fan_speed_level", "/airflow/vs/0",
              lambda rep, _r: as_int(rep.get("x.com.samsung.da.speedLevel"))),
         Spec("localthings_air_quality", "/sensors/vs/0",
-             lambda rep, _r: _sensor(rep, "CleanLevel")),
-        Spec("measure_pm25", "/sensors/vs/0", lambda rep, _r: _sensor(rep, "FineDust")),
+             lambda rep, _r: _sensor(rep, "CleanLevel"),
+             exists=shared.has_sensor_type("CleanLevel")),
+        Spec("measure_pm25", "/sensors/vs/0", lambda rep, _r: _sensor(rep, "FineDust"),
+             exists=shared.has_sensor_type("FineDust")),
         Spec("localthings_dust_pm10", "/sensors/vs/0",
-             lambda rep, _r: _sensor(rep, "Dust")),
+             lambda rep, _r: _sensor(rep, "Dust"),
+             exists=shared.has_sensor_type("Dust")),
         Spec("localthings_dust_pm1", "/sensors/vs/0",
-             lambda rep, _r: _sensor(rep, "SuperFineDust")),
+             lambda rep, _r: _sensor(rep, "SuperFineDust"),
+             exists=shared.has_sensor_type("SuperFineDust")),
         # CO2, which some purifiers carry and none of the four dumps does — added
-        # when the reference took a reporter's word for it (its #387/#390) and gated
-        # the same way: the reading is a `CO2` entry in the same items[] array, so a
-        # board without one reads None and never gets the tile. Same reader the air
-        # monitor already uses, so there is nothing family-specific being guessed.
+        # when the reference took a reporter's word for it (its #387/#390). Same
+        # reader the air monitor already uses, so there is nothing family-specific
+        # being guessed.
         #
-        # Blank on every dump of this type by construction, which is what
-        # ALLOWED_BLANK in tests/test_no_dead_mappings.py exists to make somebody
-        # say out loud rather than let pass.
-        Spec("measure_co2", "/sensors/vs/0", lambda rep, _r: _sensor(rep, "CO2")),
+        # This comment used to claim a board without a CO2 entry "reads None and
+        # never gets the tile". The first half was true and the second was not:
+        # `None` only means leave the value alone, and with no `exists` gate the
+        # capability was bound on every purifier reporting /sensors/vs/0 and sat
+        # blank forever. The gate below is what actually makes the claim true, and
+        # it retired this spec's ALLOWED_BLANK entry (2026-09-12).
+        Spec("measure_co2", "/sensors/vs/0", lambda rep, _r: _sensor(rep, "CO2"),
+             exists=shared.has_sensor_type("CO2")),
         # Periodic air-quality sensing, the same four read-only fields the hood
         # binds. Added when the reference took this resource up on the purifier
         # (its #268), which retired the reason we had for skipping it here — see
@@ -833,7 +841,29 @@ def _oven_temperature(field: str):
     has a 0 °C oven cavity, and on a Fahrenheit board a literal 0 would convert to
     -17.8 °C — a sentinel published as a measurement is how the range hood shipped
     broken.
+
+    **An idle range does not report 0, though — it parks `current` at Bake's own
+    minimum**, 175 °F on every Fahrenheit range dump and 80 °C on the Celsius one.
+    That is not a cavity reading either, so `current` additionally reads nothing
+    while the oven is idle and sits at or below that floor. Adopted from the
+    reference on 2026-09-12.
+
+    Both halves of the idle test are load-bearing, and they are what stop the rule
+    from eating real readings:
+
+    - **The setpoint must be absent.** A cool-down after a bake has `desired` at 0
+      and `current` still falling through the floor — that is a genuine measurement
+      and it survives, because the unit is idle but the value is above the floor
+      only until it is not. The floor comparison alone would silence the tail of
+      every cool-down.
+    - **The floor is compared in the appliance's own unit**, before conversion. A
+      KeepWarm cook *at* exactly 175 °F has a setpoint, so it is not idle, and it
+      reads.
     """
+    # Bake's minimum per unit, which is what an idle range parks `current` at.
+    # Keyed by the appliance's own unit letter because the comparison happens
+    # before conversion.
+    idle_floor = {"f": 175.0, "c": 80.0}
 
     def read(rep, _resources):
         items = rep.get("x.com.samsung.da.items")
@@ -846,6 +876,11 @@ def _oven_temperature(field: str):
         if value is None or value == 0:
             return None
         unit = str(item.get("x.com.samsung.da.unit") or "C").strip().lower()
+        if field.endswith("current"):
+            setpoint = as_float(item.get("x.com.samsung.da.desired"))
+            idle = setpoint is None or setpoint == 0
+            if idle and value <= idle_floor.get(unit[:1], 0.0):
+                return None
         if unit.startswith("f"):
             return round((value - 32) * 5 / 9, 1)
         return value
@@ -891,18 +926,204 @@ OVEN = Registry(
              *shared.CYCLE_STOP_ONLY, *_oven_specs()),
 )
 
+# --- microwave, DAWIT 3.0 generation --------------------------------------
+#
+# A `TP1X_DA-KS-MICROWAVE-0102X` combi board (reference #433, model `OT80H30-/AA0`)
+# answers **none** of the hrefs `_oven_specs()` binds — no `/oven/vs/0`, `/mode/vs/0`,
+# `/temperatures/vs/0`, `/doors/vs/0` or `/operational/state/vs/0`. Before this it
+# bound four capabilities on its whole dump: an alarm code, two energy readings and
+# the firmware flag. Everything that makes it a microwave read nothing.
+#
+# The cavity is one flat `/oven/status/vs/0` resource instead, and the built-in vent
+# hood is `/hood/status/vs/0`. Note the shape change as well as the paths: these
+# carry **bare field names and nested objects** (`door.state`, `mode.name`,
+# `time.remaining`), not the `x.com.samsung.da.*` flat fields every older board uses.
+#
+# Declared *alongside* the older specs rather than replacing them, which costs
+# nothing: each generation's resources are absent on the other, so `Spec.applies`
+# binds whichever one the unit actually reports, and `Registry.spec_for` already
+# prefers the form that applies.
+#
+# **Read-only, deliberately.** `/oven/spec/vs/0` advertises
+# `remoteControlProperty: ["set"]` per mode and the hood spec lists its full fan and
+# lamp vocabularies, which is exactly the kind of evidence that is not a write
+# contract — the induction cooktop advertised three remote features and answers 4.05
+# to every write. Fan speed and lamp are left unbound rather than bound to a setable
+# capability that might do nothing: a control that silently fails is worse than an
+# absent one. See docs/BACKLOG.md for what would settle it.
+HREF_MW2_STATUS = "/oven/status/vs/0"
+HREF_MW2_HOOD = "/hood/status/vs/0"
+
+
+def _mw2_nested(field: str, key: str):
+    """One key out of a nested object on this generation's resources."""
+
+    def read(rep, _resources):
+        obj = rep.get(field)
+        if not isinstance(obj, dict):
+            return None
+        value = obj.get(key)
+        return None if value in (None, "") else value
+
+    return read
+
+
+def _mw2_flag(field: str, on: str = "on"):
+    def read(rep, _resources):
+        value = rep.get(field)
+        return None if value in (None, "") else str(value).strip().lower() == on
+
+    return read
+
+
+def _mw2_door_open(rep, _resources):
+    state = _mw2_nested("door", "state")(rep, None)
+    return None if state is None else str(state).strip().lower() == "open"
+
+
+def _mw2_remaining_minutes(rep, _resources):
+    """`time.remaining` is in **seconds** on this board — the mode spec bounds cook
+    time at 1..6039, which is a hundred minutes, not a hundred hours. The shared
+    reading this capability otherwise comes from is in minutes, so it is converted
+    here rather than published in the appliance's unit."""
+    seconds = as_int(_mw2_nested("time", "remaining")(rep, None))
+    return None if seconds is None else round(seconds / 60)
+
+
+def _mw2_filter_alarm(rep, _resources):
+    """Any filter on the vent hood asking to be cleaned. One entry, a grease filter,
+    on the only dump — read as a list anyway because the spec resource declares a
+    `filterList`, so a board with two would otherwise report only the first."""
+    filters = rep.get("filter")
+    if not isinstance(filters, list) or not filters:
+        return None
+    seen = False
+    for entry in filters:
+        if not isinstance(entry, dict) or "alarm" not in entry:
+            continue
+        seen = True
+        if str(entry.get("alarm")).strip().lower() not in ("off", "", "none"):
+            return True
+    return False if seen else None
+
+
+def _microwave_gen2_specs():
+    return (
+        Spec("localthings_operation_state", HREF_MW2_STATUS,
+             lambda rep, _r: rep.get("operation") or None),
+        Spec("localthings_oven_mode", HREF_MW2_STATUS, _mw2_nested("mode", "name")),
+        Spec("localthings_child_lock_state", HREF_MW2_STATUS, _mw2_flag("childLock")),
+        Spec("alarm_contact", HREF_MW2_STATUS, _mw2_door_open),
+        Spec("localthings_remaining_minutes", HREF_MW2_STATUS, _mw2_remaining_minutes),
+        Spec("localthings_alarm_filter", HREF_MW2_HOOD, _mw2_filter_alarm,
+             titles={"en": "Grease filter", "ko": "기름 필터"}),
+    )
+
+
 MICROWAVE = Registry(
     name="microwave", device_class="other",
     titles={"en": "Samsung Microwave", "ko": "삼성 전자레인지"},
     specs=(*shared.POWER, *shared.UNIVERSAL, *shared.OPERATIONAL,
-             *shared.CYCLE_STOP_ONLY, *_oven_specs()),
+             *shared.CYCLE_STOP_ONLY, *_oven_specs(), *_microwave_gen2_specs()),
 )
+
+# --- the range's lit-burner bitmask ---------------------------------------
+#
+# `/cooktopmonitoring/vs/0`'s `cooktopMonitoring` is a bitmask of lit burners, one
+# bit per knob. The reference verified the bit order on a gas NX60T8311SS/AA by
+# lighting each burner alone and reading the resource live, and found the value
+# unaffected by flame level.
+#
+# **Only decoded on a board that says it burns gas.** Six dumps carry the field and
+# exactly one has ever read non-zero — the gas unit, at 31, every burner lit. The
+# five electric NE boards all read 0, and a permanent 0 cannot be told apart from a
+# field the board does not implement. Publishing "no burner is on" from it would be
+# a reading invented out of a sentinel, which is the mistake this registry has
+# already shipped once. `Fuel_Gas` in `/mode/vs/0`'s options[] is the discriminator
+# the reference settled on: both gas boards in its evidence carry it and none of the
+# electric ones carries any `Fuel_` token.
+#
+# An electric owner whose mask reads non-zero is what would lift the gate.
+HREF_COOKTOP_MONITORING = "/cooktopmonitoring/vs/0"
+FIELD_BURNER_MASK = "x.com.samsung.da.cooktopMonitoring"
+
+# Bit order as verified on the gas unit, least significant bit first.
+_MASK_BURNER_TITLES = (
+    {"en": "Front left", "ko": "왼쪽 앞"},
+    {"en": "Back left", "ko": "왼쪽 뒤"},
+    {"en": "Center", "ko": "가운데"},
+    {"en": "Back right", "ko": "오른쪽 뒤"},
+    {"en": "Front right", "ko": "오른쪽 앞"},
+)
+
+
+def _burner_mask(rep):
+    try:
+        return int(rep.get(FIELD_BURNER_MASK))
+    except (TypeError, ValueError):
+        return None
+
+
+def _mask_decodable(rep, resources) -> bool:
+    """Whether this board's mask may be read as burner positions.
+
+    Three conditions, and the middle one is the whole point of the gate:
+
+    - the field parses as an integer at all;
+    - the board declares `Fuel_Gas`, because that is the only kind of board the bit
+      order was ever verified on;
+    - no `/cooktop/status/vs/0` burnerList is present. A board publishing both would
+      have every burner listed twice, and burnerList wins — it carries state, power
+      level and a timer per burner, where the mask carries one bit. No dump in the
+      corpus carries both, so this arm is precautionary.
+
+    The stub carve-out applies to `/mode/vs/0` rather than to the mask's own
+    resource: at discovery the mode resource may not be fetched yet, and treating
+    that as "not a gas board" would unbind the burners permanently.
+    """
+    if _burner_mask(rep) is None:
+        return False
+    if (resources.get("/cooktop/status/vs/0") or {}).get("x.com.samsung.da.burnerList"):
+        return False
+    mode = resources.get("/mode/vs/0")
+    if mode is None or is_stub_rep(mode):
+        return True
+    options = mode.get("x.com.samsung.da.options")
+    if not isinstance(options, list):
+        return False
+    return any(isinstance(o, str) and o == "Fuel_Gas" for o in options)
+
+
+def _mask_burner_state(bit: int):
+    def read(rep, _resources):
+        mask = _burner_mask(rep)
+        return None if mask is None else ("On" if mask >> bit & 1 else "Off")
+
+    return read
+
+
+def _mask_any_active(rep, _resources):
+    mask = _burner_mask(rep)
+    return None if mask is None else mask != 0
+
+
+def _mask_burner_specs():
+    for bit, titles in enumerate(_MASK_BURNER_TITLES):
+        yield Spec(
+            f"localthings_burner_state.{bit + 1}", HREF_COOKTOP_MONITORING,
+            _mask_burner_state(bit), exists=_mask_decodable,
+            titles={k: f"{v} — state" if k == "en" else f"{v} 상태"
+                    for k, v in titles.items()},
+        )
+    yield Spec("localthings_burner_any_active", HREF_COOKTOP_MONITORING,
+               _mask_any_active, exists=_mask_decodable)
+
 
 RANGE = Registry(
     name="range", device_class="other",
     titles={"en": "Samsung Range", "ko": "삼성 레인지"},
     specs=(*shared.POWER, *shared.UNIVERSAL, *shared.OPERATIONAL,
-             *shared.CYCLE_STOP_ONLY, *_oven_specs()),
+             *shared.CYCLE_STOP_ONLY, *_oven_specs(), *_mask_burner_specs()),
 )
 
 # --- gas cooktop ----------------------------------------------------------
@@ -1125,13 +1346,17 @@ RANGE_HOOD = Registry(
         Spec("localthings_alarm_filter", HREF_HOOD_FILTER,
              _read_filter_status_alarm),
         Spec("localthings_air_quality", "/sensors/vs/0",
-             lambda rep, _r: _sensor(rep, "CleanLevel")),
+             lambda rep, _r: _sensor(rep, "CleanLevel"),
+             exists=shared.has_sensor_type("CleanLevel")),
         Spec("localthings_dust_pm10", "/sensors/vs/0",
-             lambda rep, _r: _sensor(rep, "Dust")),
+             lambda rep, _r: _sensor(rep, "Dust"),
+             exists=shared.has_sensor_type("Dust")),
         Spec("measure_pm25", "/sensors/vs/0",
-             lambda rep, _r: _sensor(rep, "FineDust")),
+             lambda rep, _r: _sensor(rep, "FineDust"),
+             exists=shared.has_sensor_type("FineDust")),
         Spec("localthings_dust_pm1", "/sensors/vs/0",
-             lambda rep, _r: _sensor(rep, "SuperFineDust")),
+             lambda rep, _r: _sensor(rep, "SuperFineDust"),
+             exists=shared.has_sensor_type("SuperFineDust")),
     ),
 )
 
@@ -1206,13 +1431,18 @@ AIR_MONITOR = Registry(
     specs=(
         *shared.UNIVERSAL,
         Spec("localthings_air_quality", "/sensors/vs/0",
-             lambda rep, _r: _sensor(rep, "CleanLevel")),
-        Spec("measure_pm25", "/sensors/vs/0", lambda rep, _r: _sensor(rep, "FineDust")),
+             lambda rep, _r: _sensor(rep, "CleanLevel"),
+             exists=shared.has_sensor_type("CleanLevel")),
+        Spec("measure_pm25", "/sensors/vs/0", lambda rep, _r: _sensor(rep, "FineDust"),
+             exists=shared.has_sensor_type("FineDust")),
         Spec("localthings_dust_pm10", "/sensors/vs/0",
-             lambda rep, _r: _sensor(rep, "Dust")),
+             lambda rep, _r: _sensor(rep, "Dust"),
+             exists=shared.has_sensor_type("Dust")),
         Spec("localthings_dust_pm1", "/sensors/vs/0",
-             lambda rep, _r: _sensor(rep, "SuperFineDust")),
-        Spec("measure_co2", "/sensors/vs/0", lambda rep, _r: _sensor(rep, "CO2")),
+             lambda rep, _r: _sensor(rep, "SuperFineDust"),
+             exists=shared.has_sensor_type("SuperFineDust")),
+        Spec("measure_co2", "/sensors/vs/0", lambda rep, _r: _sensor(rep, "CO2"),
+             exists=shared.has_sensor_type("CO2")),
         Spec("measure_humidity", "/humidity/vs/0",
              lambda rep, _r: as_float(rep.get("x.com.samsung.da.humidity"))),
         Spec("measure_battery", "/energy/battery/vs/0",
