@@ -15,7 +15,7 @@ there is no cloud round-trip.
 > in certification for a while before it is served. Four air conditioners, an
 > induction cooktop, a range hood and three refrigerators are discovered, paired
 > and controlled on real hardware, with state arriving by CoAP OBSERVE (polling
-> continues as a five-minute safety sweep). All 87 custom capabilities are usable
+> continues as a five-minute safety sweep). All 100 custom capabilities are usable
 > in Flows. The remaining fourteen appliance types are routed and mapped but not
 > verified against hardware. Design notes
 > and measurements are in [`docs/PORTING.md`](docs/PORTING.md); unmapped resources and
@@ -183,11 +183,11 @@ that would mean the same mount failure reaches another setup too.
 
 ## Flow automation
 
-Homey creates Flow cards for **its own built-in capabilities only**. The 86 this app
+Homey creates Flow cards for **its own built-in capabilities only**. The 100 this app
 defines had none, so you could not switch a hood's light from a Flow or raise a
 notification from filter wear.
 
-There are now **144 cards** — 32 actions, 88 conditions, 24 triggers.
+There are now **164 cards** — 36 actions, 101 conditions, 27 triggers.
 
 | Kind | Scope |
 |---|---|
@@ -403,7 +403,7 @@ nothing.
 | Dishwasher (`ADW`, `DW*`) | Unverified. Machine state, **start / pause / stop the cycle**, progress, sanitize, heated dry, cumulative water, sound, washes until drum clean, **the running cycle by name** (19 cycles) |
 | Air purifier (`AIR/TVTL/VTWW/AVT`) | Unverified here, but **a user reports a Blue Sky 5500 working**. Which board that unit runs was not reported, so it is not known which of the four tokens carried it — see BACKLOG. Fan, panel light, pet filter, HEPA filter, air quality, PM10/2.5/1.0, CO2 where the board reports it, periodic air sensing with its last grade and what it triggers |
 | Dehumidifier (`DHM`) | Unverified. Humidity, target humidity (writable), filter, panel display and water-tank light (both writable, on the revision that reports them) |
-| Oven, range, microwave (`OVEN/RANGE/MICROWAVE`) | Unverified. Operation state, **stop the programme** (stop only — the reference gives this family no start or pause), mode, cavity and target temperature, door — **no heat control** |
+| Oven, range, microwave (`OVEN/RANGE/MICROWAVE`) | Unverified. Operation state, **stop the programme** (stop only — the reference gives this family no start or pause), mode, cavity and target temperature, door — **no heat control**. A gas range also shows **which burners are lit**, decoded only on a board that declares gas. A newer microwave board (`-0102X`) answers none of the older family's resources and is read through its own: door, child lock, mode, cook time and the vent hood's grease filter |
 | Gas cooktop (`CT`) | Unverified. Power state, whether a burner is in use — **read-only** |
 | Water purifier (`WATERPURIFIER`) | Unverified against hardware, but read against the reference's dump of a real one. Operation state, filter-door contact, three locks — hot water, cold water and buttons (writable) — water filter, cumulative water |
 | Clean station (`VSKR`, `VSWW`) | Unverified against hardware, but read against the reference's dump of a real one. Operation state, dust-bag counter and full warning, auto empty and auto close (both writable) |
@@ -577,7 +577,7 @@ python3 -m venv .venv
 ## Languages
 
 Korean and English are supported, and **any language not declared falls back to
-English** — app name, description, 87 capabilities, 144 Flow cards, settings labels,
+English** — app name, description, 100 capabilities, 164 Flow cards, settings labels,
 three webviews and device names alike. `tests/test_i18n.py` enforces it, because adding
 a Korean string and forgetting the English one is invisible to whoever wrote it.
 
