@@ -1,0 +1,34 @@
+{
+  "type": "enum",
+  "title": {
+    "en": "Cycle",
+    "ko": "사이클"
+  },
+  "getable": true,
+  "setable": true,
+  "uiComponent": "picker",
+  "icon": "/assets/capabilities/mdi-play-pause.svg",
+  "values": [
+    {
+      "id": "start",
+      "title": {
+        "en": "Start",
+        "ko": "시작"
+      }
+    },
+    {
+      "id": "pause",
+      "title": {
+        "en": "Pause",
+        "ko": "일시정지"
+      }
+    },
+    {
+      "id": "stop",
+      "title": {
+        "en": "Stop",
+        "ko": "정지"
+      }
+    }
+  ]
+}

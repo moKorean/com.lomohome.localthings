@@ -367,6 +367,93 @@ OPERATIONAL = (
     Spec("localthings_remaining_minutes", HREF_OPERATIONAL, _remaining_minutes),
 )
 
+# --- cycle control -------------------------------------------------------
+# Starting, pausing and stopping a program, by writing the state field the four
+# readings above only read. Taken from the reference field for field: its
+# OPERATIONAL_STATE exposes start/pause/stop as buttons posting
+# `x.com.samsung.da.state` = Run / Pause / Ready to this same resource, and its
+# STOP_BUTTON is shared with the oven family.
+#
+# No hardware here runs a cycle — no washer, dryer, dishwasher, air dresser, oven
+# or microwave — so unlike the air conditioner's writes this one has never been
+# read back off an appliance. It is bound anyway because the reference drives real
+# machines with exactly this payload, but that is the whole of the evidence, and
+# the induction cooktop is the standing reminder of what a plausible-looking write
+# is worth: see `docs/BACKLOG.md`.
+
+# The vendor spellings, from the reference's _SAMSUNG_STATE_TO_OCF. Anything not
+# listed reads as stopped rather than as nothing: a state this table has not seen
+# is still not a running cycle, and returning None would leave the picker showing
+# whatever it held last.
+_CYCLE_STATE_TO_CONTROL = {
+    "run": "start",
+    "running": "start",
+    "start": "start",
+    "started": "start",
+    "active": "start",
+    "pause": "pause",
+    "paused": "pause",
+}
+
+# What each control value posts back. `stop` is Ready, not Stop: Ready is the
+# payload the reference sends and `Stop` appears in its table only as a state some
+# boards report.
+_CONTROL_TO_STATE = {
+    "start": "Run",
+    "pause": "Pause",
+    "stop": "Ready",
+}
+
+FIELD_STATE = "x.com.samsung.da.state"
+
+
+def _read_cycle_control(rep, _resources):
+    """The cycle's own state, expressed in the three values that can be written.
+
+    Doubles as the picker's current position, which is what keeps this capability
+    honest: it is not a write-only command that reads blank forever, and a start
+    asked of an already-running machine is short-circuited by the write path
+    instead of being sent and refused.
+    """
+    state = str(rep.get(FIELD_STATE) or "").strip()
+    if not state:
+        return None
+    # A cycle that has reached Finish is over, whatever the state field still says
+    # — the same firmware quirk `_cycle_active` guards against.
+    if str(rep.get("x.com.samsung.da.progress") or "") == "Finish":
+        return "stop"
+    return _CYCLE_STATE_TO_CONTROL.get(state.lower(), "stop")
+
+
+def _write_cycle_control(value, _rep):
+    state = _CONTROL_TO_STATE.get(value)
+    return None if state is None else (["operational", "state", "vs", "0"],
+                                       {FIELD_STATE: state})
+
+
+def _write_cycle_stop_only(value, _rep):
+    """The oven family's writer: stop, and nothing else.
+
+    The reference gives ovens, ranges and microwaves `STOP_BUTTON` alone — no start
+    and no pause — while the laundry types get all three. That difference is
+    reproduced rather than smoothed over. Returning None for the other two makes
+    the write path refuse them by name ("this appliance does not support X"),
+    which is the same treatment any undeclared value gets.
+    """
+    return None if value != "stop" else _write_cycle_control(value, _rep)
+
+
+CYCLE_CONTROL = (
+    Spec("localthings_cycle_control", HREF_OPERATIONAL,
+         _read_cycle_control, _write_cycle_control),
+)
+
+# Oven, range and microwave. Same capability and same reading; only stop is sent.
+CYCLE_STOP_ONLY = (
+    Spec("localthings_cycle_control", HREF_OPERATIONAL,
+         _read_cycle_control, _write_cycle_stop_only),
+)
+
 # --- sound ---------------------------------------------------------------
 
 def _sound_volume_options(rep, _resources) -> dict:

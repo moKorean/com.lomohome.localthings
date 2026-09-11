@@ -164,6 +164,7 @@ WASHER = Registry(
         *shared.POWER,
         *shared.UNIVERSAL,
         *shared.OPERATIONAL,
+        *shared.CYCLE_CONTROL,
         *shared.WATER_METER,
         *WASH_CYCLE,
         *DRUM_CLEAN,
@@ -186,6 +187,7 @@ DRYER = Registry(
         *shared.POWER,
         *shared.UNIVERSAL,
         *shared.OPERATIONAL,
+        *shared.CYCLE_CONTROL,
         *WASH_CYCLE,
         *DRUM_CLEAN,
         Spec("localthings_dry_level", HREF_WASHER,
@@ -211,6 +213,7 @@ DISHWASHER = Registry(
         *shared.POWER,
         *shared.UNIVERSAL,
         *shared.OPERATIONAL,
+        *shared.CYCLE_CONTROL,
         *shared.WATER_METER,
         *DISH_CYCLE,
         *DRUM_CLEAN,
@@ -884,19 +887,22 @@ def _oven_specs():
 OVEN = Registry(
     name="oven", device_class="other",
     titles={"en": "Samsung Oven", "ko": "삼성 오븐"},
-    specs=(*shared.POWER, *shared.UNIVERSAL, *shared.OPERATIONAL, *_oven_specs()),
+    specs=(*shared.POWER, *shared.UNIVERSAL, *shared.OPERATIONAL,
+             *shared.CYCLE_STOP_ONLY, *_oven_specs()),
 )
 
 MICROWAVE = Registry(
     name="microwave", device_class="other",
     titles={"en": "Samsung Microwave", "ko": "삼성 전자레인지"},
-    specs=(*shared.POWER, *shared.UNIVERSAL, *shared.OPERATIONAL, *_oven_specs()),
+    specs=(*shared.POWER, *shared.UNIVERSAL, *shared.OPERATIONAL,
+             *shared.CYCLE_STOP_ONLY, *_oven_specs()),
 )
 
 RANGE = Registry(
     name="range", device_class="other",
     titles={"en": "Samsung Range", "ko": "삼성 레인지"},
-    specs=(*shared.POWER, *shared.UNIVERSAL, *shared.OPERATIONAL, *_oven_specs()),
+    specs=(*shared.POWER, *shared.UNIVERSAL, *shared.OPERATIONAL,
+             *shared.CYCLE_STOP_ONLY, *_oven_specs()),
 )
 
 # --- gas cooktop ----------------------------------------------------------
@@ -1320,6 +1326,7 @@ AIR_DRESSER = Registry(
         *shared.POWER,
         *shared.UNIVERSAL,
         *shared.OPERATIONAL,
+        *shared.CYCLE_CONTROL,
         *DRUM_CLEAN,
         # `/airdresser/vs/0` does not exist. Three reference dumps of this family
         # (TP1_21, TP2_20 and the original) put sanitize on its own option resource
