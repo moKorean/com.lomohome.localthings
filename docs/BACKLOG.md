@@ -332,6 +332,57 @@ statusFeedback, sleepTime = "14002200"
 `sleepTime`이 `HHMM`+`HHMM`(14:00–22:00) 형태로 보이지만 확인 안 됨. `test_registry.py`가
 이 href를 미매핑 목록에 남겨 두어 잊히지 않게 하고 있습니다.
 
+### 리모컨 조작은 그대로 올라옵니다 (2026-08-24 실측)
+
+1.2.0의 세 트리거 카드(`ac_mode` / `fan_mode` / `wind_direction`)는 힌트에 "리모컨도,
+본체 조작도 똑같이 보인다"고 적어 두었지만, 그건 **추론이었습니다**. 사용자가 같은 것을
+다시 물어(2026-08-22, "IR 리모컨으로 온도를 바꿔도 카드가 뜨느냐") 실제로 측정했습니다.
+
+안방 에어컨(`192.168.1.90`) 한 대, **물리 리모컨만** 사용, `/device/0`을 6초 간격으로 읽으며
+관측:
+
+| 리모컨 조작 | 가전 리소스 | Homey capability |
+|---|---|---|
+| 희망온도 27.5 → 28.0 → 29.0 → 24.0 | `/temperatures/vs/0` `desired` | `target_temperature` |
+| 운전 모드 Auto → Cool | `/mode/vs/0` `workingMode` | `localthings_ac_mode` |
+| 풍량 0 → 2 | `/wind/strength/vs/0` `modes` | `localthings_fan_mode` "mid" |
+| 풍향 Fix → All | `/wind/direction/vs/0` `modes` | `localthings_wind_direction` "All" |
+
+네 가지 모두 가전 리소스에 반영됐고, Homey capability까지 따라왔습니다. 코드 쪽으로도
+같은 결론입니다 — `_apply()`는 가전이 돌려준 값을 이전 값과 비교해 밀어넣을 뿐, **누가
+바꿨는지를 기록하는 코드가 없습니다.** 구분하지 못하는 것이 아니라 구분할 정보를 갖고
+있지 않습니다.
+
+**희망온도는 저 세 카드에 없습니다.** 표준 capability(`target_temperature`)라 Homey가
+만드는 트리거가 처음부터 있었습니다. 질문이 세 카드를 온도까지 포함하는 것으로 전제하고
+있었어서, 답할 때 짚어야 하는 부분입니다.
+
+### 풍향 `Fix`는 이 유닛의 `supportedModes`에 없습니다 (2026-08-24, 미해결)
+
+위 실측을 되돌리다 걸렸습니다. 세션 시작 시점의 안방 유닛은 **풍향 `Fix` 상태였는데**,
+같은 리소스가 광고하는 목록에는 `Fix`가 없습니다:
+
+```
+x.com.samsung.da.modes:          "All"
+x.com.samsung.da.supportedModes: ["Left_And_Right", "All"]
+```
+
+그래서 79eb483의 쓰기 가드가 `Fix` 쓰기를 거부했고 — 가드는 옳게 동작했습니다 —
+**가전이 실제로 있던 상태를 앱이 되돌려놓지 못했습니다.** 리모컨으로는 됩니다.
+capability 정의에는 `Fix`가 들어 있으므로 Homey picker는 이 유닛에서도 `Fix`를 제시하고,
+고르면 에러가 납니다.
+
+가장 그럴듯한 해석은 `Fix`가 설정 가능한 모드가 아니라 **스윙이 멈춰 있는 상태 표시**라는
+것이지만, 이것은 추론입니다. 한 대만 본 한 시점 관측이기도 합니다.
+
+**확정 방법**: 나머지 에어컨 세 대의 `/wind/direction/vs/0`을 읽어 `supportedModes`가
+똑같이 `Fix`를 빼는지 봅니다. 전부 빼면 "`Fix`는 읽기 전용 상태"가 되고, 이 유닛만
+그렇다면 유닛/펌웨어 차이입니다. 전자라면 `_setpoint_options`처럼 `options` 콜백을 붙여
+picker를 가전이 광고하는 값으로 좁히는 것이 맞습니다 — 고를 수 있는데 거부되는 값이
+사라집니다.
+
+---
+
 ---
 
 ## 후드 (`AHD-WW-TP1-22`)
