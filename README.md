@@ -317,6 +317,15 @@ address changes:
 Relocation takes a minute or two, during which the device is unavailable. Reserving a
 **static lease** on your router avoids the path entirely.
 
+## Laundry tile indicator
+
+Washers and dryers expose `measure_remaining_minutes` so **Time remaining** can
+be selected as the device tile's status indicator. Existing devices gain it on
+refresh after updating the app; no re-pairing is needed. The original
+`localthings_remaining_minutes` capability, Flow cards and Insights history are
+preserved. The indicator uses the same reading, including zero when a cycle finishes.
+It adds no duplicate sensor in the device view or Insights series.
+
 ## Requirements
 
 - **Homey Pro on firmware v13.0.0 or newer.** The app runs on Homey's Python runtime

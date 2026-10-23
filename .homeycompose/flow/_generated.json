@@ -91,6 +91,7 @@
   "conditions/lamp_brightness_is.json",
   "conditions/light_mode_is.json",
   "conditions/machine_state_is.json",
+  "conditions/measure_remaining_minutes_is.json",
   "conditions/motion_detect_wind_is.json",
   "conditions/mute_once_is.json",
   "conditions/odor_controller_is.json",

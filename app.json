@@ -3370,6 +3370,34 @@
       },
       {
         "title": {
+          "en": "Time remaining !{{is|is not}} at least [[value]] min",
+          "ko": "남은 시간 [[value]] min !{{이상|미만}}"
+        },
+        "titleFormatted": {
+          "en": "Time remaining !{{is|is not}} at least [[value]] min",
+          "ko": "남은 시간 [[value]] min !{{이상|미만}}"
+        },
+        "hint": {
+          "en": "Checks the value as the appliance last reported it.",
+          "ko": "가전이 마지막으로 보고한 값을 확인합니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=measure_remaining_minutes"
+          },
+          {
+            "name": "value",
+            "type": "number",
+            "min": 0,
+            "max": 1440
+          }
+        ],
+        "id": "measure_remaining_minutes_is"
+      },
+      {
+        "title": {
           "en": "Avoid direct wind !{{is|is not}} on",
           "ko": "바람 피함 !{{켜짐|꺼짐}}"
         },
@@ -10782,6 +10810,24 @@
       "setable": true,
       "uiComponent": "toggle",
       "icon": "/assets/capabilities/mdi-tshirt-crew.svg"
+    },
+    "measure_remaining_minutes": {
+      "type": "number",
+      "title": {
+        "en": "Time remaining",
+        "ko": "남은 시간"
+      },
+      "getable": true,
+      "setable": false,
+      "uiComponent": null,
+      "decimals": 0,
+      "icon": "/assets/capabilities/mdi-timer-sand.svg",
+      "units": {
+        "en": "min"
+      },
+      "min": 0,
+      "max": 1440,
+      "insights": false
     }
   }
 }
