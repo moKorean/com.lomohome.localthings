@@ -159,6 +159,53 @@ def _option_token(rep, name: str):
     return None
 
 
+# --- the panel display light, which three board families encode differently ---
+#
+# Reported by a user whose unit could not switch its display off at night. The
+# capability existed and worked — on `/light/stateful/vs/0`, which **2 of the 26
+# air conditioners in the reference's corpus report**, this house's CAC among
+# them. The other boards split between a plain `/light/vs/0` switch (10) and a
+# `Light_*` token in `/mode/vs/0`'s options array (9). So the control was being
+# built from the one encoding nobody else had, and for most owners the tile
+# simply was not there.
+#
+# The three encodings are mutually exclusive on every board observed, so all
+# three specs are declared and `Spec.applies` picks whichever the unit reports.
+#
+# **The token's polarity is inverted**, and this is the part that would have
+# shipped broken if it were inferred from the name. The reference established by
+# a live toggle that the unit reads `Light_Off` while the panel is *lit* and
+# `Light_On` while it is *dark*: the flag means "night mode active", not "light
+# on". Reading it at face value would leave the user turning the display on to
+# switch it off.
+
+HREF_LIGHT_PLAIN = "/light/vs/0"
+_LIGHT_TOKEN = "Light"
+
+
+def _read_option_light(rep, _resources):
+    """Panel light from the options token, un-inverting it on the way out."""
+    token = _option_token(rep, _LIGHT_TOKEN)
+    return None if token is None else token == "Off"
+
+
+def _write_option_light(value, _rep):
+    """One-token options write, inverted to match the read.
+
+    Only the changed token is sent — the appliance accepts that, and sending the
+    whole array back would mean re-asserting two dozen settings read at some
+    earlier poll. `device._fold_options` is what keeps the cached array intact
+    when this lands.
+    """
+    return ["mode", "vs", "0"], {
+        "x.com.samsung.da.options": [f"{_LIGHT_TOKEN}_{'Off' if value else 'On'}"]
+    }
+
+
+def _has_option_light(rep, _resources) -> bool:
+    return _option_token(rep, _LIGHT_TOKEN) is not None
+
+
 def _read_odor_controller(rep, _resources):
     """Smart Cool Clean, the odor-controller self-clean cycle.
 
@@ -667,6 +714,11 @@ REGISTRY = Registry(
              _write_flag(["option", "muteonce", "vs", "0"], "muteonce")),
         Spec("localthings_display_light", HREF_LIGHT, _read_flag("status"),
              _write_flag(["light", "stateful", "vs", "0"], "status")),
+        # The same control on the two encodings this app used to miss entirely.
+        Spec("localthings_display_light", HREF_LIGHT_PLAIN, _read_flag("mode"),
+             _write_flag(["light", "vs", "0"], "mode")),
+        Spec("localthings_display_light", HREF_MODE, _read_option_light,
+             _write_option_light, exists=_has_option_light),
         Spec("localthings_edge_light", HREF_EDGE_LIGHT, _read_flag("status"),
              _write_flag(["edgelighting", "vs", "0"], "status")),
         Spec("localthings_absence_power_saving", HREF_ABSENCE_SAVING,

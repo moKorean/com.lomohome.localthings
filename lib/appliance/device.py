@@ -40,6 +40,7 @@ from lib.resources import read_serial
 from lib.session import Session
 
 ITEMS_FIELD = "x.com.samsung.da.items"
+OPTIONS_FIELD = "x.com.samsung.da.options"
 ITEM_ID = "x.com.samsung.da.id"
 
 
@@ -99,8 +100,43 @@ def _fold_write_into(cached: dict, body: dict) -> None:
         current = cached.get(key)
         if key == ITEMS_FIELD and isinstance(value, list) and isinstance(current, list):
             cached[key] = _fold_items(current, value)
+        elif key == OPTIONS_FIELD and isinstance(value, list) and isinstance(current, list):
+            cached[key] = _fold_options(current, value)
         else:
             cached[key] = value
+
+
+def _fold_options(cached: list, written: list) -> list:
+    """Apply a one-token `options` write without dropping the other tokens.
+
+    The same truncation `_fold_items` exists for, in the other list shape this
+    firmware uses. `/mode/vs/0`'s options is a flat array of `Token_Value` strings
+    — 25 to 26 of them on the air conditioners here — and a write carries **only
+    the token being changed**, `["Light_Off"]`. A plain assignment therefore
+    replaces twenty-odd tokens with one, and every capability gated on a token's
+    presence reads as absent until the next poll: the appliance has not changed,
+    but the app has forgotten what it advertises.
+
+    Tokens are matched on the prefix before the first underscore, which is how
+    they are read back (`_option_token`). A prefix that is not already present is
+    appended rather than dropped, so a board advertising a token only after it is
+    first set does not lose it.
+    """
+    def prefix(token):
+        return token.split("_", 1)[0] if isinstance(token, str) else None
+
+    merged = list(cached)
+    for token in written:
+        key = prefix(token)
+        if key is None:
+            continue
+        for index, existing in enumerate(merged):
+            if prefix(existing) == key:
+                merged[index] = token
+                break
+        else:
+            merged.append(token)
+    return merged
 
 
 def _fold_items(cached: list, written: list) -> list:
