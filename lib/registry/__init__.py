@@ -136,13 +136,23 @@ def _consumer_model_key(description: str) -> str | None:
 # carried over from the reference, never a guess at what the OCF vocabulary might
 # contain.
 #
-# **`oic.d.cooktop` is excluded on purpose.** Our induction reports it, but
-# `cooktop` and `induction_cooktop` are two unrelated registries that happen to
-# share the English word — a gas cooktop's burner state lives in `/mode/vs/0`'s
-# options array, a completely different resource surface. Nothing in the OCF type
-# distinguishes them, so mapping it to either one would silently mis-type the
-# other, and as the *primary* signal it would override a board token that had it
-# right. The board token keeps deciding between those two.
+# **`oic.d.cooktop` was excluded on purpose until 2026-11-06.** Our induction
+# reports it, but `cooktop` and `induction_cooktop` are two registries that share
+# the English word and nothing else — a gas cooktop's burner state lives in
+# `/mode/vs/0`'s options array, a completely different resource surface. Nothing
+# in the *OCF type* distinguishes them, so mapping it to either one would silently
+# mis-type the other.
+#
+# What changed is not the OCF type but the discovery that the **resource surface**
+# separates them cleanly, which is how the reference came to merge its two
+# registries into one keyed on the OCF type (its "Route oic.d.cooktop to a single
+# cooktop registry"). The two are kept apart here — the induction mapping is
+# measured against this house's unit and the gas one is not — and the same split is
+# made in `_cooktop_surface_key` below, on `/cooktop/status/vs/0`'s presence.
+#
+# That also fixes a real mis-routing the board token alone could not: the `COOKTOP`
+# token is carried by TP2X boards that have the options surface, and sending one of
+# those to the induction registry leaves it with almost nothing bound.
 _OIC_TYPE_TO_KEY: dict[str, str] = {
     "oic.d.airconditioner": "airconditioner",   # measured: 4 units
     "oic.d.refrigerator": "refrigerator",       # measured: 3 units
@@ -176,7 +186,58 @@ _OIC_TYPE_TO_KEY: dict[str, str] = {
     # which is where this app's users are.
     "oic.d.krefrigerator": "refrigerator",
     "x.com.st.d.winecellar": "refrigerator",
+    # Resolved to one of the two cooktop registries by `_cooktop_surface_key`.
+    "oic.d.cooktop": "cooktop",
 }
+
+
+# The two cooktop registries, and the href that tells them apart. A TP1X board
+# carries `/cooktop/status/vs/0`; a TP2X or ARTIK051 one keeps its burner state in
+# `/mode/vs/0`'s options array and has no such resource.
+_COOKTOP_KEYS = frozenset({"induction_cooktop", "cooktop"})
+HREF_COOKTOP_STATUS = "/cooktop/status/vs/0"
+
+
+def _cooktop_surface_key(
+    key: str | None, resources: dict, token_key: str | None = None
+) -> str | None:
+    """Pick the cooktop registry the appliance's own resources point at.
+
+    Both `COOKTOP` and `oic.d.cooktop` name the appliance type without saying
+    which of the two surfaces the board uses, so neither signal can decide this on
+    its own. The resource can: the induction mapping is built entirely on
+    `/cooktop/status/vs/0`, and a board without it would bind almost nothing there.
+
+    Only a surface that is actually present decides. With neither in the dump the
+    board token is preferred over the OCF type, which is the one place the usual
+    precedence has to be inverted: `oic.d.cooktop` is the *primary* signal and
+    names only the appliance, so left alone it would override a token that had
+    already said which surface this board is — the exact failure that kept this
+    type unmapped until now. Falling back to `key` covers a device with no token
+    either.
+    """
+    if key not in _COOKTOP_KEYS:
+        return key
+    if HREF_COOKTOP_STATUS in resources:
+        return "induction_cooktop"
+    if _has_burner_options(resources):
+        return "cooktop"
+    if token_key in _COOKTOP_KEYS:
+        return token_key
+    return key
+
+
+def _has_burner_options(resources: dict) -> bool:
+    """Whether `/mode/vs/0` carries the options-array burner surface.
+
+    `OperationState<n>_<value>` is what the options registry reads; a cooktop
+    reporting `/mode/vs/0` with nothing of that shape (our hood does) is not
+    evidence either way.
+    """
+    options = (resources.get("/mode/vs/0") or {}).get("x.com.samsung.da.options")
+    if not isinstance(options, list):
+        return False
+    return any(isinstance(o, str) and o.startswith("OperationState") for o in options)
 
 
 def _oic_type_key(device_types) -> str | None:
@@ -201,12 +262,13 @@ def resolve(resources: dict, device_types=()) -> Registry | None:
     which is what determines the resource surface.
     """
     identity = read_identity(resources)
-    key = (
-        _oic_type_key(device_types)
-        or _board_family_key(identity["model"], "|")
+    token_key = (
+        _board_family_key(identity["model"], "|")
         or _board_family_key(identity["description"], "/")
         or _consumer_model_key(identity["description"])
     )
+    key = _oic_type_key(device_types) or token_key
+    key = _cooktop_surface_key(key, resources, token_key)
     return _REGISTRY_BY_KEY.get(key) if key else None
 
 

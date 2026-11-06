@@ -398,22 +398,55 @@ def test_every_type_measured_on_real_hardware_routes(oic_type, expected):
     assert resolved is not None and resolved.name == expected
 
 
-def test_oic_d_cooktop_is_deliberately_not_mapped():
-    """The one measured type left out, and the reason it must stay out.
+def test_oic_d_cooktop_is_split_by_resource_surface():
+    """`oic.d.cooktop` is mapped now, and the resource decides which registry.
 
-    Our induction answers `oic.d.cooktop`, but `cooktop` is the unrelated gas
-    family — burner state in /mode/vs/0's options array, a different resource
-    surface entirely. The OCF type cannot tell them apart, so mapping it either
-    way silently mis-types the other, and as the *primary* signal it would
-    override a board token that had it right.
+    It was left out until 2026-11-06 because the OCF type names the appliance
+    without saying which of the two surfaces the board uses, and mapping it either
+    way mis-types the other. That is still true of the type. What changed is that
+    the *surface* separates them cleanly — the reference merged its two registries
+    on the same observation — so the type can be routed and then narrowed.
+
+    The two are still separate registries here: only the induction mapping is
+    measured against this house's unit.
     """
-    assert "oic.d.cooktop" not in registry._OIC_TYPE_TO_KEY
-    # The board token still resolves our induction, which is the point.
+    assert registry._OIC_TYPE_TO_KEY["oic.d.cooktop"] in registry._COOKTOP_KEYS
+
+    # With the induction surface present, the OCF type lands on the induction map.
+    resolved = registry.resolve(
+        {"/information/vs/0": {"x.com.samsung.da.modelNum": "TP1X_DA-KS-COOKTOP-01001|1|2"},
+         registry.HREF_COOKTOP_STATUS: {"x.com.samsung.da.burnerList": []}},
+        _oicd("oic.wk.d", "oic.d.cooktop"),
+    )
+    assert resolved is not None and resolved.name == "induction_cooktop"
+
+    # With the options surface instead, the same OCF type lands on the other one.
+    resolved = registry.resolve(
+        {"/mode/vs/0": {"x.com.samsung.da.options": ["OperationState1_Off"]}},
+        _oicd("oic.wk.d", "oic.d.cooktop"),
+    )
+    assert resolved is not None and resolved.name == "cooktop"
+
+    # Neither surface in the dump: the board token is not overridden from absence.
     resolved = registry.resolve(
         {"/information/vs/0": {"x.com.samsung.da.modelNum": "TP1X_DA-KS-COOKTOP-01001|1|2"}},
         _oicd("oic.wk.d", "oic.d.cooktop"),
     )
     assert resolved is not None and resolved.name == "induction_cooktop"
+
+
+def test_the_measured_induction_still_routes_to_its_own_registry():
+    """The regression that matters: this house's unit, read off the wire, must keep
+    landing on the mapping that was built from it."""
+    import json
+    from pathlib import Path
+
+    dump = Path(__file__).parent / "fixtures" / "induction_cooktop_TP1X_DA-KS-COOKTOP-01011.json"
+    resources = json.loads(dump.read_text())["resources"]
+    assert registry.HREF_COOKTOP_STATUS in resources
+    for types in ((), _oicd("oic.wk.d", "oic.d.cooktop")):
+        resolved = registry.resolve(resources, types)
+        assert resolved is not None and resolved.name == "induction_cooktop"
 
 
 def test_the_gas_cooktop_is_not_captured_by_the_induction_mapping():

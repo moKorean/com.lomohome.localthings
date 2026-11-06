@@ -76,6 +76,19 @@ def _parse_str_dict(text: str, name: str) -> dict:
     raise AssertionError(f"{name} not found — has the reference restructured it?")
 
 
+# Reference registry names that correspond to more than one registry here, because
+# this app splits where the reference merged.
+#
+# The reference folded its induction and options-array cooktops into one registry
+# named for the OCF type. Both are kept separate here: only the induction mapping
+# is measured against hardware in this house, and merging would put a verified
+# mapping and an unverified one behind one name. `registry._cooktop_surface_key`
+# makes the same distinction the merged registry makes internally, on whether
+# `/cooktop/status/vs/0` is present — so a device still lands on the right surface;
+# it is only the *name* that differs, which is what this allowance covers.
+EQUIVALENT = {"cooktop": {"cooktop", "induction_cooktop"}}
+
+
 def test_every_reference_board_token_routes():
     """A token the reference recognises must not leave a device unsupported here."""
     tokens = _reference_tokens()
@@ -85,7 +98,9 @@ def test_every_reference_board_token_routes():
     for token, expected in tokens.items():
         resolved = registry.resolve(_identity(model=f"TP1X_DA-XX-{token}-01001|1|2"))
         assert resolved is not None, f"{token} routes nowhere"
-        assert resolved.name == expected, f"{token} -> {resolved.name}, not {expected}"
+        assert resolved.name in EQUIVALENT.get(expected, {expected}), (
+            f"{token} -> {resolved.name}, not {expected}"
+        )
 
 
 def test_every_capability_has_a_definition():
