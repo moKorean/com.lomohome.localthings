@@ -402,6 +402,13 @@
       }
     },
     {
+      "id": "51",
+      "title": {
+        "en": "Super Speed",
+        "ko": "쾌속건조"
+      }
+    },
+    {
       "id": "52",
       "title": {
         "en": "Eco Cold",
@@ -430,10 +437,52 @@
       }
     },
     {
+      "id": "56",
+      "title": {
+        "en": "Bedding",
+        "ko": "이불"
+      }
+    },
+    {
       "id": "57",
       "title": {
-        "en": "Delicate",
+        "en": "Delicates",
         "ko": "섬세의류"
+      }
+    },
+    {
+      "id": "58",
+      "title": {
+        "en": "Wool",
+        "ko": "울"
+      }
+    },
+    {
+      "id": "5a",
+      "title": {
+        "en": "Steam Sanitize",
+        "ko": "스팀살균"
+      }
+    },
+    {
+      "id": "5b",
+      "title": {
+        "en": "Small Load",
+        "ko": "소량 세탁"
+      }
+    },
+    {
+      "id": "5c",
+      "title": {
+        "en": "Outdoor",
+        "ko": "아웃도어"
+      }
+    },
+    {
+      "id": "5d",
+      "title": {
+        "en": "Power Rinse",
+        "ko": "강력 헹굼"
       }
     },
     {
@@ -444,10 +493,31 @@
       }
     },
     {
+      "id": "5f",
+      "title": {
+        "en": "Spin Only",
+        "ko": "탈수만"
+      }
+    },
+    {
       "id": "60",
       "title": {
         "en": "Self Clean+",
         "ko": "통세척+"
+      }
+    },
+    {
+      "id": "63",
+      "title": {
+        "en": "Power Steam",
+        "ko": "강력 스팀"
+      }
+    },
+    {
+      "id": "64",
+      "title": {
+        "en": "Steam Whites",
+        "ko": "스팀 흰옷"
       }
     },
     {
@@ -462,6 +532,20 @@
       "title": {
         "en": "Denim",
         "ko": "데님"
+      }
+    },
+    {
+      "id": "67",
+      "title": {
+        "en": "Steam Allergen",
+        "ko": "스팀 알레르기 케어"
+      }
+    },
+    {
+      "id": "68",
+      "title": {
+        "en": "Steam Bulky",
+        "ko": "스팀 이불"
       }
     },
     {
@@ -612,6 +696,13 @@
       }
     },
     {
+      "id": "85",
+      "title": {
+        "en": "Steam Normal",
+        "ko": "스팀 표준"
+      }
+    },
+    {
       "id": "86",
       "title": {
         "en": "Deep Wash",
@@ -630,6 +721,20 @@
       "title": {
         "en": "Pet Care",
         "ko": "펫케어"
+      }
+    },
+    {
+      "id": "8b",
+      "title": {
+        "en": "Quick Wash",
+        "ko": "쾌속세탁"
+      }
+    },
+    {
+      "id": "8c",
+      "title": {
+        "en": "AI OptiWash",
+        "ko": "AI OptiWash"
       }
     },
     {

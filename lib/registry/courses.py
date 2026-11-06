@@ -16,9 +16,16 @@ translations-only concern because Home Assistant resolves labels at runtime; her
 is structural.
 
 Only tables somebody has actually confirmed are here. A board reporting a table
-nobody has named gets no cycle rather than a label borrowed from another generation
-— the FlexWash reports `Table_00_Course_A5`, and `a5` is a dryer Table_00 code, not
-a washer one, so it stays blank.
+nobody has named gets no cycle rather than a label borrowed from another generation.
+
+The FlexWash was the standing example of that and no longer is. It reports
+`Table_00_Course_A5` on its *washer* resource and carries no dryer-course resource
+at all, and `a5` used to be a dryer Table_00 code with no washer counterpart, so it
+read blank. The reference has since named washer Table_00's own `a5` (Bedding), so
+the FlexWash now reads from the right catalog instead of nothing. The trap the
+example stood for is unchanged — the two families share table ids, so pooling by id
+alone would still name a washer's cycle out of a dryer's list — and the tests now
+pin it on a code only the dryer catalog has, such as `7f` (Time Dry).
 
 Both catalogs come from the reference, which built Table_02/Table_03 from reporters'
 SmartThings screenshots and Table_00 from a reporter selecting each cycle on a
@@ -31,11 +38,6 @@ WASHER_TABLE_00 = {
     "01": {"en": "Normal", "ko": "표준세탁"},
     "55": {"en": "Whites", "ko": "흰옷"},
     "57": {"en": "Self Clean+", "ko": "통세척+"},
-    # The WW6500's fourteen codes (DA_WM_A51_20_COMMON), contributed to the
-    # reference by an owner who listed the temperature, rinse count and spin
-    # speed each course ran at and matched them against the model's manual —
-    # not read off a screenshot. Disjoint from the eleven above, so nothing
-    # here relabels an existing code. Adopted 2026-09-12.
     "5b": {"en": "Cotton", "ko": "면"},
     "5c": {"en": "Extra Speed", "ko": "초고속세탁"},
     "5d": {"en": "Super Eco Wash", "ko": "초절약세탁"},
@@ -50,6 +52,7 @@ WASHER_TABLE_00 = {
     "67": {"en": "Synthetics", "ko": "합성섬유"},
     "68": {"en": "E Cotton", "ko": "에코 면"},
     "6b": {"en": "Spin Only", "ko": "탈수단독"},
+    "6c": {"en": "Denim", "ko": "데님"},
     "70": {"en": "Heavy Duty", "ko": "강력세탁"},
     "71": {"en": "Bedding", "ko": "이불"},
     "72": {"en": "Sanitize", "ko": "살균"},
@@ -58,6 +61,33 @@ WASHER_TABLE_00 = {
     "75": {"en": "Delicates", "ko": "섬세의류"},
     "77": {"en": "Perm Press", "ko": "구김방지"},
     "78": {"en": "Quick Wash", "ko": "쾌속세탁"},
+    "91": {"en": "Self Clean", "ko": "통세척"},
+    "94": {"en": "Towels", "ko": "타월"},
+    "9c": {"en": "Heavy Duty", "ko": "강력세탁"},
+    "9d": {"en": "Rinse + Spin", "ko": "헹굼+탈수"},
+    "9e": {"en": "Perm Press", "ko": "구김방지"},
+    "9f": {"en": "Quick Wash", "ko": "쾌속세탁"},
+    "a2": {"en": "Delicates", "ko": "섬세의류"},
+    "a3": {"en": "Active Wear", "ko": "운동복"},
+    "a5": {"en": "Bedding", "ko": "이불"},
+    "a9": {"en": "Sanitize", "ko": "살균"},
+    "aa": {"en": "Whites", "ko": "흰옷"},
+    "ab": {"en": "Eco Cold", "ko": "에코 냉수 세탁"},
+    "b1": {"en": "Self Clean+", "ko": "통세척+"},
+    "ba": {"en": "Drain/Spin", "ko": "배수/탈수"},
+    "d0": {"en": "Cotton", "ko": "면"},
+    "d1": {"en": "E Cotton", "ko": "에코 면"},
+    "d2": {"en": "Synthetics", "ko": "합성섬유"},
+    "d3": {"en": "Delicates", "ko": "섬세의류"},
+    "d4": {"en": "Rinse + Spin", "ko": "헹굼+탈수"},
+    "d5": {"en": "Drum Clean", "ko": "무세제통세척"},
+    "d6": {"en": "Bedding", "ko": "이불"},
+    "d7": {"en": "Outdoor Care", "ko": "아웃도어케어"},
+    "d8": {"en": "Wool", "ko": "울"},
+    "da": {"en": "Super Eco Wash", "ko": "초절약세탁"},
+    "db": {"en": "Super Speed", "ko": "쾌속세탁"},
+    "dc": {"en": "15' Quick Wash", "ko": "15분 쾌속세탁"},
+    "e4": {"en": "Anti Allergen", "ko": "알레르기 케어"},
 }
 
 WASHER_TABLE_02 = {
@@ -117,15 +147,27 @@ WASHER_TABLE_02 = {
     "38": {"en": "Cotton Dry", "ko": "면 건조"},
     "39": {"en": "Synthetics Dry", "ko": "합성섬유 건조"},
     "3a": {"en": "Drum Clean", "ko": "무세제통세척"},
+    "51": {"en": "Super Speed", "ko": "쾌속건조"},
     "52": {"en": "Eco Cold", "ko": "에코 냉수 세탁"},
     "53": {"en": "Heavy Duty", "ko": "강력세탁"},
     "54": {"en": "Towels", "ko": "타월"},
     "55": {"en": "Activewear", "ko": "피트니스"},
-    "57": {"en": "Delicate", "ko": "섬세의류"},
+    "56": {"en": "Bedding", "ko": "이불"},
+    "57": {"en": "Delicates", "ko": "섬세의류"},
+    "58": {"en": "Wool", "ko": "울"},
+    "5a": {"en": "Steam Sanitize", "ko": "스팀살균"},
+    "5b": {"en": "Small Load", "ko": "소량 세탁"},
+    "5c": {"en": "Outdoor", "ko": "아웃도어"},
+    "5d": {"en": "Power Rinse", "ko": "강력 헹굼"},
     "5e": {"en": "Rinse+Spin", "ko": "헹굼+탈수"},
+    "5f": {"en": "Spin Only", "ko": "탈수만"},
     "60": {"en": "Self Clean+", "ko": "통세척+"},
+    "63": {"en": "Power Steam", "ko": "강력 스팀"},
+    "64": {"en": "Steam Whites", "ko": "스팀 흰옷"},
     "65": {"en": "Colors", "ko": "컬러 의류"},
     "66": {"en": "Denim", "ko": "데님"},
+    "67": {"en": "Steam Allergen", "ko": "스팀 알레르기 케어"},
+    "68": {"en": "Steam Bulky", "ko": "스팀 이불"},
     "69": {"en": "AI Wash", "ko": "AI 맞춤세탁"},
     "6a": {"en": "Wool", "ko": "울"},
     "6b": {"en": "Denim", "ko": "데님"},
@@ -147,9 +189,12 @@ WASHER_TABLE_02 = {
     "7d": {"en": "Bedding/Waterproof", "ko": "이불/방수 의류"},
     "7e": {"en": "Self-Clean", "ko": "통세척"},
     "7f": {"en": "Wool/Delicate", "ko": "울/섬세"},
+    "85": {"en": "Steam Normal", "ko": "스팀 표준"},
     "86": {"en": "Deep Wash", "ko": "찌든 때 세탁"},
     "87": {"en": "Download", "ko": "다운로드"},
     "88": {"en": "Pet Care", "ko": "펫케어"},
+    "8b": {"en": "Quick Wash", "ko": "쾌속세탁"},
+    "8c": {"en": "AI OptiWash", "ko": "AI OptiWash"},
     "8f": {"en": "Intense Cold", "ko": "강력 냉수 세탁"},
     "96": {"en": "Less Microfiber", "ko": "미세플라스틱저감"},
     "a0": {"en": "15' Quick Wash", "ko": "15분 쾌속세탁"},
@@ -218,6 +263,14 @@ DRYER_TABLE_03 = {
     "29": {"en": "AI Dry", "ko": "AI 맞춤건조"},
     "2a": {"en": "Hygiene Care+", "ko": "살균건조+"},
     "2b": {"en": "Self Tub Dry", "ko": "통 건조"},
+    "2e": {"en": "Eco Normal", "ko": "에코 표준건조"},
+    "2f": {"en": "Heavy Duty", "ko": "강력건조"},
+    "30": {"en": "Activewear", "ko": "피트니스"},
+    "32": {"en": "Perm Press", "ko": "구김방지"},
+    "33": {"en": "Steam Sanitize+", "ko": "스팀살균+"},
+    "34": {"en": "Steam Refresh", "ko": "스팀 리프레시"},
+    "35": {"en": "Wrinkle Away", "ko": "구김 방지"},
+    "36": {"en": "Air Fluff", "ko": "송풍"},
     "37": {"en": "Blouses", "ko": "블라우스"},
     "38": {"en": "Iron dry", "ko": "다림질건조"},
     "39": {"en": "Room Dehumidify", "ko": "공간제습"},
@@ -225,6 +278,8 @@ DRYER_TABLE_03 = {
     "3b": {"en": "Bedding/Dust Off", "ko": "이불/먼지털기"},
     "3c": {"en": "Activewear", "ko": "피트니스"},
     "3d": {"en": "Denim", "ko": "데님"},
+    "3e": {"en": "Small Load", "ko": "소량 세탁"},
+    "43": {"en": "Shirts", "ko": "셔츠"},
     "4c": {"en": "Air Refresh", "ko": "에어 리프레시"},
     "4e": {"en": "Self Dry", "ko": "자체 건조"},
     "51": {"en": "Eco Cotton", "ko": "에코 면"},

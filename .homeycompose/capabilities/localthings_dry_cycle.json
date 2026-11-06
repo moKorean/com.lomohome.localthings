@@ -248,6 +248,62 @@
       }
     },
     {
+      "id": "2e",
+      "title": {
+        "en": "Eco Normal",
+        "ko": "에코 표준건조"
+      }
+    },
+    {
+      "id": "2f",
+      "title": {
+        "en": "Heavy Duty",
+        "ko": "강력건조"
+      }
+    },
+    {
+      "id": "30",
+      "title": {
+        "en": "Activewear",
+        "ko": "피트니스"
+      }
+    },
+    {
+      "id": "32",
+      "title": {
+        "en": "Perm Press",
+        "ko": "구김방지"
+      }
+    },
+    {
+      "id": "33",
+      "title": {
+        "en": "Steam Sanitize+",
+        "ko": "스팀살균+"
+      }
+    },
+    {
+      "id": "34",
+      "title": {
+        "en": "Steam Refresh",
+        "ko": "스팀 리프레시"
+      }
+    },
+    {
+      "id": "35",
+      "title": {
+        "en": "Wrinkle Away",
+        "ko": "구김 방지"
+      }
+    },
+    {
+      "id": "36",
+      "title": {
+        "en": "Air Fluff",
+        "ko": "송풍"
+      }
+    },
+    {
       "id": "37",
       "title": {
         "en": "Blouses",
@@ -294,6 +350,20 @@
       "title": {
         "en": "Denim",
         "ko": "데님"
+      }
+    },
+    {
+      "id": "3e",
+      "title": {
+        "en": "Small Load",
+        "ko": "소량 세탁"
+      }
+    },
+    {
+      "id": "43",
+      "title": {
+        "en": "Shirts",
+        "ko": "셔츠"
       }
     },
     {

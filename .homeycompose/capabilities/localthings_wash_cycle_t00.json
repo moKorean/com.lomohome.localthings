@@ -129,6 +129,13 @@
       }
     },
     {
+      "id": "6c",
+      "title": {
+        "en": "Denim",
+        "ko": "데님"
+      }
+    },
+    {
       "id": "70",
       "title": {
         "en": "Heavy Duty",
@@ -182,6 +189,195 @@
       "title": {
         "en": "Quick Wash",
         "ko": "쾌속세탁"
+      }
+    },
+    {
+      "id": "91",
+      "title": {
+        "en": "Self Clean",
+        "ko": "통세척"
+      }
+    },
+    {
+      "id": "94",
+      "title": {
+        "en": "Towels",
+        "ko": "타월"
+      }
+    },
+    {
+      "id": "9c",
+      "title": {
+        "en": "Heavy Duty",
+        "ko": "강력세탁"
+      }
+    },
+    {
+      "id": "9d",
+      "title": {
+        "en": "Rinse + Spin",
+        "ko": "헹굼+탈수"
+      }
+    },
+    {
+      "id": "9e",
+      "title": {
+        "en": "Perm Press",
+        "ko": "구김방지"
+      }
+    },
+    {
+      "id": "9f",
+      "title": {
+        "en": "Quick Wash",
+        "ko": "쾌속세탁"
+      }
+    },
+    {
+      "id": "a2",
+      "title": {
+        "en": "Delicates",
+        "ko": "섬세의류"
+      }
+    },
+    {
+      "id": "a3",
+      "title": {
+        "en": "Active Wear",
+        "ko": "운동복"
+      }
+    },
+    {
+      "id": "a5",
+      "title": {
+        "en": "Bedding",
+        "ko": "이불"
+      }
+    },
+    {
+      "id": "a9",
+      "title": {
+        "en": "Sanitize",
+        "ko": "살균"
+      }
+    },
+    {
+      "id": "aa",
+      "title": {
+        "en": "Whites",
+        "ko": "흰옷"
+      }
+    },
+    {
+      "id": "ab",
+      "title": {
+        "en": "Eco Cold",
+        "ko": "에코 냉수 세탁"
+      }
+    },
+    {
+      "id": "b1",
+      "title": {
+        "en": "Self Clean+",
+        "ko": "통세척+"
+      }
+    },
+    {
+      "id": "ba",
+      "title": {
+        "en": "Drain/Spin",
+        "ko": "배수/탈수"
+      }
+    },
+    {
+      "id": "d0",
+      "title": {
+        "en": "Cotton",
+        "ko": "면"
+      }
+    },
+    {
+      "id": "d1",
+      "title": {
+        "en": "E Cotton",
+        "ko": "에코 면"
+      }
+    },
+    {
+      "id": "d2",
+      "title": {
+        "en": "Synthetics",
+        "ko": "합성섬유"
+      }
+    },
+    {
+      "id": "d3",
+      "title": {
+        "en": "Delicates",
+        "ko": "섬세의류"
+      }
+    },
+    {
+      "id": "d4",
+      "title": {
+        "en": "Rinse + Spin",
+        "ko": "헹굼+탈수"
+      }
+    },
+    {
+      "id": "d5",
+      "title": {
+        "en": "Drum Clean",
+        "ko": "무세제통세척"
+      }
+    },
+    {
+      "id": "d6",
+      "title": {
+        "en": "Bedding",
+        "ko": "이불"
+      }
+    },
+    {
+      "id": "d7",
+      "title": {
+        "en": "Outdoor Care",
+        "ko": "아웃도어케어"
+      }
+    },
+    {
+      "id": "d8",
+      "title": {
+        "en": "Wool",
+        "ko": "울"
+      }
+    },
+    {
+      "id": "da",
+      "title": {
+        "en": "Super Eco Wash",
+        "ko": "초절약세탁"
+      }
+    },
+    {
+      "id": "db",
+      "title": {
+        "en": "Super Speed",
+        "ko": "쾌속세탁"
+      }
+    },
+    {
+      "id": "dc",
+      "title": {
+        "en": "15' Quick Wash",
+        "ko": "15분 쾌속세탁"
+      }
+    },
+    {
+      "id": "e4",
+      "title": {
+        "en": "Anti Allergen",
+        "ko": "알레르기 케어"
       }
     }
   ]
