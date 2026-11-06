@@ -61,6 +61,14 @@ ALLOWED_BLANK: dict[tuple[str, str], str] = {
     ("oven", "measure_power"): "dumps carry cumulativePower only",
     ("induction_cooktop", "measure_power"):
         "the idle unit reports -500 W, which is a sentinel, not a measurement",
+    # Same sentinel, found on a range when the reference's corpus grew one
+    # (2026-11-06): of eleven range dumps only nx60t8311ss_full reports
+    # instantaneousPower at all, and it reports -500. The reference clamps a
+    # negative reading to 0.0 instead; this app keeps returning None, because an
+    # idle hob does not draw zero watts either — 0 would be as invented as -500,
+    # just less obviously so.
+    ("range", "measure_power"):
+        "the only range dump carrying instantaneousPower reports the -500 W sentinel",
     ("induction_cooktop", "localthings_smart_control"):
         "absent from the reference dump; confirmed live on the owner's unit instead",
     ("induction_cooktop", "measure_temperature.probe"):
@@ -80,12 +88,9 @@ ALLOWED_BLANK: dict[tuple[str, str], str] = {
     ("oven", "measure_temperature.cavity"):
         "every dump is idle; wall ovens park current at 0",
     ("microwave", "measure_temperature.cavity"): "same idle corpus",
-    ("range", "measure_temperature.cavity"):
-        "every range dump is idle with current parked at Bake's 175 °F minimum",
     ("oven", "localthings_target_temperature_readonly"):
         "every dump is idle with desired 0, which is treated as no setpoint",
     ("microwave", "localthings_target_temperature_readonly"): "same idle 0",
-    ("range", "localthings_target_temperature_readonly"): "same idle 0",
     ("refrigerator", "localthings_alarm_code"):
         "the dumps that carry /alarms/vs/0 at all carry it as an empty stub",
 }

@@ -787,4 +787,11 @@ REGISTRY = Registry(
 # 192.168.1.90, and contributed upstream as mbillow/localthings#194; the
 # reference reached the same token independently as #191 and carries it as of
 # v0.17.0, so this is no longer a local-only addition — see docs/PORTING.md.
-BOARD_TOKENS = ("RAC", "PRAC", "KRAC", "CAC", "WAC", "FAC", "CAWW", "ARA")
+#
+# `DUCT` (slim duct, reference #501) and `RHS` (AI Air Combo ventilator,
+# reference #551) joined upstream and are adopted here 2026-11-06. Routing a
+# token only says "this board is an air conditioner"; every capability below is
+# still gated on the hrefs the unit actually reports, so a board with a
+# different resource surface gets only what it has rather than a wall of blanks.
+BOARD_TOKENS = ("RAC", "PRAC", "KRAC", "CAC", "WAC", "FAC", "CAWW", "ARA",
+                "DUCT", "RHS")
