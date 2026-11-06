@@ -1,0 +1,11 @@
+{
+  "type": "boolean",
+  "title": {
+    "en": "AI Energy Mode",
+    "ko": "AI 절약모드"
+  },
+  "getable": true,
+  "setable": false,
+  "uiComponent": "sensor",
+  "icon": "/assets/capabilities/mdi-leaf.svg"
+}

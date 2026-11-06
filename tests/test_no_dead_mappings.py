@@ -69,6 +69,8 @@ ALLOWED_BLANK: dict[tuple[str, str], str] = {
     # just less obviously so.
     ("range", "measure_power"):
         "the only range dump carrying instantaneousPower reports the -500 W sentinel",
+    ("microfiber_filter", "measure_power"):
+        "both AMF dumps report the same -500 W sentinel",
     ("induction_cooktop", "localthings_smart_control"):
         "absent from the reference dump; confirmed live on the owner's unit instead",
     ("induction_cooktop", "measure_temperature.probe"):

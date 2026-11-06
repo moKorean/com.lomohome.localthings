@@ -590,11 +590,38 @@ def _kimchi_specs():
 KIMCHI = tuple(_kimchi_specs())
 
 
+# AI Energy Mode, `/energy/ailevel/vs/0`. Of this house's three refrigerators only
+# the fridge-only unit reports it, with `aiLevel "1"` and `supportedAiLevel ["1"]`
+# — one level, so it is a plain on/off rather than a strength.
+#
+# **Read-only, and now measured rather than assumed.** The reference writes
+# `aiLevel` directly and reads `"0"` as off. Tested on this unit 2026-11-06 with
+# the owner's permission: writing `{"aiLevel": "0"}` comes back `{"aiLevel": "0"}`
+# with no rejection flag, and the resource still reads `"1"` immediately after and
+# twenty seconds later. The appliance acknowledged a change it did not make.
+#
+# The likely reason is in the same rep: `supportedAiLevel` is `["1"]` alone, so
+# `"0"` is not a value this board offers and the mode may simply not be switchable
+# here. Either way a writable control would have reported success while changing
+# nothing — the exact failure the induction cooktop's power toggle shipped as.
+def _ai_energy_on(rep, _resources):
+    level = rep.get("aiLevel")
+    if level is None or str(level).strip() == "":
+        return None
+    return str(level).strip() != "0"
+
+
+def _has_ai_level(rep, _resources) -> bool:
+    return "aiLevel" in rep
+
+
 REFRIGERATOR = Registry(
     name="refrigerator",
     device_class="other",
     titles={"en": "Samsung Refrigerator", "ko": "삼성 냉장고"},
     specs=(
+        Spec("localthings_ai_energy_mode", "/energy/ailevel/vs/0",
+             _ai_energy_on, exists=_has_ai_level),
         *shared.POWER,
         *shared.UNIVERSAL,
         *shared.WATER_FILTER,
@@ -1578,6 +1605,53 @@ AIR_DRESSER = Registry(
 # --- board tokens ---------------------------------------------------------
 # Straight from the reference's _BOARD_TOKEN_TO_KEY and _CONSUMER_PREFIX_TO_KEY.
 
+# --- microfiber filter ----------------------------------------------------
+#
+# A lint filter that sits on a washer's drain (AMF board; reference #475, #626).
+# It is plumbed like a washer and reports a washer's resources — an empty
+# `/washer/vs/0`, a course resource listing only the app's home-care wizard, a
+# laundry job status — but there is no washer behind them, so none of that is
+# bound here. The reference shared its washer registry until #626 and split it
+# out for exactly that reason: the filter was being given a cycle select, a
+# delay, a start button and a child lock with no hardware behind any of them.
+#
+# What it really has is the machine state it shares with the laundry family, its
+# own activity vocabulary on the same resource, and the two filter resources.
+# `progress` here is **not** the laundry progress: its values are the filter's own
+# (Filtering, Bypassing, Waiting, Stopping, Sensing), so it is read as text rather
+# than through `shared.OPERATIONAL`, whose progress reading expects a percentage.
+
+HREF_FILTER_STATUS = "/filterstatus/vs/0"
+
+
+def _filter_blockage(rep, _resources):
+    """The filter reporting itself blocked. Compared case-insensitively because a
+    firmware casing variant must not quietly read as "no problem" — the board
+    advertises `["Blockage", "Normal"]` but nothing guarantees the casing."""
+    notice = rep.get("filterStatusNotice")
+    if not isinstance(notice, str) or not notice.strip():
+        return None
+    return notice.strip().lower() == "blockage"
+
+
+MICROFIBER_FILTER = Registry(
+    name="microfiber_filter",
+    device_class="other",
+    titles={"en": "Samsung Microfiber Filter", "ko": "삼성 미세플라스틱 필터"},
+    specs=(
+        *shared.POWER,
+        *shared.UNIVERSAL,
+        *shared.WATER_FILTER,
+        Spec("localthings_machine_state", shared.HREF_OPERATIONAL,
+             shared.text("x.com.samsung.da.state")),
+        Spec("localthings_filter_activity", shared.HREF_OPERATIONAL,
+             shared.text("x.com.samsung.da.progress")),
+        Spec("localthings_alarm_filter", HREF_FILTER_STATUS, _filter_blockage,
+             titles={"en": "Blocked", "ko": "막힘"}),
+    ),
+)
+
+
 BOARD_TOKENS = {
     "REF": REFRIGERATOR,
     "ADW": DISHWASHER,
@@ -1603,6 +1677,8 @@ BOARD_TOKENS = {
     "DF": AIR_DRESSER,
     "ASM": AIR_MONITOR,             # reference #210 — Air Monitor Plus
     "EHS": EHS,                     # air-to-water heat pump
+    # Reference #475/#626 — the microfiber lint filter on a washer's drain.
+    "AMF": MICROFIBER_FILTER,
 }
 
 # Consumer-model prefixes, matched against the *start* of a '_'-delimited segment of

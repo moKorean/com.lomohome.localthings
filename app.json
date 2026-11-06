@@ -1009,6 +1009,28 @@
       },
       {
         "title": {
+          "en": "AI Energy Mode !{{is|is not}} on",
+          "ko": "AI 절약모드 !{{켜짐|꺼짐}}"
+        },
+        "titleFormatted": {
+          "en": "AI Energy Mode !{{is|is not}} on",
+          "ko": "AI 절약모드 !{{켜짐|꺼짐}}"
+        },
+        "hint": {
+          "en": "Checks the value as the appliance last reported it.",
+          "ko": "가전이 마지막으로 보고한 값을 확인합니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_ai_energy_mode"
+          }
+        ],
+        "id": "ai_energy_mode_is"
+      },
+      {
+        "title": {
           "en": "Air purify !{{is|is not}} on",
           "ko": "공기청정 !{{켜짐|꺼짐}}"
         },
@@ -2853,6 +2875,32 @@
           }
         ],
         "id": "fan_speed_level_is"
+      },
+      {
+        "title": {
+          "en": "Filter activity !{{is|is not}} [[value]]",
+          "ko": "필터 동작 [[value]] !{{임|아님}}"
+        },
+        "titleFormatted": {
+          "en": "Filter activity !{{is|is not}} [[value]]",
+          "ko": "필터 동작 [[value]] !{{임|아님}}"
+        },
+        "hint": {
+          "en": "Checks the value as the appliance last reported it.",
+          "ko": "가전이 마지막으로 보고한 값을 확인합니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_filter_activity"
+          },
+          {
+            "name": "value",
+            "type": "text"
+          }
+        ],
+        "id": "filter_activity_is"
       },
       {
         "title": {
@@ -8021,6 +8069,17 @@
         }
       ]
     },
+    "localthings_ai_energy_mode": {
+      "type": "boolean",
+      "title": {
+        "en": "AI Energy Mode",
+        "ko": "AI 절약모드"
+      },
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "icon": "/assets/capabilities/mdi-leaf.svg"
+    },
     "localthings_air_purify": {
       "type": "boolean",
       "title": {
@@ -9417,6 +9476,17 @@
       "min": 0,
       "max": 10,
       "insights": true
+    },
+    "localthings_filter_activity": {
+      "type": "string",
+      "title": {
+        "en": "Filter activity",
+        "ko": "필터 동작"
+      },
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "icon": "/assets/capabilities/mdi-filter-outline.svg"
     },
     "localthings_filter_usage": {
       "type": "number",

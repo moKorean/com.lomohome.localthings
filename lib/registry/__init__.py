@@ -188,6 +188,11 @@ _OIC_TYPE_TO_KEY: dict[str, str] = {
     "x.com.st.d.winecellar": "refrigerator",
     # Resolved to one of the two cooktop registries by `_cooktop_surface_key`.
     "oic.d.cooktop": "cooktop",
+    # Reference #475/#626, adopted 2026-11-06. The microfiber filter is plumbed
+    # like a washer and reports a washer's resources, so without this row a board
+    # whose token is missing could be typed as one and handed a cycle select, a
+    # start button and a child lock with no hardware behind them.
+    "x.com.st.d.microfiberfilter": "microfiber_filter",
 }
 
 
