@@ -1,0 +1,21 @@
+{
+  "type": "enum",
+  "title": {
+    "en": "Fan mode",
+    "ko": "팬 모드"
+  },
+  "getable": true,
+  "setable": true,
+  "uiComponent": "picker",
+  "icon": "/assets/capabilities/mdi-fan.svg",
+  "values": [
+    { "id": "auto",     "title": { "en": "Auto",      "ko": "자동" } },
+    { "id": "smart",    "title": { "en": "Smart",     "ko": "스마트" } },
+    { "id": "sleep",    "title": { "en": "Sleep",     "ko": "취침" } },
+    { "id": "windfree", "title": { "en": "Wind-Free", "ko": "무풍" } },
+    { "id": "mid",      "title": { "en": "Mid",       "ko": "중" } },
+    { "id": "high",     "title": { "en": "High",      "ko": "강" } },
+    { "id": "turbo",    "title": { "en": "Turbo",     "ko": "터보" } },
+    { "id": "max",      "title": { "en": "Max",       "ko": "최대" } }
+  ]
+}

@@ -1,0 +1,83 @@
+{
+  "title": {
+    "en": "Fan mode !{{is|is not}} [[value]]",
+    "ko": "팬 모드 [[value]] !{{임|아님}}"
+  },
+  "titleFormatted": {
+    "en": "Fan mode !{{is|is not}} [[value]]",
+    "ko": "팬 모드 [[value]] !{{임|아님}}"
+  },
+  "hint": {
+    "en": "Checks the value as the appliance last reported it.",
+    "ko": "가전이 마지막으로 보고한 값을 확인합니다."
+  },
+  "args": [
+    {
+      "name": "device",
+      "type": "device",
+      "filter": "driver_id=appliance&capabilities=localthings_purifier_fan_mode"
+    },
+    {
+      "name": "value",
+      "type": "dropdown",
+      "values": [
+        {
+          "id": "auto",
+          "title": {
+            "en": "Auto",
+            "ko": "자동"
+          }
+        },
+        {
+          "id": "smart",
+          "title": {
+            "en": "Smart",
+            "ko": "스마트"
+          }
+        },
+        {
+          "id": "sleep",
+          "title": {
+            "en": "Sleep",
+            "ko": "취침"
+          }
+        },
+        {
+          "id": "windfree",
+          "title": {
+            "en": "Wind-Free",
+            "ko": "무풍"
+          }
+        },
+        {
+          "id": "mid",
+          "title": {
+            "en": "Mid",
+            "ko": "중"
+          }
+        },
+        {
+          "id": "high",
+          "title": {
+            "en": "High",
+            "ko": "강"
+          }
+        },
+        {
+          "id": "turbo",
+          "title": {
+            "en": "Turbo",
+            "ko": "터보"
+          }
+        },
+        {
+          "id": "max",
+          "title": {
+            "en": "Max",
+            "ko": "최대"
+          }
+        }
+      ]
+    }
+  ]
+}

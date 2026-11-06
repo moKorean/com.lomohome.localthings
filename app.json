@@ -2871,7 +2871,8 @@
             "name": "value",
             "type": "number",
             "min": 0,
-            "max": 10
+            "max": 4,
+            "step": 1
           }
         ],
         "id": "fan_speed_level_is"
@@ -3823,6 +3824,90 @@
           }
         ],
         "id": "progress_is"
+      },
+      {
+        "title": {
+          "en": "Fan mode !{{is|is not}} [[value]]",
+          "ko": "팬 모드 [[value]] !{{임|아님}}"
+        },
+        "titleFormatted": {
+          "en": "Fan mode !{{is|is not}} [[value]]",
+          "ko": "팬 모드 [[value]] !{{임|아님}}"
+        },
+        "hint": {
+          "en": "Checks the value as the appliance last reported it.",
+          "ko": "가전이 마지막으로 보고한 값을 확인합니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_purifier_fan_mode"
+          },
+          {
+            "name": "value",
+            "type": "dropdown",
+            "values": [
+              {
+                "id": "auto",
+                "title": {
+                  "en": "Auto",
+                  "ko": "자동"
+                }
+              },
+              {
+                "id": "smart",
+                "title": {
+                  "en": "Smart",
+                  "ko": "스마트"
+                }
+              },
+              {
+                "id": "sleep",
+                "title": {
+                  "en": "Sleep",
+                  "ko": "취침"
+                }
+              },
+              {
+                "id": "windfree",
+                "title": {
+                  "en": "Wind-Free",
+                  "ko": "무풍"
+                }
+              },
+              {
+                "id": "mid",
+                "title": {
+                  "en": "Mid",
+                  "ko": "중"
+                }
+              },
+              {
+                "id": "high",
+                "title": {
+                  "en": "High",
+                  "ko": "강"
+                }
+              },
+              {
+                "id": "turbo",
+                "title": {
+                  "en": "Turbo",
+                  "ko": "터보"
+                }
+              },
+              {
+                "id": "max",
+                "title": {
+                  "en": "Max",
+                  "ko": "최대"
+                }
+              }
+            ]
+          }
+        ],
+        "id": "purifier_fan_mode_is"
       },
       {
         "title": {
@@ -6832,6 +6917,35 @@
       },
       {
         "title": {
+          "en": "Set Fan level",
+          "ko": "풍량 단계 설정"
+        },
+        "titleFormatted": {
+          "en": "Set Fan level to [[value]]",
+          "ko": "풍량 단계 설정: [[value]]"
+        },
+        "hint": {
+          "en": "Fails the Flow if the appliance refuses the change, rather than reporting a success it did not achieve.",
+          "ko": "가전이 변경을 거부하면 플로우를 실패로 처리합니다. 이루지 못한 성공을 보고하지 않습니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_fan_speed_level"
+          },
+          {
+            "name": "value",
+            "type": "number",
+            "min": 0,
+            "max": 4,
+            "step": 1
+          }
+        ],
+        "id": "set_fan_speed_level"
+      },
+      {
+        "title": {
           "en": "Set Fan speed",
           "ko": "풍량 설정"
         },
@@ -7328,6 +7442,90 @@
           }
         ],
         "id": "set_pet_filter"
+      },
+      {
+        "title": {
+          "en": "Set Fan mode",
+          "ko": "팬 모드 설정"
+        },
+        "titleFormatted": {
+          "en": "Set Fan mode to [[value]]",
+          "ko": "팬 모드 설정: [[value]]"
+        },
+        "hint": {
+          "en": "Fails the Flow if the appliance refuses the change, rather than reporting a success it did not achieve.",
+          "ko": "가전이 변경을 거부하면 플로우를 실패로 처리합니다. 이루지 못한 성공을 보고하지 않습니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_purifier_fan_mode"
+          },
+          {
+            "name": "value",
+            "type": "dropdown",
+            "values": [
+              {
+                "id": "auto",
+                "title": {
+                  "en": "Auto",
+                  "ko": "자동"
+                }
+              },
+              {
+                "id": "smart",
+                "title": {
+                  "en": "Smart",
+                  "ko": "스마트"
+                }
+              },
+              {
+                "id": "sleep",
+                "title": {
+                  "en": "Sleep",
+                  "ko": "취침"
+                }
+              },
+              {
+                "id": "windfree",
+                "title": {
+                  "en": "Wind-Free",
+                  "ko": "무풍"
+                }
+              },
+              {
+                "id": "mid",
+                "title": {
+                  "en": "Mid",
+                  "ko": "중"
+                }
+              },
+              {
+                "id": "high",
+                "title": {
+                  "en": "High",
+                  "ko": "강"
+                }
+              },
+              {
+                "id": "turbo",
+                "title": {
+                  "en": "Turbo",
+                  "ko": "터보"
+                }
+              },
+              {
+                "id": "max",
+                "title": {
+                  "en": "Max",
+                  "ko": "최대"
+                }
+              }
+            ]
+          }
+        ],
+        "id": "set_purifier_fan_mode"
       },
       {
         "title": {
@@ -9469,13 +9667,14 @@
         "ko": "풍량 단계"
       },
       "getable": true,
-      "setable": false,
-      "uiComponent": "sensor",
+      "setable": true,
+      "uiComponent": "slider",
       "decimals": 0,
       "icon": "/assets/capabilities/mdi-fan-speed-1.svg",
       "min": 0,
-      "max": 10,
-      "insights": true
+      "max": 4,
+      "insights": true,
+      "step": 1
     },
     "localthings_filter_activity": {
       "type": "string",
@@ -10062,6 +10261,75 @@
       "min": 0,
       "max": 100,
       "insights": true
+    },
+    "localthings_purifier_fan_mode": {
+      "type": "enum",
+      "title": {
+        "en": "Fan mode",
+        "ko": "팬 모드"
+      },
+      "getable": true,
+      "setable": true,
+      "uiComponent": "picker",
+      "icon": "/assets/capabilities/mdi-fan.svg",
+      "values": [
+        {
+          "id": "auto",
+          "title": {
+            "en": "Auto",
+            "ko": "자동"
+          }
+        },
+        {
+          "id": "smart",
+          "title": {
+            "en": "Smart",
+            "ko": "스마트"
+          }
+        },
+        {
+          "id": "sleep",
+          "title": {
+            "en": "Sleep",
+            "ko": "취침"
+          }
+        },
+        {
+          "id": "windfree",
+          "title": {
+            "en": "Wind-Free",
+            "ko": "무풍"
+          }
+        },
+        {
+          "id": "mid",
+          "title": {
+            "en": "Mid",
+            "ko": "중"
+          }
+        },
+        {
+          "id": "high",
+          "title": {
+            "en": "High",
+            "ko": "강"
+          }
+        },
+        {
+          "id": "turbo",
+          "title": {
+            "en": "Turbo",
+            "ko": "터보"
+          }
+        },
+        {
+          "id": "max",
+          "title": {
+            "en": "Max",
+            "ko": "최대"
+          }
+        }
+      ]
     },
     "localthings_rapid_freeze": {
       "type": "boolean",

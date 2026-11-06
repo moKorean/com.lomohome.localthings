@@ -18,7 +18,7 @@ don't-guess rule, so does this. Nothing that applies heat is writable.
 
 from ..resources import is_stub_rep
 from . import courses, shared
-from .base import Registry, Spec, as_float, as_int
+from .base import Registry, Spec, ValueNotAdvertised, as_float, as_int
 
 # --- the running cycle ----------------------------------------------------
 #
@@ -706,6 +706,120 @@ REFRIGERATOR = Registry(
 
 
 # --- air purifier ---------------------------------------------------------
+#
+# **Fan speed lives in a different resource on each board generation**, and this
+# app bound none of the three. A user reported being able to switch the purifier
+# on and off but not change its speed, and that is exactly what the mapping did:
+# the only fan reading declared was `speedLevel` on the vendor `/airflow/vs/0`,
+# which one of the reference's six purifier dumps reports — and it is read-only.
+# Five of six boards therefore had no fan control at all.
+#
+# `speedLevel` is also the one field the reference deliberately does **not** use
+# for this: measured on two units in the same round it collided Low with Medium on
+# one and sat at 0 on the other. It is **no longer bound at all**. Keeping it as a
+# read-only reading alongside a now-writable capability would put a control on the
+# tile that silently does nothing wherever that path won, and it could never win
+# anyway — no dump in the corpus carries `/airflow/vs/0` without `/airflow/0`.
+#
+# The three real paths, all named presets rather than a ladder of speeds:
+#
+#   /mode/vs/0 top-level modes     TP1X_DA-AC-AIR boards. `modes` is a one-element
+#                                  list, values self-describing (Smart/Max/Mid/…)
+#   /wind/strength/vs/0            AVT-WW and A-VTWW boards. `modes` is a bare
+#                                  string of numeric codes ("87"); the names are
+#                                  in a parallel `modesName` array
+#   /airflow/0 `speed`             ARTIK051_TVTL. 0-4, confirmed upstream against
+#                                  two units sampled 60-90s apart per setting
+#
+# The first two are folded into one picker. Their values are normalised to a
+# lower-case key so a single capability covers both spellings — the same preset
+# arrives as "SMART" from one board and "Smart" from another — and each write
+# translates the key back into whatever that board advertises, gated on its own
+# supportedModes so a value it never offered is refused by name rather than sent
+# and silently dropped.
+
+HREF_WIND_STRENGTH = "/wind/strength/vs/0"
+FIELD_MODES = "x.com.samsung.da.modes"
+FIELD_SUPPORTED_MODES = "x.com.samsung.da.supportedModes"
+FIELD_MODES_NAME = "x.com.samsung.da.modesName"
+
+
+def _fan_mode_key(name) -> str | None:
+    """Normalise a board's own spelling to the capability's value."""
+    if not isinstance(name, str) or not name.strip():
+        return None
+    key = name.strip().lower().replace("_", "").replace("-", "").replace(" ", "")
+    return key or None
+
+
+def _top_level_modes(rep) -> list:
+    supported = rep.get(FIELD_SUPPORTED_MODES)
+    return list(supported) if isinstance(supported, list) else []
+
+
+def _has_top_level_modes(rep, _resources) -> bool:
+    return bool(_top_level_modes(rep))
+
+
+def _read_mode_fan(rep, _resources):
+    modes = rep.get(FIELD_MODES)
+    if isinstance(modes, (list, tuple)):
+        modes = modes[0] if modes else None
+    return _fan_mode_key(modes)
+
+
+def _write_mode_fan(value, rep):
+    """Key -> the board's own spelling, refused when it does not offer it."""
+    for candidate in _top_level_modes(rep or {}):
+        if _fan_mode_key(candidate) == value:
+            return ["mode", "vs", "0"], {FIELD_MODES: [candidate]}
+    raise ValueNotAdvertised(value, _top_level_modes(rep or {}))
+
+
+def _wind_strength_pairs(rep) -> list[tuple[str, str]]:
+    """(code, name) pairs. The two arrays correspond by index — that is the only
+    thing tying a code to a name, since the codes are opaque."""
+    codes = rep.get(FIELD_SUPPORTED_MODES)
+    names = rep.get(FIELD_MODES_NAME)
+    if not isinstance(codes, list) or not isinstance(names, list):
+        return []
+    return [(str(c), str(n)) for c, n in zip(codes, names, strict=False)]
+
+
+def _has_wind_strength(rep, _resources) -> bool:
+    return bool(_wind_strength_pairs(rep))
+
+
+def _read_wind_strength_fan(rep, _resources):
+    current = rep.get(FIELD_MODES)
+    if current is None:
+        return None
+    current = str(current)
+    for code, name in _wind_strength_pairs(rep):
+        if code == current:
+            return _fan_mode_key(name)
+    return None
+
+
+def _write_wind_strength_fan(value, rep):
+    pairs = _wind_strength_pairs(rep or {})
+    for code, name in pairs:
+        if _fan_mode_key(name) == value:
+            return ["wind", "strength", "vs", "0"], {FIELD_MODES: code}
+    raise ValueNotAdvertised(value, [n for _, n in pairs])
+
+
+def _read_airflow_speed(rep, _resources):
+    return as_int(rep.get("speed"))
+
+
+def _write_airflow_speed(value, _rep):
+    return ["airflow", "0"], {"speed": as_int(value)}
+
+
+def _has_airflow_speed(rep, _resources) -> bool:
+    return "speed" in rep
+
 
 AIR_PURIFIER = Registry(
     name="air_purifier",
@@ -725,8 +839,16 @@ AIR_PURIFIER = Registry(
         Spec("localthings_pet_filter", "/petfilteractivation/vs/0",
              shared.flag("status"),
              shared.write_flag(["petfilteractivation", "vs", "0"], "status")),
-        Spec("localthings_fan_speed_level", "/airflow/vs/0",
-             lambda rep, _r: as_int(rep.get("x.com.samsung.da.speedLevel"))),
+        # The two named-preset paths, folded into one picker.
+        Spec("localthings_purifier_fan_mode", "/mode/vs/0",
+             _read_mode_fan, _write_mode_fan, exists=_has_top_level_modes),
+        Spec("localthings_purifier_fan_mode", HREF_WIND_STRENGTH,
+             _read_wind_strength_fan, _write_wind_strength_fan,
+             exists=_has_wind_strength),
+        # The numeric path, 0-4.
+        Spec("localthings_fan_speed_level", "/airflow/0",
+             _read_airflow_speed, _write_airflow_speed, exists=_has_airflow_speed),
+
         Spec("localthings_air_quality", "/sensors/vs/0",
              lambda rep, _r: _sensor(rep, "CleanLevel"),
              exists=shared.has_sensor_type("CleanLevel")),

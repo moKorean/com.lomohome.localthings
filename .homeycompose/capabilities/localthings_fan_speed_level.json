@@ -5,11 +5,12 @@
     "ko": "풍량 단계"
   },
   "getable": true,
-  "setable": false,
-  "uiComponent": "sensor",
+  "setable": true,
+  "uiComponent": "slider",
   "decimals": 0,
   "icon": "/assets/capabilities/mdi-fan-speed-1.svg",
   "min": 0,
-  "max": 10,
-  "insights": true
+  "max": 4,
+  "insights": true,
+  "step": 1
 }
