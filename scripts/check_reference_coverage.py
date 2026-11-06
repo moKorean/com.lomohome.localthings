@@ -15,6 +15,11 @@ has to be in here, or the report is about the part nobody forgot.
     python3 scripts/check_reference_coverage.py
 
 Exits 1 when anything is missing, so it can gate CI if wanted.
+
+Divergences this port has decided on are declared below rather than tolerated
+silently. An entry there is a promise somebody wrote down a reason; anything not
+listed still fails, and an entry that stops applying fails too, so the allowance
+cannot quietly become a blanket.
 """
 
 import ast
@@ -25,6 +30,28 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent.parent
 REFERENCE = HERE.parent / "localthings-reference"
+
+# Appliance types the reference supports and this port deliberately does not, each
+# with the reason. Dropping a type in here is a decision, not a backlog entry —
+# docs/BACKLOG.md carries what would change it.
+UNPORTED_TYPES: dict[str, str] = {
+    "soundbar": (
+        "35 /sec/networkaudio/* resources and a discovery path for boards that "
+        "serve no /device/0 at all; not an appliance, and none here to measure"
+    ),
+    "robot_vacuum": "POWERbot R7040; no unit here, nothing to verify a mapping against",
+}
+
+# Board tokens this port routes somewhere other than the reference does.
+DIVERGENT_TOKENS: dict[str, str] = {
+    "COOKTOP": (
+        "the reference merged its induction and options-array cooktops into one "
+        "registry named for the OCF type. Both are kept apart here because only "
+        "the induction mapping is measured against hardware in this house. "
+        "registry._cooktop_surface_key makes the same split on /cooktop/status/vs/0, "
+        "so a device still lands on the right surface — only the name differs"
+    ),
+}
 
 
 def load_reference_tables():
@@ -173,9 +200,48 @@ def main() -> int:
             print(f"  {token} -> {our_tokens[token]}   (worth contributing upstream)")
         print()
 
-    if not (missing_types or missing_tokens or misrouted
-            or missing_oic or misrouted_oic):
-        print("no gaps: every reference type, board token and OCF type is routed here.")
+    # Declared divergences are reported but do not fail. An OCF type is covered by
+    # its own type's allowance: with the type unported there is nothing to route to.
+    allowed_types = [k for k in missing_types if k in UNPORTED_TYPES]
+    allowed_oic = [t for t in missing_oic if ref_oic[t] in UNPORTED_TYPES]
+    allowed_misrouted = [
+        line for line in misrouted if line.split(":", 1)[0] in DIVERGENT_TOKENS
+    ]
+    if allowed_types or allowed_oic or allowed_misrouted:
+        print("declared divergences (not failures):")
+        for key in allowed_types:
+            print(f"  type {key} — {UNPORTED_TYPES[key]}")
+        for oic_type in allowed_oic:
+            print(f"  oic  {oic_type} — its type {ref_oic[oic_type]} is unported above")
+        for line in allowed_misrouted:
+            token = line.split(":", 1)[0]
+            print(f"  token {token} — {DIVERGENT_TOKENS[token]}")
+        print()
+
+    # A declaration that no longer applies is itself a failure: the type got ported,
+    # or the routing came back into line, and the allowance is now hiding nothing
+    # while looking like it still earns its place.
+    stale = [k for k in UNPORTED_TYPES if k in our_keys]
+    stale += [
+        t for t in DIVERGENT_TOKENS
+        if t not in {line.split(":", 1)[0] for line in misrouted}
+    ]
+    if stale:
+        print("declared divergences that no longer apply — remove them:")
+        for name in stale:
+            print(f"  {name}")
+        print()
+        return 1
+
+    unexplained = (
+        [k for k in missing_types if k not in UNPORTED_TYPES]
+        + missing_tokens
+        + [t for t in missing_oic if ref_oic[t] not in UNPORTED_TYPES]
+        + [line for line in misrouted if line.split(":", 1)[0] not in DIVERGENT_TOKENS]
+        + misrouted_oic
+    )
+    if not unexplained:
+        print("no undeclared gaps: everything else the reference routes is routed here.")
         return 0
     return 1
 
