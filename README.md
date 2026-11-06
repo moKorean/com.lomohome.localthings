@@ -15,8 +15,8 @@ there is no cloud round-trip.
 > in certification for a while before it is served. Four air conditioners, an
 > induction cooktop, a range hood and three refrigerators are discovered, paired
 > and controlled on real hardware, with state arriving by CoAP OBSERVE (polling
-> continues as a five-minute safety sweep). All 100 custom capabilities are usable
-> in Flows. The remaining fourteen appliance types are routed and mapped but not
+> continues as a five-minute safety sweep). All 102 custom capabilities are usable
+> in Flows. The remaining fifteen appliance types are routed and mapped but not
 > verified against hardware. Design notes
 > and measurements are in [`docs/PORTING.md`](docs/PORTING.md); unmapped resources and
 > recorded decisions are in [`docs/BACKLOG.md`](docs/BACKLOG.md).
@@ -38,9 +38,9 @@ there is no cloud round-trip.
 Samsung appliances running Tizen RT 3.x / DAWIT 3.0+ firmware — roughly 2022 and later.
 
 **The app claims support for air conditioners, induction cooktops, range hoods and
-refrigerators** — the four types verified on real hardware. The code routes all eighteen
+refrigerators** — the four types verified on real hardware. The code routes all nineteen
 types the reference covers (see [Support status](#support-status)), but the other
-fourteen are deliberately left out of the app description and tags because they could not be
+fifteen are deliberately left out of the app description and tags because they could not be
 tested. They may well work; please try one and report what you find.
 
 If you add an unsupported appliance by IP, the app builds a **support report** from that
@@ -183,11 +183,11 @@ that would mean the same mount failure reaches another setup too.
 
 ## Flow automation
 
-Homey creates Flow cards for **its own built-in capabilities only**. The 100 this app
+Homey creates Flow cards for **its own built-in capabilities only**. The 102 this app
 defines had none, so you could not switch a hood's light from a Flow or raise a
 notification from filter wear.
 
-There are now **164 cards** — 36 actions, 101 conditions, 27 triggers.
+There are now **166 cards** — 36 actions, 103 conditions, 27 triggers.
 
 | Kind | Scope |
 |---|---|
@@ -386,7 +386,7 @@ computed for it, so a unit gets exactly what it reported.
 
 ### Support status
 
-All **eighteen** types the reference supports are routed, but they are verified to
+All **nineteen** types the reference supports are routed, but they are verified to
 different degrees. An unverified entry was ported from the reference's field definitions
 and never seen on the appliance itself — and as the range hood demonstrated,
 **guessing field names is usually wrong**: it pairs, shows capabilities, and reads
@@ -397,9 +397,9 @@ nothing.
 | **Air conditioner** (`RAC/PRAC/KRAC/CAC/WAC/FAC/CAWW/ARA`) | **Verified on hardware.** Power, target and current temperature, mode, fan, comfort modes, airflow, air purify, auto clean, panel and edge lighting with the edge light's brightness and colour temperature (both writable), outdoor temperature, UV, absence power saving, humidity, power, dust, both dust filters with their own wash alarms, sound, Smart Cool Clean state and progress, periodic air sensing with its last grade and what it triggers, an operation state code the appliance reports beside its alarms (52) |
 | **Induction cooktop** (`COOKTOP`) | **Verified on hardware.** Per-burner level, state, residual heat, pan detection and timer, power, child lock, smart control, safety shutoff, active alarm, energy, Bluetooth probe (26). All read-only: this appliance answers 4.05 to every write, measured at the cooktop |
 | **Range hood** (`AHD`) | **Verified on hardware** (AHD-WW-TP1-22). Power, 5-step fan (writable), light on/off and 2-step brightness (writable), auto-ventilation state, filter usage and replacement alarm, air quality and PM10/2.5/1.0, periodic air sensing with its last grade and what it triggers, cumulative energy (18) |
-| **Refrigerator** (`REF`) | **Verified on hardware** (three TP2X_REF_21K Kitchen Fit units — convertible cooling, convertible freezing, fridge-only). Per-compartment current and target temperature (writable), convertible-compartment mode (read-only — the appliance refuses the change remotely, including from Samsung's own app), rapid cool (writable), door, two cumulative energy counters, instantaneous power, self check, firmware (9). **Kimchi refrigerators** route here too and now read their compartments: storage mode (writable, unverified), ripening status and remaining time, rack count — per compartment on both the one-door and the three-drawer layouts |
-| Washer (`WW/WD/WF/WV/WA*`) | Unverified. Machine state, **start / pause / stop the cycle**, progress, remaining time, wash temperature, spin, rinse, cumulative water, washes until drum clean, **the running cycle by name** (two course tables, 104 wash cycles; a one-body washer-dryer reports both its wash and its dry cycle) |
-| Dryer (`DV*`) | Unverified. Machine state, **start / pause / stop the cycle**, progress, remaining time, dry level, wrinkle prevention, washes until drum clean, **the running cycle by name** (two course tables, 69 dry cycles) |
+| **Refrigerator** (`REF`) | **Verified on hardware** (three TP2X_REF_21K Kitchen Fit units — convertible cooling, convertible freezing, fridge-only). Per-compartment current and target temperature (writable), convertible-compartment mode (read-only — the appliance refuses the change remotely, including from Samsung's own app), rapid cool (writable), door, two cumulative energy counters, instantaneous power, self check, firmware, **AI Energy Mode** (read-only; of the three units only the fridge-only one reports it) (10). **Kimchi refrigerators** route here too and now read their compartments: storage mode (writable, unverified), ripening status and remaining time, rack count — per compartment on both the one-door and the three-drawer layouts |
+| Washer (`WW/WD/WF/WV/WA*`) | Unverified. Machine state, **start / pause / stop the cycle**, progress, remaining time, wash temperature, spin, rinse, cumulative water, washes until drum clean, **the running cycle by name** (two course tables, 161 wash cycles; a one-body washer-dryer reports both its wash and its dry cycle) |
+| Dryer (`DV*`) | Unverified. Machine state, **start / pause / stop the cycle**, progress, remaining time, dry level, wrinkle prevention, washes until drum clean, **the running cycle by name** (two course tables, 79 dry cycles) |
 | Dishwasher (`ADW`, `DW*`) | Unverified. Machine state, **start / pause / stop the cycle**, progress, sanitize, heated dry, cumulative water, sound, washes until drum clean, **the running cycle by name** (19 cycles) |
 | Air purifier (`AIR/TVTL/VTWW/AVT`) | Unverified here, but **a user reports a Blue Sky 5500 working**. Which board that unit runs was not reported, so it is not known which of the four tokens carried it — see BACKLOG. Fan, panel light, pet filter, HEPA filter, air quality, PM10/2.5/1.0, CO2 where the board reports it, periodic air sensing with its last grade and what it triggers |
 | Dehumidifier (`DHM`) | Unverified. Humidity, target humidity (writable), filter, panel display and water-tank light (both writable, on the revision that reports them) |
@@ -408,6 +408,7 @@ nothing.
 | Water purifier (`WATERPURIFIER`) | Unverified against hardware, but read against the reference's dump of a real one. Operation state, filter-door contact, three locks — hot water, cold water and buttons (writable) — water filter, cumulative water |
 | Clean station (`VSKR`, `VSWW`) | Unverified against hardware, but read against the reference's dump of a real one. Operation state, dust-bag counter and full warning, auto empty and auto close (both writable) |
 | AirDresser (`DF`) | Unverified against hardware, but read against the reference's dumps of three real ones. Operation state, **start / pause / stop the cycle**, progress, remaining time, sanitize (writable), wrinkle prevent (writable) |
+| Microfiber filter (`AMF`) | Unverified. The lint filter on a washer's drain. Machine state, its own filter activity vocabulary, water-filter usage and a blockage alarm — plumbed like a washer, but with no washer behind it |
 | Air monitor (`ASM`) | Unverified. Air quality, PM10/2.5/1.0, CO2, humidity, battery — sensors only, the board has no power resource |
 | Heat pump (`EHS`) | Unverified. Power, leaving-water temperature and setpoint. Zone mode, the hot-water loop and away mode need capabilities of their own — see BACKLOG |
 
@@ -577,7 +578,7 @@ python3 -m venv .venv
 ## Languages
 
 Korean and English are supported, and **any language not declared falls back to
-English** — app name, description, 100 capabilities, 164 Flow cards, settings labels,
+English** — app name, description, 102 capabilities, 166 Flow cards, settings labels,
 three webviews and device names alike. `tests/test_i18n.py` enforces it, because adding
 a Korean string and forgetting the English one is invisible to whoever wrote it.
 
