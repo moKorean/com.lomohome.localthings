@@ -93,8 +93,6 @@ ALLOWED_BLANK: dict[tuple[str, str], str] = {
     ("oven", "localthings_target_temperature_readonly"):
         "every dump is idle with desired 0, which is treated as no setpoint",
     ("microwave", "localthings_target_temperature_readonly"): "same idle 0",
-    ("refrigerator", "localthings_alarm_code"):
-        "the dumps that carry /alarms/vs/0 at all carry it as an empty stub",
 }
 
 

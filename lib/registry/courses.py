@@ -36,6 +36,8 @@ catalog rather than a wrong reading.
 
 WASHER_TABLE_00 = {
     "01": {"en": "Normal", "ko": "표준세탁"},
+    "50": {"en": "Cotton Dry", "ko": "면 건조"},
+    "51": {"en": "Synthetics Dry", "ko": "합성섬유 건조"},
     "55": {"en": "Whites", "ko": "흰옷"},
     "57": {"en": "Self Clean+", "ko": "통세척+"},
     "5b": {"en": "Cotton", "ko": "면"},
@@ -75,6 +77,9 @@ WASHER_TABLE_00 = {
     "ab": {"en": "Eco Cold", "ko": "에코 냉수 세탁"},
     "b1": {"en": "Self Clean+", "ko": "통세척+"},
     "ba": {"en": "Drain/Spin", "ko": "배수/탈수"},
+    "bd": {"en": "Auto Optimal Wash", "ko": "자동 최적 세탁"},
+    "c7": {"en": "Eco Drum Clean", "ko": "에코 통세척"},
+    "ca": {"en": "Air Wash", "ko": "에어워시"},
     "d0": {"en": "Cotton", "ko": "면"},
     "d1": {"en": "E Cotton", "ko": "에코 면"},
     "d2": {"en": "Synthetics", "ko": "합성섬유"},
@@ -87,7 +92,9 @@ WASHER_TABLE_00 = {
     "da": {"en": "Super Eco Wash", "ko": "초절약세탁"},
     "db": {"en": "Super Speed", "ko": "쾌속세탁"},
     "dc": {"en": "15' Quick Wash", "ko": "15분 쾌속세탁"},
+    "e3": {"en": "Daily Wash", "ko": "데일리 세탁"},
     "e4": {"en": "Anti Allergen", "ko": "알레르기 케어"},
+    "e7": {"en": "Speed Wash+Dry", "ko": "스피드 세탁+건조"},
 }
 
 WASHER_TABLE_02 = {
@@ -279,7 +286,10 @@ DRYER_TABLE_03 = {
     "3c": {"en": "Activewear", "ko": "피트니스"},
     "3d": {"en": "Denim", "ko": "데님"},
     "3e": {"en": "Small Load", "ko": "소량 세탁"},
+    "42": {"en": "Refresh", "ko": "리프레시"},
     "43": {"en": "Shirts", "ko": "셔츠"},
+    "44": {"en": "Quick Dry", "ko": "쾌속건조"},
+    "47": {"en": "Pet Care Dry", "ko": "펫케어 건조"},
     "4c": {"en": "Air Refresh", "ko": "에어 리프레시"},
     "4e": {"en": "Self Dry", "ko": "자체 건조"},
     "51": {"en": "Eco Cotton", "ko": "에코 면"},

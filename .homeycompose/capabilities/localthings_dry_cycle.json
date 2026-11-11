@@ -360,10 +360,31 @@
       }
     },
     {
+      "id": "42",
+      "title": {
+        "en": "Refresh",
+        "ko": "리프레시"
+      }
+    },
+    {
       "id": "43",
       "title": {
         "en": "Shirts",
         "ko": "셔츠"
+      }
+    },
+    {
+      "id": "44",
+      "title": {
+        "en": "Quick Dry",
+        "ko": "쾌속건조"
+      }
+    },
+    {
+      "id": "47",
+      "title": {
+        "en": "Pet Care Dry",
+        "ko": "펫케어 건조"
       }
     },
     {

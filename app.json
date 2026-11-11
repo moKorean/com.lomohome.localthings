@@ -2332,10 +2332,31 @@
                 }
               },
               {
+                "id": "42",
+                "title": {
+                  "en": "Refresh",
+                  "ko": "리프레시"
+                }
+              },
+              {
                 "id": "43",
                 "title": {
                   "en": "Shirts",
                   "ko": "셔츠"
+                }
+              },
+              {
+                "id": "44",
+                "title": {
+                  "en": "Quick Dry",
+                  "ko": "쾌속건조"
+                }
+              },
+              {
+                "id": "47",
+                "title": {
+                  "en": "Pet Care Dry",
+                  "ko": "펫케어 건조"
                 }
               },
               {
@@ -5167,6 +5188,20 @@
                 }
               },
               {
+                "id": "50",
+                "title": {
+                  "en": "Cotton Dry",
+                  "ko": "면 건조"
+                }
+              },
+              {
+                "id": "51",
+                "title": {
+                  "en": "Synthetics Dry",
+                  "ko": "합성섬유 건조"
+                }
+              },
+              {
                 "id": "55",
                 "title": {
                   "en": "Whites",
@@ -5440,6 +5475,27 @@
                 }
               },
               {
+                "id": "bd",
+                "title": {
+                  "en": "Auto Optimal Wash",
+                  "ko": "자동 최적 세탁"
+                }
+              },
+              {
+                "id": "c7",
+                "title": {
+                  "en": "Eco Drum Clean",
+                  "ko": "에코 통세척"
+                }
+              },
+              {
+                "id": "ca",
+                "title": {
+                  "en": "Air Wash",
+                  "ko": "에어워시"
+                }
+              },
+              {
                 "id": "d0",
                 "title": {
                   "en": "Cotton",
@@ -5524,10 +5580,24 @@
                 }
               },
               {
+                "id": "e3",
+                "title": {
+                  "en": "Daily Wash",
+                  "ko": "데일리 세탁"
+                }
+              },
+              {
                 "id": "e4",
                 "title": {
                   "en": "Anti Allergen",
                   "ko": "알레르기 케어"
+                }
+              },
+              {
+                "id": "e7",
+                "title": {
+                  "en": "Speed Wash+Dry",
+                  "ko": "스피드 세탁+건조"
                 }
               }
             ]
@@ -9262,10 +9332,31 @@
           }
         },
         {
+          "id": "42",
+          "title": {
+            "en": "Refresh",
+            "ko": "리프레시"
+          }
+        },
+        {
           "id": "43",
           "title": {
             "en": "Shirts",
             "ko": "셔츠"
+          }
+        },
+        {
+          "id": "44",
+          "title": {
+            "en": "Quick Dry",
+            "ko": "쾌속건조"
+          }
+        },
+        {
+          "id": "47",
+          "title": {
+            "en": "Pet Care Dry",
+            "ko": "펫케어 건조"
           }
         },
         {
@@ -11361,6 +11452,20 @@
           }
         },
         {
+          "id": "50",
+          "title": {
+            "en": "Cotton Dry",
+            "ko": "면 건조"
+          }
+        },
+        {
+          "id": "51",
+          "title": {
+            "en": "Synthetics Dry",
+            "ko": "합성섬유 건조"
+          }
+        },
+        {
           "id": "55",
           "title": {
             "en": "Whites",
@@ -11634,6 +11739,27 @@
           }
         },
         {
+          "id": "bd",
+          "title": {
+            "en": "Auto Optimal Wash",
+            "ko": "자동 최적 세탁"
+          }
+        },
+        {
+          "id": "c7",
+          "title": {
+            "en": "Eco Drum Clean",
+            "ko": "에코 통세척"
+          }
+        },
+        {
+          "id": "ca",
+          "title": {
+            "en": "Air Wash",
+            "ko": "에어워시"
+          }
+        },
+        {
           "id": "d0",
           "title": {
             "en": "Cotton",
@@ -11718,10 +11844,24 @@
           }
         },
         {
+          "id": "e3",
+          "title": {
+            "en": "Daily Wash",
+            "ko": "데일리 세탁"
+          }
+        },
+        {
           "id": "e4",
           "title": {
             "en": "Anti Allergen",
             "ko": "알레르기 케어"
+          }
+        },
+        {
+          "id": "e7",
+          "title": {
+            "en": "Speed Wash+Dry",
+            "ko": "스피드 세탁+건조"
           }
         }
       ]

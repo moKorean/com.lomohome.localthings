@@ -153,7 +153,18 @@ def test_the_two_sources_agree_wherever_both_exist():
             # token, so only one of its two can match.
             if path.name.startswith("washer_dryer_onebody"):
                 continue
-            assert raw.endswith(f"_Course_{bare}"), f"{path.name}: {raw} vs {bare}"
+            # `AutoLinkCycle_<code>` is a second shape, and not a disagreement.
+            # The AWM-US-M64 washer-dryer (reference #784) names its washer side
+            # `Table_02_Course_A1` and its dryer side `AutoLinkCycle_A1`: the
+            # dryer is running whatever the washer's cycle links to, so the
+            # prefix names that linkage rather than a course table. The code
+            # still agrees, which is what this test is about; BY_TABLE has no
+            # `autolinkcycle` entry, so the dryer simply reads no cycle, which
+            # is the right answer for a cycle the board never names.
+            if raw.startswith("AutoLinkCycle_"):
+                assert raw == f"AutoLinkCycle_{bare}", f"{path.name}: {raw} vs {bare}"
+            else:
+                assert raw.endswith(f"_Course_{bare}"), f"{path.name}: {raw} vs {bare}"
             checked += 1
     assert checked >= 8, f"only {checked} dumps compared"
 

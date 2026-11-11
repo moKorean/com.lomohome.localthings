@@ -1780,6 +1780,13 @@ BOARD_TOKENS = {
     "AHD": RANGE_HOOD,
     "AIR": AIR_PURIFIER,
     "TVTL": AIR_PURIFIER,
+    # TP6X_VTL_16K, reference issue #608. That unit speaks the 8888 bridge
+    # protocol this app does not implement, so nothing here can reach it today
+    # and the entry buys only one thing: a VTL board that ever does answer over
+    # CoAP lands on the purifier registry instead of falling through to the
+    # unknown-type path. Costs a line; the alternative was a declared divergence
+    # saying the same thing at ten times the length.
+    "VTL": AIR_PURIFIER,
     "VTWW": AIR_PURIFIER,
     # A next-gen BESPOKE Cube Air board, AVT-WW-TP1-23-AXX500. Same lineage and
     # the same resource surface as VTWW, but the "-WW-" delimiter falls one letter
