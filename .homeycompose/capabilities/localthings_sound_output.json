@@ -1,0 +1,11 @@
+{
+  "type": "string",
+  "title": {
+    "en": "Sound output",
+    "ko": "소리 출력"
+  },
+  "getable": true,
+  "setable": false,
+  "uiComponent": "sensor",
+  "icon": "/assets/capabilities/mdi-volume-high.svg"
+}

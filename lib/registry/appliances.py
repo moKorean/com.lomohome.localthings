@@ -169,6 +169,7 @@ WASHER = Registry(
         *shared.WATER_METER,
         *WASH_CYCLE,
         *DRUM_CLEAN,
+        *shared.SOUND,
         Spec("localthings_wash_temperature", HREF_WASHER,
              shared.text("x.com.samsung.da.waterTemperature")),
         Spec("localthings_spin_speed", HREF_WASHER,
@@ -191,8 +192,23 @@ DRYER = Registry(
         *shared.CYCLE_CONTROL,
         *WASH_CYCLE,
         *DRUM_CLEAN,
+        *shared.SOUND,
         Spec("localthings_dry_level", HREF_WASHER,
              shared.text("x.com.samsung.da.dryLevel")),
+        # A dryer has no wash water, and `waterTemperature` on `/washer/vs/0` is
+        # where it keeps its heat setting instead — the field name is shared with
+        # the washer, the meaning is not. Measured in the reference's corpus: a
+        # DVE50A8600 reads `Medium` out of `None ExtraLow Low MediumLow Medium
+        # High`, where the washers on the same field read `40` out of `Cold 20 30
+        # 40 60 90`. Two different value domains behind one name, which is why
+        # this is a capability of its own rather than the washer's reused.
+        #
+        # Read-only, unlike the reference's select. Its write was confirmed on a
+        # DV45K6500EW — the reporter's unit, not one here — and the standing rule
+        # is that nothing applying heat becomes writable on somebody else's
+        # measurement. docs/BACKLOG.md carries it.
+        Spec("localthings_drying_temperature", HREF_WASHER,
+             shared.text("x.com.samsung.da.waterTemperature")),
         # A wrinkle-prevention tumble, not a heat control — writable per the
         # reference, which exposes it as a switch.
         Spec("localthings_wrinkle_prevent", HREF_WASHER,
@@ -626,6 +642,7 @@ REFRIGERATOR = Registry(
         *shared.UNIVERSAL,
         *shared.WATER_FILTER,
         *shared.DOORS,
+        *shared.SOUND,
         *KIMCHI,
         Spec("localthings_rapid_fridge", "/refrigeration/vs/0",
              shared.flag("x.com.samsung.da.rapidFridge"),

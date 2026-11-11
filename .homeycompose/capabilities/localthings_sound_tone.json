@@ -1,0 +1,11 @@
+{
+  "type": "string",
+  "title": {
+    "en": "Sound tone",
+    "ko": "알림음 종류"
+  },
+  "getable": true,
+  "setable": false,
+  "uiComponent": "sensor",
+  "icon": "/assets/capabilities/mdi-volume-high.svg"
+}

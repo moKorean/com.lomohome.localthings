@@ -540,19 +540,43 @@ def _sound_volume_options(rep, _resources) -> dict:
     return options
 
 
-# Unusually for this codebase, these two resources use plain OCF field names with
-# no vendor prefix (`mode`, `level`). That is what three air conditioners actually
-# report, so the names are confirmed rather than assumed.
+# Unusually for this codebase, these resources use plain OCF field names with no
+# vendor prefix (`mode`, `level`, `tone`, `deviceType`). That is what three air
+# conditioners actually report, so the names are confirmed rather than assumed.
 #
-# Both stay read-only. The volume resource advertises min/max/resolution, which
-# looks like an invitation to write it, but no write has been observed and the
-# reference exposes neither as writable — a control that looks settable and is
-# silently refused is worse than a reading.
+# All of them stay read-only. The volume resource advertises min/max/resolution,
+# which looks like an invitation to write it, but no write has been observed and
+# the reference exposes it read-only too — a control that looks settable and is
+# silently refused is worse than a reading. The reference does make mode and tone
+# writable; its own note on the tone write says it was "inferred from the read
+# alone" and "needs live confirmation", which is exactly the kind of claim this
+# app does not ship as a control.
+#
+# Each is bound by href, so a board gets only the ones it serves. Six of the
+# reference's dumps carry some part of this surface and the AWM-US-M64
+# washer-dryer (its #784) carries all of it; `/settings/sound/voice/vs/0` is
+# left out because its `supportedVoices` are opaque voice-pack ids with nothing
+# to render them as.
 SOUND = (
     Spec("localthings_sound_mode", "/settings/sound/mode/vs/0", text("mode")),
     Spec("localthings_sound_volume", "/settings/sound/volume/vs/0",
          lambda rep, _r: as_int(rep.get("level")),
          options=_sound_volume_options),
+    # Which of the board's numbered tones plays while sound mode is `tone`. The
+    # value is an opaque index ("11" of "1".."11"), so it is a reading and not a
+    # picker — naming them would be inventing labels the board never gives.
+    Spec("localthings_sound_tone", "/settings/sound/tone/vs/0", text("tone")),
+    # `deviceType` names where the sound comes out ("speaker"), and `alarmInMute`
+    # says whether the alarm is currently silenced. Both read-only for the same
+    # reason as the two above: no sibling field advertises either as settable,
+    # and this family has already shown that a resource answering a write is no
+    # evidence it honoured one.
+    Spec("localthings_sound_output", "/settings/sound/output/vs/0",
+         text("deviceType")),
+    Spec("localthings_sound_muted", "/settings/sound/output/vs/0",
+         lambda rep, _r: str(rep.get("alarmInMute")).strip().lower() == "true"
+         if rep.get("alarmInMute") is not None else None,
+         exists=lambda rep, _r: "alarmInMute" in rep),
 )
 
 # --- doors ---------------------------------------------------------------
