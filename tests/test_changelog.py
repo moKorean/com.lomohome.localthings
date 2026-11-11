@@ -36,6 +36,16 @@ LANGUAGES = ("en", "ko")
 # legitimately travel into the next entry. Each needs the reason, because the whole
 # value of the set is that it is checkable.
 UNPROMOTED = {
+    "1.6.0": (
+        "build 28 uploaded 2026-11-11, never promoted; the store page still showed "
+        "1.3.0 later that day and the owner chose to go straight to 1.8.0. Its news "
+        "— which already carries 1.4.0's and 1.5.0's — travels into 1.8.0, and four "
+        "releases of it does not fit under the ceiling below. So 1.8.0's entry keeps "
+        "four of these paragraphs verbatim and merges the rest. That is editing "
+        "rather than hiding, because the store has shown none of this to anyone; it "
+        "is recorded here because a merged paragraph is not an exact repeat, so the "
+        "check below sees only the four and this set is doing less work than usual"
+    ),
     "1.5.0": (
         "build 27 uploaded 2026-11-07, never promoted; the store page still showed "
         "1.3.0 on 2026-11-11 and the owner chose to go straight to 1.6.0, so its "
