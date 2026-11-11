@@ -94,6 +94,60 @@ def _board_family_key(value: str, cut_at: str) -> str | None:
     return None
 
 
+# What an 8888 bridge record calls itself. `legacy_bridge` carries it into
+# `/information/vs/0`, and it is the only thing those boards offer that names a
+# type: they serve no `/oic/d` at all, and their model strings are things like
+# `DONGLE_WF7500` and `LCD_OV_WALL_16K`, which carry no token this table knows.
+#
+# **Inert on CoAP.** Measured 2026-11-11 across the reference's whole corpus and
+# the four verified types here: not one CoAP board reports this field. So it can
+# only ever decide a case that is currently undecided, which is what makes
+# putting it above model-string parsing safe.
+#
+# `CombiOven` is deliberately absent. It covers both a microwave and an oven on
+# different units, so it names a cabinet rather than a type; those are told apart
+# by their resources instead.
+_DEVICE_SUBTYPE_TO_KEY: dict[str, str] = {
+    "Cooktop": "cooktop",
+    "Dryer": "dryer",
+    "Refrigerator": "refrigerator",
+    "Room_Air_Conditioner": "airconditioner",
+    "WallOven": "oven",
+    "Washer": "washer",
+}
+
+
+def _combi_oven_key(resources: dict) -> str:
+    """Which half of a combi cabinet this slot is, from the modes it offers.
+
+    `CombiOven` names a cabinet rather than a type: the same subtype covers an
+    NQ70M6650DS's microwave and an NW9300MD's oven cavity. What tells them apart
+    is the mode list — the microwave's leads with `MicroWave`, and no oven
+    cavity's carries it. Measured on both: the NW9300MD's lower cavity offers
+    `LowerBake`, `LowerConvectionBake` and four Healthycook slots, the TP6X_OV
+    offers `MicroWave`, `SpeedBroil`, `Convection`.
+    """
+    modes = (resources.get("/mode/vs/0") or {}).get("x.com.samsung.da.supportedModes")
+    entries = modes if isinstance(modes, list) else [modes]
+    for entry in entries:
+        if isinstance(entry, str) and any(
+            part.strip().startswith("MicroWave") for part in entry.split(",")
+        ):
+            return "microwave"
+    return "oven"
+
+
+def _subtype_key(resources: dict) -> str | None:
+    """Registry key from an 8888 record's own `deviceSubType`."""
+    info = (resources or {}).get("/information/vs/0") or {}
+    subtype = info.get("x.com.samsung.da.deviceSubType")
+    if not isinstance(subtype, str):
+        return None
+    if subtype == "CombiOven":
+        return _combi_oven_key(resources or {})
+    return _DEVICE_SUBTYPE_TO_KEY.get(subtype)
+
+
 def _consumer_model_key(description: str) -> str | None:
     """Registry key from the consumer-model token in `description`.
 
@@ -104,9 +158,24 @@ def _consumer_model_key(description: str) -> str | None:
     Splits on '_' only. Widening to '-' would start reading board-family segments as
     consumer models — a dishwasher's 'ADW-WW-RTL-24' would offer a bare 'WW' and
     route to washer.
+
+    **A segment must carry a digit**, because a two-letter prefix is far too
+    short to be distinctive on its own and three English words in the corpus
+    collide with it: `WALL` (an oven), `WAC` (a window air conditioner) and
+    `WATERPURIFIER` all begin `WA` and all claimed to be washers. Measured over
+    the 90 distinct descriptions in the reference corpus and this house's own:
+    the rule drops exactly those three and keeps all nineteen real matches,
+    every one of which is a model number — `WW6500`, `DV6800N`, `DW9000F`.
+
+    Latent until now, because the board token is tried first and these three all
+    carry one. The 8888 bridge is what surfaced it: `LCD_OV_WALL_16K` has no
+    token this app knows, so the fallback was the only thing left and it made a
+    wall oven into a washer.
     """
     segments = (description or "").split("/", 1)[0].split("_")
     for segment in reversed(segments):
+        if not any(character.isdigit() for character in segment):
+            continue
         key = _CONSUMER_PREFIX_TO_KEY.get(segment[:2].upper())
         if key is not None:
             return key
@@ -272,7 +341,10 @@ def resolve(resources: dict, device_types=()) -> Registry | None:
         or _board_family_key(identity["description"], "/")
         or _consumer_model_key(identity["description"])
     )
-    key = _oic_type_key(device_types) or token_key
+    # Narrowest evidence first, and a type the appliance *states* outranks one
+    # parsed out of a model string. `/oic/d` is that statement on a CoAP board;
+    # `deviceSubType` is the 8888 bridge's, and the only one it makes.
+    key = _oic_type_key(device_types) or _subtype_key(resources) or token_key
     key = _cooktop_surface_key(key, resources, token_key)
     return _REGISTRY_BY_KEY.get(key) if key else None
 
