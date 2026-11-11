@@ -1,0 +1,16 @@
+{
+  "type": "number",
+  "title": {
+    "en": "Flow rate",
+    "ko": "유량"
+  },
+  "getable": true,
+  "setable": false,
+  "uiComponent": "sensor",
+  "decimals": 1,
+  "icon": "/assets/capabilities/mdi-water-outline.svg",
+  "units": {
+    "en": "L/min"
+  },
+  "insights": true
+}

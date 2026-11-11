@@ -1,0 +1,16 @@
+{
+  "type": "number",
+  "title": {
+    "en": "Compressor",
+    "ko": "압축기 주파수"
+  },
+  "getable": true,
+  "setable": false,
+  "uiComponent": "sensor",
+  "decimals": 0,
+  "icon": "/assets/capabilities/mdi-counter.svg",
+  "units": {
+    "en": "Hz"
+  },
+  "insights": true
+}

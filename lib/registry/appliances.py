@@ -17,7 +17,7 @@ don't-guess rule, so does this. Nothing that applies heat is writable.
 """
 
 from ..resources import is_stub_rep
-from . import courses, shared
+from . import courses, ehs_cycle, shared
 from .base import Registry, Spec, ValueNotAdvertised, as_float, as_int
 
 # --- the running cycle ----------------------------------------------------
@@ -1640,6 +1640,23 @@ EHS = Registry(
              lambda value, _rep: (["temperatures", "indoor", "vs", "0"],
                                   {"x.com.samsung.da.desired": str(float(value))}),
              options=lambda rep, _r: _ehs_setpoint_options(rep)),
+        # The cycle log, decoded. See lib/registry/ehs_cycle.py for the byte map
+        # and for which of its offsets are bound — only the ones a second
+        # resource in the same dump agrees with.
+        Spec("measure_temperature.flow", ehs_cycle.HREF,
+             ehs_cycle.read_flow_temperature,
+             titles={"en": "Flow", "ko": "공급 수온"}),
+        Spec("measure_temperature.return", ehs_cycle.HREF,
+             ehs_cycle.read_return_temperature,
+             titles={"en": "Return", "ko": "환수 수온"}),
+        Spec("measure_temperature.outdoor", ehs_cycle.HREF,
+             ehs_cycle.read_outdoor_temperature,
+             exists=ehs_cycle.outdoor_temperature_unmeasured,
+             titles={"en": "Outdoor", "ko": "실외"}),
+        Spec("localthings_flow_rate", ehs_cycle.HREF, ehs_cycle.read_flow_rate),
+        Spec("localthings_pump_speed", ehs_cycle.HREF, ehs_cycle.read_pump_speed),
+        Spec("localthings_compressor_hz", ehs_cycle.HREF,
+             ehs_cycle.read_compressor_hz),
     ),
 )
 

@@ -1,0 +1,16 @@
+{
+  "type": "number",
+  "title": {
+    "en": "Pump speed",
+    "ko": "순환 펌프 속도"
+  },
+  "getable": true,
+  "setable": false,
+  "uiComponent": "sensor",
+  "decimals": 0,
+  "icon": "/assets/capabilities/mdi-gauge.svg",
+  "units": {
+    "en": "%"
+  },
+  "insights": true
+}

@@ -1593,6 +1593,32 @@
       },
       {
         "title": {
+          "en": "Compressor !{{is|is not}} at least [[value]] Hz",
+          "ko": "압축기 주파수 [[value]] Hz !{{이상|미만}}"
+        },
+        "titleFormatted": {
+          "en": "Compressor !{{is|is not}} at least [[value]] Hz",
+          "ko": "압축기 주파수 [[value]] Hz !{{이상|미만}}"
+        },
+        "hint": {
+          "en": "Checks the value as the appliance last reported it.",
+          "ko": "가전이 마지막으로 보고한 값을 확인합니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_compressor_hz"
+          },
+          {
+            "name": "value",
+            "type": "number"
+          }
+        ],
+        "id": "compressor_hz_is"
+      },
+      {
+        "title": {
           "en": "Convenient mode !{{is|is not}} [[value]]",
           "ko": "쾌적 모드 [[value]] !{{임|아님}}"
         },
@@ -3068,6 +3094,32 @@
       },
       {
         "title": {
+          "en": "Flow rate !{{is|is not}} at least [[value]] L/min",
+          "ko": "유량 [[value]] L/min !{{이상|미만}}"
+        },
+        "titleFormatted": {
+          "en": "Flow rate !{{is|is not}} at least [[value]] L/min",
+          "ko": "유량 [[value]] L/min !{{이상|미만}}"
+        },
+        "hint": {
+          "en": "Checks the value as the appliance last reported it.",
+          "ko": "가전이 마지막으로 보고한 값을 확인합니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_flow_rate"
+          },
+          {
+            "name": "value",
+            "type": "number"
+          }
+        ],
+        "id": "flow_rate_is"
+      },
+      {
+        "title": {
           "en": "Heated dry !{{is|is not}} [[value]]",
           "ko": "가열 건조 [[value]] !{{임|아님}}"
         },
@@ -3959,6 +4011,32 @@
           }
         ],
         "id": "progress_is"
+      },
+      {
+        "title": {
+          "en": "Pump speed !{{is|is not}} at least [[value]] %",
+          "ko": "순환 펌프 속도 [[value]] % !{{이상|미만}}"
+        },
+        "titleFormatted": {
+          "en": "Pump speed !{{is|is not}} at least [[value]] %",
+          "ko": "순환 펌프 속도 [[value]] % !{{이상|미만}}"
+        },
+        "hint": {
+          "en": "Checks the value as the appliance last reported it.",
+          "ko": "가전이 마지막으로 보고한 값을 확인합니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_pump_speed"
+          },
+          {
+            "name": "value",
+            "type": "number"
+          }
+        ],
+        "id": "pump_speed_is"
       },
       {
         "title": {
@@ -8849,6 +8927,22 @@
       "uiComponent": "sensor",
       "icon": "/assets/capabilities/mdi-lock.svg"
     },
+    "localthings_compressor_hz": {
+      "type": "number",
+      "title": {
+        "en": "Compressor",
+        "ko": "압축기 주파수"
+      },
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "decimals": 0,
+      "icon": "/assets/capabilities/mdi-counter.svg",
+      "units": {
+        "en": "Hz"
+      },
+      "insights": true
+    },
     "localthings_convenient_mode": {
       "type": "enum",
       "title": {
@@ -10039,6 +10133,22 @@
       "uiComponent": "sensor",
       "icon": "/assets/capabilities/mdi-cog-outline.svg"
     },
+    "localthings_flow_rate": {
+      "type": "number",
+      "title": {
+        "en": "Flow rate",
+        "ko": "유량"
+      },
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "decimals": 1,
+      "icon": "/assets/capabilities/mdi-water-outline.svg",
+      "units": {
+        "en": "L/min"
+      },
+      "insights": true
+    },
     "localthings_heated_dry": {
       "type": "string",
       "title": {
@@ -10594,6 +10704,22 @@
       },
       "min": 0,
       "max": 100,
+      "insights": true
+    },
+    "localthings_pump_speed": {
+      "type": "number",
+      "title": {
+        "en": "Pump speed",
+        "ko": "순환 펌프 속도"
+      },
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "decimals": 0,
+      "icon": "/assets/capabilities/mdi-gauge.svg",
+      "units": {
+        "en": "%"
+      },
       "insights": true
     },
     "localthings_purifier_fan_mode": {

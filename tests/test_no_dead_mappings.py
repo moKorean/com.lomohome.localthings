@@ -93,6 +93,25 @@ ALLOWED_BLANK: dict[tuple[str, str], str] = {
     ("oven", "localthings_target_temperature_readonly"):
         "every dump is idle with desired 0, which is treated as no setpoint",
     ("microwave", "localthings_target_temperature_readonly"): "same idle 0",
+    # The six cycle-log readings are blank for a reason that is not about the
+    # mapping at all: `/ehscycle/vs/0` samples carry their own timestamp, the
+    # log stops advancing while the unit is off, and anything older than half an
+    # hour is withheld rather than published as live. The reference's dumps were
+    # taken in October 2026, so every sample in them is stale by definition and
+    # will only get staler.
+    #
+    # This is the one case where an entry here does not mean "unconfirmable".
+    # `tests/test_ehs_cycle.py` decodes these same dumps with the clock set to
+    # the sample's own time and asserts the values, including the cross-check
+    # against `/temperatures/outside/vs/0` that is the evidence the byte offsets
+    # are right. Without that file these entries would be exactly the kind of
+    # blanket excuse this list is supposed to make hard.
+    ("ehs", "measure_temperature.flow"): "cycle-log sample is older than the staleness window",
+    ("ehs", "measure_temperature.return"): "same stale sample",
+    ("ehs", "measure_temperature.outdoor"): "same stale sample",
+    ("ehs", "localthings_flow_rate"): "same stale sample",
+    ("ehs", "localthings_pump_speed"): "same stale sample",
+    ("ehs", "localthings_compressor_hz"): "same stale sample",
 }
 
 
