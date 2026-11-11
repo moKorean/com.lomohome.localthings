@@ -15,7 +15,7 @@ there is no cloud round-trip.
 > in certification for a while before it is served. Four air conditioners, an
 > induction cooktop, a range hood and three refrigerators are discovered, paired
 > and controlled on real hardware, with state arriving by CoAP OBSERVE (polling
-> continues as a five-minute safety sweep). All 103 custom capabilities are usable
+> continues as a five-minute safety sweep). All 114 custom capabilities are usable
 > in Flows. The remaining fifteen appliance types are routed and mapped but not
 > verified against hardware. Design notes
 > and measurements are in [`docs/PORTING.md`](docs/PORTING.md); unmapped resources and
@@ -183,11 +183,11 @@ that would mean the same mount failure reaches another setup too.
 
 ## Flow automation
 
-Homey creates Flow cards for **its own built-in capabilities only**. The 103 this app
+Homey creates Flow cards for **its own built-in capabilities only**. The 114 this app
 defines had none, so you could not switch a hood's light from a Flow or raise a
 notification from filter wear.
 
-There are now **169 cards** — 38 actions, 104 conditions, 27 triggers.
+There are now **180 cards** — 38 actions, 115 conditions, 27 triggers.
 
 | Kind | Scope |
 |---|---|
@@ -394,23 +394,23 @@ nothing.
 
 | Appliance | Status |
 |---|---|
-| **Air conditioner** (`RAC/PRAC/KRAC/CAC/WAC/FAC/CAWW/ARA`) | **Verified on hardware.** Power, target and current temperature, mode, fan, comfort modes, airflow, air purify, auto clean, the panel display light (on all three encodings boards use for it) and edge lighting with the edge light's brightness and colour temperature (both writable), outdoor temperature, UV, absence power saving, humidity, power, dust, both dust filters with their own wash alarms, sound, Smart Cool Clean state and progress, periodic air sensing with its last grade and what it triggers, an operation state code the appliance reports beside its alarms (52) |
+| **Air conditioner** (`RAC/PRAC/KRAC/CAC/WAC/FAC/CAWW/ARA`) | **Verified on hardware.** Power, target and current temperature, mode, fan, comfort modes, airflow, air purify (not offered on `ARTIK051_PRAC` boards, which report the option and refuse every write), auto clean, the panel display light (on all three encodings boards use for it) and edge lighting with the edge light's brightness and colour temperature (both writable), outdoor temperature, UV, absence power saving, humidity, power, dust, both dust filters with their own wash alarms, sound, Smart Cool Clean state and progress, periodic air sensing with its last grade and what it triggers, an operation state code the appliance reports beside its alarms (52) |
 | **Induction cooktop** (`COOKTOP`) | **Verified on hardware.** Per-burner level, state, residual heat, pan detection and timer, power, child lock, smart control, safety shutoff, active alarm, energy, Bluetooth probe (26). All read-only: this appliance answers 4.05 to every write, measured at the cooktop |
 | **Range hood** (`AHD`) | **Verified on hardware** (AHD-WW-TP1-22). Power, 5-step fan (writable), light on/off and 2-step brightness (writable), auto-ventilation state, filter usage and replacement alarm, air quality and PM10/2.5/1.0, periodic air sensing with its last grade and what it triggers, cumulative energy (18) |
-| **Refrigerator** (`REF`) | **Verified on hardware** (three TP2X_REF_21K Kitchen Fit units — convertible cooling, convertible freezing, fridge-only). Per-compartment current and target temperature (writable), convertible-compartment mode (read-only — the appliance refuses the change remotely, including from Samsung's own app), rapid cool (writable), door, two cumulative energy counters, instantaneous power, self check, firmware, **AI Energy Mode** (read-only; of the three units only the fridge-only one reports it) (10). **Kimchi refrigerators** route here too and now read their compartments: storage mode (writable, unverified), ripening status and remaining time, rack count — per compartment on both the one-door and the three-drawer layouts |
-| Washer (`WW/WD/WF/WV/WA*`) | Unverified. Machine state, **start / pause / stop the cycle**, progress, remaining time, wash temperature, spin, rinse, cumulative water, washes until drum clean, **the running cycle by name** (two course tables, 161 wash cycles; a one-body washer-dryer reports both its wash and its dry cycle) |
-| Dryer (`DV*`) | Unverified. Machine state, **start / pause / stop the cycle**, progress, remaining time, dry level, wrinkle prevention, washes until drum clean, **the running cycle by name** (two course tables, 79 dry cycles) |
+| **Refrigerator** (`REF`) | **Verified on hardware** (three TP2X_REF_21K Kitchen Fit units — convertible cooling, convertible freezing, fridge-only). Per-compartment current and target temperature (writable), convertible-compartment mode (read-only — the appliance refuses the change remotely, including from Samsung's own app), rapid cool (writable), door, two cumulative energy counters, instantaneous power, self check, firmware, sound settings, **AI Energy Mode** (read-only; of the three units only the fridge-only one reports it) (10). **Kimchi refrigerators** route here too and now read their compartments: storage mode (writable, unverified), ripening status and remaining time, rack count — per compartment on both the one-door and the three-drawer layouts |
+| Washer (`WW/WD/WF/WV/WA*`) | Unverified. Machine state, **start / pause / stop the cycle**, progress, remaining time, wash temperature, spin, rinse, cumulative water, sound settings, washes until drum clean, **the running cycle by name** (two course tables, 168 wash cycles; a one-body washer-dryer reports both its wash and its dry cycle) |
+| Dryer (`DV*`) | Unverified. Machine state, **start / pause / stop the cycle**, progress, remaining time, dry level, drying temperature, wrinkle prevention, sound settings, washes until drum clean, **the running cycle by name** (two course tables, 82 dry cycles) |
 | Dishwasher (`ADW`, `DW*`) | Unverified. Machine state, **start / pause / stop the cycle**, progress, sanitize, heated dry, cumulative water, sound, washes until drum clean, **the running cycle by name** (19 cycles) |
 | Air purifier (`AIR/TVTL/VTWW/AVT`) | Unverified here, but **a user reports a Blue Sky 5500 working**. **Fan mode is settable** on all three resources boards use for it. Which board that unit runs was not reported, so it is not known which of the four tokens carried it — see BACKLOG. Fan, panel light, pet filter, HEPA filter, air quality, PM10/2.5/1.0, CO2 where the board reports it, periodic air sensing with its last grade and what it triggers |
 | Dehumidifier (`DHM`) | Unverified. Humidity, target humidity (writable), filter, panel display and water-tank light (both writable, on the revision that reports them) |
-| Oven, range, microwave (`OVEN/RANGE/MICROWAVE`) | Unverified. Operation state, **stop the programme** (stop only — the reference gives this family no start or pause), mode, cavity and target temperature, door — **no heat control**. A gas range also shows **which burners are lit**, decoded only on a board that declares gas. A newer microwave board (`-0102X`) answers none of the older family's resources and is read through its own: door, child lock, mode, cook time and the vent hood's grease filter |
+| Oven, range, microwave (`OVEN/RANGE/MICROWAVE`) | Unverified. Operation state, **stop the programme** (stop only — the reference gives this family no start or pause), mode, cavity and target temperature, door — **no heat control**. A gas range also shows **which burners are lit**, decoded only on a board that declares gas. A newer board generation (`-0102X` microwaves, `-0103X` ranges) answers none of the older family's resources and is read through its own: door, child lock, mode, cook time, cavity and target temperature, lamp, Smart Control, the panel's beep, clock auto-sync and 12-hour energy saving, and the vent hood's grease filter |
 | Gas cooktop (`CT`) | Unverified. Power state, whether a burner is in use — **read-only** |
 | Water purifier (`WATERPURIFIER`) | Unverified against hardware, but read against the reference's dump of a real one. Operation state, filter-door contact, three locks — hot water, cold water and buttons (writable) — water filter, cumulative water |
 | Clean station (`VSKR`, `VSWW`) | Unverified against hardware, but read against the reference's dump of a real one. Operation state, dust-bag counter and full warning, auto empty and auto close (both writable) |
 | AirDresser (`DF`) | Unverified against hardware, but read against the reference's dumps of three real ones. Operation state, **start / pause / stop the cycle**, progress, remaining time, sanitize (writable), wrinkle prevent (writable) |
 | Microfiber filter (`AMF`) | Unverified. The lint filter on a washer's drain. Machine state, its own filter activity vocabulary, water-filter usage and a blockage alarm — plumbed like a washer, but with no washer behind it |
 | Air monitor (`ASM`) | Unverified. Air quality, PM10/2.5/1.0, CO2, humidity, battery — sensors only, the board has no power resource |
-| Heat pump (`EHS`) | Unverified. Power, leaving-water temperature and setpoint. Zone mode, the hot-water loop and away mode need capabilities of their own — see BACKLOG |
+| Heat pump (`EHS`) | Unverified. Power, leaving-water temperature and setpoint, and six readings decoded from the cycle log — flow and return water temperature, flow rate, circulation pump speed, compressor frequency and, where the board has no better sensor, outdoor temperature. Zone mode, the hot-water loop and away mode need capabilities of their own — see BACKLOG |
 
 **What "unverified" means**: the field names, resource paths and writability were taken
 from the reference's definitions, and routing and manifest consistency are covered by
@@ -578,7 +578,7 @@ python3 -m venv .venv
 ## Languages
 
 Korean and English are supported, and **any language not declared falls back to
-English** — app name, description, 103 capabilities, 169 Flow cards, settings labels,
+English** — app name, description, 114 capabilities, 180 Flow cards, settings labels,
 three webviews and device names alike. `tests/test_i18n.py` enforces it, because adding
 a Korean string and forgetting the English one is invisible to whoever wrote it.
 
