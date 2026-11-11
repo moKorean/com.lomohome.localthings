@@ -1,0 +1,11 @@
+{
+  "type": "boolean",
+  "title": {
+    "en": "12-hour energy saving",
+    "ko": "12시간 절전"
+  },
+  "getable": true,
+  "setable": false,
+  "uiComponent": "sensor",
+  "icon": "/assets/capabilities/mdi-leaf.svg"
+}

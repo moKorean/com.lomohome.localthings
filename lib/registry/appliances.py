@@ -1173,6 +1173,56 @@ def _mw2_filter_alarm(rep, _resources):
     return False if seen else None
 
 
+HREF_MW2_SETTINGS = "/oven/settings/status/vs/0"
+
+
+def _mw2_cavity_unit(rep) -> str:
+    temperature = rep.get("temperature")
+    unit = temperature.get("unit") if isinstance(temperature, dict) else None
+    return str(unit or "celsius").strip().lower()[:1]
+
+
+def _mw2_setpoint(rep):
+    """`temperature.target`, with 0 meaning no setpoint.
+
+    The same rule `_oven_temperature` applies to the older generation's
+    `desired`: every idle dump reads 0, and an oven set to 0 degrees is not a
+    thing any of these boards can express.
+    """
+    temperature = rep.get("temperature")
+    if not isinstance(temperature, dict):
+        return None
+    value = as_float(temperature.get("target"))
+    if value is None or value == 0:
+        return None
+    return round((value - 32) * 5 / 9, 1) if _mw2_cavity_unit(rep) == "f" else value
+
+
+def _mw2_cavity(rep, _resources):
+    """`temperature.current`, with the idle floor taken out.
+
+    Same two-part test as `_oven_temperature`, against the same floors and for
+    the same reason: the OS70H30E range sits at 175 °F while Ready, which is
+    Bake's own minimum rather than a reading of the cavity. The setpoint has to
+    be absent *and* the value at or below the floor, so the tail of a cool-down
+    survives and a KeepWarm cook at exactly 175 °F is not silenced.
+    """
+    temperature = rep.get("temperature")
+    if not isinstance(temperature, dict):
+        return None
+    value = as_float(temperature.get("current"))
+    if value is None or value == 0:
+        return None
+    unit = _mw2_cavity_unit(rep)
+    if _mw2_setpoint(rep) is None and value <= {"f": 175.0, "c": 80.0}.get(unit, 0.0):
+        return None
+    return round((value - 32) * 5 / 9, 1) if unit == "f" else value
+
+
+def _mw2_reports(field: str):
+    return lambda rep, _resources: field in rep
+
+
 def _microwave_gen2_specs():
     return (
         Spec("localthings_operation_state", HREF_MW2_STATUS,
@@ -1181,6 +1231,33 @@ def _microwave_gen2_specs():
         Spec("localthings_child_lock_state", HREF_MW2_STATUS, _mw2_flag("childLock")),
         Spec("alarm_contact", HREF_MW2_STATUS, _mw2_door_open),
         Spec("localthings_remaining_minutes", HREF_MW2_STATUS, _mw2_remaining_minutes),
+        # The cavity pair. Declared after `_oven_specs()` in every registry that
+        # takes both, so on a board serving `/temperatures/vs/0` as well the OCF
+        # form still wins — `Registry.spec_for` returns the first spec that
+        # applies, and no dump in the corpus carries both anyway.
+        Spec("measure_temperature.cavity", HREF_MW2_STATUS, _mw2_cavity,
+             exists=_mw2_reports("temperature"),
+             titles={"en": "Cavity", "ko": "내부"}),
+        Spec("localthings_target_temperature_readonly", HREF_MW2_STATUS,
+             lambda rep, _r: _mw2_setpoint(rep),
+             exists=_mw2_reports("temperature"),
+             titles={"en": "Set temperature", "ko": "설정 온도"}),
+        Spec("localthings_oven_lamp", HREF_MW2_STATUS, _mw2_flag("lamp"),
+             exists=_mw2_reports("lamp")),
+        Spec("localthings_smart_control", HREF_MW2_STATUS, _mw2_flag("smartControl"),
+             exists=_mw2_reports("smartControl")),
+        # The panel settings resource. Read-only like the rest of this
+        # generation: `availableSettingList` names these as settings, which is a
+        # list of features and not a write contract — the induction cooktop
+        # advertised three remote features and answers 4.05 to every write.
+        Spec("localthings_beep", HREF_MW2_SETTINGS, _mw2_flag("beepSound"),
+             exists=_mw2_reports("beepSound")),
+        Spec("localthings_display_time_sync", HREF_MW2_SETTINGS,
+             _mw2_flag("displayTimeAutoSync"),
+             exists=_mw2_reports("displayTimeAutoSync")),
+        Spec("localthings_energy_saving", HREF_MW2_SETTINGS,
+             _mw2_flag("12HourEnergySaving"),
+             exists=_mw2_reports("12HourEnergySaving")),
         Spec("localthings_alarm_filter", HREF_MW2_HOOD, _mw2_filter_alarm,
              titles={"en": "Grease filter", "ko": "기름 필터"}),
     )
@@ -1285,11 +1362,17 @@ def _mask_burner_specs():
                _mask_any_active, exists=_mask_decodable)
 
 
+# The same DAWIT 3.0 generation turns up on a range: the OS70H30E
+# (TP1X_DA-KS-RANGE-0103X, reference #726) reports its oven half only as
+# `/oven/status/vs/0` and `/oven/settings/status/vs/0`, with no `/oven/vs/0`,
+# `/mode/vs/0`, `/temperatures/vs/0` or `/doors/vs/0` behind it. Before this it
+# bound the cooktop and nothing of the oven at all.
 RANGE = Registry(
     name="range", device_class="other",
     titles={"en": "Samsung Range", "ko": "삼성 레인지"},
     specs=(*shared.POWER, *shared.UNIVERSAL, *shared.OPERATIONAL,
-             *shared.CYCLE_STOP_ONLY, *_oven_specs(), *_mask_burner_specs()),
+             *shared.CYCLE_STOP_ONLY, *_oven_specs(), *_microwave_gen2_specs(),
+             *_mask_burner_specs()),
 )
 
 # --- gas cooktop ----------------------------------------------------------

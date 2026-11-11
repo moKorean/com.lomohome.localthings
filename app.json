@@ -1431,6 +1431,28 @@
       },
       {
         "title": {
+          "en": "Beep !{{is|is not}} on",
+          "ko": "알림음 !{{켜짐|꺼짐}}"
+        },
+        "titleFormatted": {
+          "en": "Beep !{{is|is not}} on",
+          "ko": "알림음 !{{켜짐|꺼짐}}"
+        },
+        "hint": {
+          "en": "Checks the value as the appliance last reported it.",
+          "ko": "가전이 마지막으로 보고한 값을 확인합니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_beep"
+          }
+        ],
+        "id": "beep_is"
+      },
+      {
+        "title": {
           "en": "A burner is on !{{is|is not}} on",
           "ko": "버너 사용 중 !{{켜짐|꺼짐}}"
         },
@@ -1931,6 +1953,28 @@
           }
         ],
         "id": "dish_cycle_is"
+      },
+      {
+        "title": {
+          "en": "Clock auto-sync !{{is|is not}} on",
+          "ko": "시계 자동 동기화 !{{켜짐|꺼짐}}"
+        },
+        "titleFormatted": {
+          "en": "Clock auto-sync !{{is|is not}} on",
+          "ko": "시계 자동 동기화 !{{켜짐|꺼짐}}"
+        },
+        "hint": {
+          "en": "Checks the value as the appliance last reported it.",
+          "ko": "가전이 마지막으로 보고한 값을 확인합니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_display_time_sync"
+          }
+        ],
+        "id": "display_time_sync_is"
       },
       {
         "title": {
@@ -2841,6 +2885,28 @@
       },
       {
         "title": {
+          "en": "12-hour energy saving !{{is|is not}} on",
+          "ko": "12시간 절전 !{{켜짐|꺼짐}}"
+        },
+        "titleFormatted": {
+          "en": "12-hour energy saving !{{is|is not}} on",
+          "ko": "12시간 절전 !{{켜짐|꺼짐}}"
+        },
+        "hint": {
+          "en": "Checks the value as the appliance last reported it.",
+          "ko": "가전이 마지막으로 보고한 값을 확인합니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_energy_saving"
+          }
+        ],
+        "id": "energy_saving_is"
+      },
+      {
+        "title": {
           "en": "Fan speed !{{is|is not}} [[value]]",
           "ko": "풍량 [[value]] !{{임|아님}}"
         },
@@ -3680,6 +3746,28 @@
           }
         ],
         "id": "operation_state_is"
+      },
+      {
+        "title": {
+          "en": "Oven lamp !{{is|is not}} on",
+          "ko": "오븐 조명 !{{켜짐|꺼짐}}"
+        },
+        "titleFormatted": {
+          "en": "Oven lamp !{{is|is not}} on",
+          "ko": "오븐 조명 !{{켜짐|꺼짐}}"
+        },
+        "hint": {
+          "en": "Checks the value as the appliance last reported it.",
+          "ko": "가전이 마지막으로 보고한 값을 확인합니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_oven_lamp"
+          }
+        ],
+        "id": "oven_lamp_is"
       },
       {
         "title": {
@@ -8684,6 +8772,17 @@
       "uiComponent": "toggle",
       "icon": "/assets/capabilities/mdi-water-outline.svg"
     },
+    "localthings_beep": {
+      "type": "boolean",
+      "title": {
+        "en": "Beep",
+        "ko": "알림음"
+      },
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "icon": "/assets/capabilities/mdi-volume-high.svg"
+    },
     "localthings_burner_any_active": {
       "type": "boolean",
       "title": {
@@ -9056,6 +9155,17 @@
       "setable": true,
       "uiComponent": "toggle",
       "icon": "/assets/capabilities/mdi-led-on.svg"
+    },
+    "localthings_display_time_sync": {
+      "type": "boolean",
+      "title": {
+        "en": "Clock auto-sync",
+        "ko": "시계 자동 동기화"
+      },
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "icon": "/assets/capabilities/mdi-timer-outline.svg"
     },
     "localthings_drum_clean_remaining": {
       "type": "number",
@@ -9821,6 +9931,17 @@
         }
       ]
     },
+    "localthings_energy_saving": {
+      "type": "boolean",
+      "title": {
+        "en": "12-hour energy saving",
+        "ko": "12시간 절전"
+      },
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "icon": "/assets/capabilities/mdi-leaf.svg"
+    },
     "localthings_fan_mode": {
       "type": "enum",
       "title": {
@@ -10351,6 +10472,17 @@
       "min": 0,
       "icon": "/assets/capabilities/mdi-counter.svg",
       "insights": true
+    },
+    "localthings_oven_lamp": {
+      "type": "boolean",
+      "title": {
+        "en": "Oven lamp",
+        "ko": "오븐 조명"
+      },
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "icon": "/assets/capabilities/mdi-lightbulb-outline.svg"
     },
     "localthings_oven_mode": {
       "type": "string",
