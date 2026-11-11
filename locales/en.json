@@ -19,6 +19,7 @@
     "settings_conflict": "The air conditioner would not hold these together: {settings}. Each was applied and then changed back by the appliance, which usually means the combination is one it does not allow — AI Comfort and a specific comfort mode, for instance. Pick one of them.",
     "probe_no_response": "Nothing answered at {host}. Check the address, and note that appliances older than about 2022 are cloud-only and cannot be controlled locally.",
     "probe_no_dtls_server": "{host} is reachable but has no local control port open. This is usually cloud-only firmware rather than a wrong address.",
+    "probe_legacy_bridge": "{host} is a Samsung appliance, but it uses the older local interface (a bridge on port 8888) that this app does not support yet. Models from roughly 2018 to 2022 use it. If you have one and would like it supported, say so on the app's community thread — the work needs somebody with the hardware to test against.",
     "probe_handshake_refused": "The appliance at {host} would not start a connection. That normally means it is still holding the previous one — wait a minute or two and try again.",
     "probe_certificate_refused": "The appliance at {host} connected but then answered nothing, which is what it does when it will not accept the client certificate. Issue a fresh one in Settings → Apps → SmartThings Local and try again."
   },

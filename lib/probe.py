@@ -72,6 +72,34 @@ _ERR_NO_RESPONSE = "error.probe_no_response"
 _ERR_NO_DTLS = "error.probe_no_dtls_server"
 _ERR_HANDSHAKE = "error.probe_handshake_refused"
 _ERR_CERTIFICATE = "error.probe_certificate_refused"
+_ERR_LEGACY_BRIDGE = "error.probe_legacy_bridge"
+
+# Samsung's 2018-2022 appliances serve no OCF at all — a small token-authenticated
+# REST bridge on this TCP port instead, and nothing on the DTLS range. See
+# docs/BACKLOG.md for what porting it would take; this app does not speak it.
+LEGACY_BRIDGE_PORT = 8888
+
+
+def legacy_bridge_open(host: str, timeout: float = LIVENESS_PROBE_TIMEOUT_S) -> bool:
+    """Whether `host` serves the legacy bridge instead of OCF.
+
+    Only ever asked after the DTLS sweep has come up empty, and only to pick the
+    message. Both failures the sweep can produce currently tell the user their
+    appliance is "probably cloud-only firmware", which for one of these is
+    **actively wrong**: it has a local interface, a good one, that this app does
+    not speak. Saying so costs one TCP connect on a path that has already given
+    up, and turns a dead end into an answer — and into the only way a reporter
+    for that family is ever going to find us.
+
+    A positive is strong: 8888 is not a port anything else on a home network
+    opens by convention. A negative means nothing either way, so the caller
+    falls through to the message it would have used.
+    """
+    try:
+        with socket.create_connection((host, LEGACY_BRIDGE_PORT), timeout=timeout):
+            return True
+    except OSError:
+        return False
 
 
 def local_source_port(host: str, attempt: int = 0) -> int:
@@ -239,6 +267,23 @@ def _read_device_types(session) -> tuple:
     return tuple(str(t) for t in types if str(t) != "oic.wk.d")
 
 
+def _no_port_failure(host: str, fallback_key: str, detail: str) -> ProbeFailure:
+    """The failure for a host that offered no DTLS port, named correctly.
+
+    Both of the sweep's dead ends say the same thing today — reachable or not,
+    probably cloud-only firmware. That is right for most of them and wrong for
+    the one family that has a local interface we do not implement, so the bridge
+    is checked before either message is chosen. Only on this path: an appliance
+    that answers DTLS is never asked, so nothing pays for it.
+    """
+    if legacy_bridge_open(host):
+        return ProbeFailure(
+            _ERR_LEGACY_BRIDGE, host=host,
+            detail=f"{detail}; TCP {LEGACY_BRIDGE_PORT} is open — legacy bridge",
+        )
+    return ProbeFailure(fallback_key, host=host, detail=detail)
+
+
 def probe(host: str, leaf_cert_pem: str, leaf_key_pem: str) -> dict:
     """Find the live port and read /device/0. Blocking; run in an executor.
 
@@ -248,10 +293,10 @@ def probe(host: str, leaf_cert_pem: str, leaf_key_pem: str) -> dict:
     nominated, rescued = sweep_ports(host)
     candidates = nominated + rescued
     if not candidates:
-        raise ProbeFailure(
-            _ERR_NO_RESPONSE, host=host,
-            detail=f"No live DTLS port on {host} in "
-                   f"{PROBE_PORT_RANGE[0]}-{PROBE_PORT_RANGE[-1]}",
+        raise _no_port_failure(
+            host, _ERR_NO_RESPONSE,
+            f"No live DTLS port on {host} in "
+            f"{PROBE_PORT_RANGE[0]}-{PROBE_PORT_RANGE[-1]}",
         )
 
     def attempt_once(port: int, source_attempt: int) -> dict:
@@ -315,10 +360,10 @@ def probe(host: str, leaf_cert_pem: str, leaf_key_pem: str) -> dict:
                 if not peer_holds_stale_session(exc):
                     break
     if last_error is None and unreachable:
-        raise ProbeFailure(
-            _ERR_NO_DTLS, host=host,
-            detail=f"No DTLS server on {host} in "
-                   f"{PROBE_PORT_RANGE[0]}-{PROBE_PORT_RANGE[-1]}",
+        raise _no_port_failure(
+            host, _ERR_NO_DTLS,
+            f"No DTLS server on {host} in "
+            f"{PROBE_PORT_RANGE[0]}-{PROBE_PORT_RANGE[-1]}",
         )
     # `answered` is what separates the two: a handshake that completed on some port
     # and then produced nothing usable points at the certificate, and that is worth

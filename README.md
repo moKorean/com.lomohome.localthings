@@ -49,7 +49,10 @@ your Wi-Fi network name — are redacted; the resource paths and field names nee
 the type are kept.
 
 Older firmware that only exposes `8888/tcp` (roughly 2018–2022, token-based HTTPS) is
-out of scope.
+out of scope — but **pairing now says so by name** rather than guessing at cloud-only
+firmware. When the port sweep finds nothing, that one TCP port is checked, and an open
+one gets its own message. The transport was measured as portable on 2026-11-11 and the
+work still waits on somebody with the hardware; `docs/BACKLOG.md` has both.
 
 To check an appliance:
 

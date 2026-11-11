@@ -157,6 +157,10 @@ def test_when_every_port_is_ruled_out_nothing_is_handshaked(monkeypatch):
 
     monkeypatch.setattr(probe, "sweep_ports", lambda *a, **k: ([49153, 49154], []))
     monkeypatch.setattr(probe, "speaks_dtls", lambda host, port, **k: False)
+    # The dead end now also asks whether this host serves the legacy 8888
+    # bridge, to pick between two messages. Stubbed so the test does not spend
+    # a real connect timeout on an address that is not there.
+    monkeypatch.setattr(probe, "legacy_bridge_open", lambda host, **k: False)
 
     def _never(*args, **kwargs):
         raise AssertionError("a handshake was attempted")
