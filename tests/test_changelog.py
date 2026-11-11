@@ -36,6 +36,11 @@ LANGUAGES = ("en", "ko")
 # legitimately travel into the next entry. Each needs the reason, because the whole
 # value of the set is that it is checkable.
 UNPROMOTED = {
+    "1.5.0": (
+        "build 27 uploaded 2026-11-07, never promoted; the store page still showed "
+        "1.3.0 on 2026-11-11 and the owner chose to go straight to 1.6.0, so its "
+        "news — which already carries 1.4.0's — travels into 1.6.0"
+    ),
     "1.4.0": (
         "build 26 uploaded 2026-11-06, never promoted; the store page still showed "
         "1.3.0 on 2026-11-07 and the owner chose to skip it, so its news travels "
