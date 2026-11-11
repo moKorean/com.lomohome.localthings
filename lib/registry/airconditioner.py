@@ -10,6 +10,7 @@ the resource itself. Echoing the untouched fields back is what the reference
 explicitly avoids.
 """
 
+from ..resources import read_identity
 from . import shared
 from .base import Registry, Spec, ValueNotAdvertised, as_float, as_int, first_item
 
@@ -447,6 +448,26 @@ def _write_airpurify(value, _rep):
     return ["option", "airpurify", "vs", "0"], {FIELD_MODES: "On" if value else "Off"}
 
 
+# The ARTIK051_PRAC generation serves `/option/airpurify/vs/0` and refuses every
+# write to it (reference #747), and the AR09TXFCAWKNEU manual for a unit of that
+# family says outright that Purify is not one of its modes — what the phone app
+# labels Purify on these boards is Wind. So the resource is there, it reads, and
+# the switch it looks like an invitation to build does nothing.
+#
+# This is the third time a board has answered a write it had no intention of
+# honouring, which is why the gate removes the control rather than leaving it to
+# fail quietly: a toggle that springs back is worse than no toggle. Narrow on
+# purpose — matched on the modelNum head alone, so only the family the refusal
+# was measured on loses it, and the eight other AC dumps that carry the resource
+# keep their switch.
+_PURIFY_REFUSING_MODEL = "ARTIK051_PRAC"
+
+
+def _has_airpurify(_rep, resources) -> bool:
+    model = str(read_identity(resources).get("model") or "").upper()
+    return not model.startswith(_PURIFY_REFUSING_MODEL)
+
+
 # Third copy of the same wrong division. The value it produced for the verified unit
 # was 56% for a filter the appliance itself reports as `wash`.
 _read_filter_usage = shared._filter_percent
@@ -688,7 +709,8 @@ REGISTRY = Registry(
              shared.flag("status")),
         Spec("measure_power", HREF_ENERGY, _read_power_watts),
         Spec("meter_power", HREF_ENERGY, _read_meter_kwh),
-        Spec("localthings_air_purify", HREF_AIRPURIFY, _read_airpurify, _write_airpurify),
+        Spec("localthings_air_purify", HREF_AIRPURIFY, _read_airpurify, _write_airpurify,
+             exists=_has_airpurify),
         Spec("localthings_filter_usage", HREF_AIR_FILTER, _read_filter_usage),
         Spec("localthings_alarm_filter", HREF_AIR_FILTER, _read_filter_alarm),
 
