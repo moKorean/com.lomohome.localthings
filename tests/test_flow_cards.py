@@ -53,7 +53,7 @@ def test_every_setable_capability_has_an_action(capabilities):
     actions = cards("actions")
     missing = [
         name for name, definition in capabilities.items()
-        if definition.get("setable") and f"set_{name[len('localthings_'):]}" not in actions
+        if definition.get("setable") and f"set_{name.removeprefix('localthings_')}" not in actions
         and name != "localthings_display_light"   # hand-written as `set_light`
     ]
     assert not missing, f"setable but not actionable: {missing}"
@@ -63,7 +63,7 @@ def test_every_capability_has_a_condition(capabilities):
     conditions = cards("conditions")
     missing = [
         name for name, definition in capabilities.items()
-        if f"{name[len('localthings_'):]}_is" not in conditions
+        if f"{name.removeprefix('localthings_')}_is" not in conditions
         and name != "localthings_display_light"   # hand-written as `light_is_on`
     ]
     assert not missing, f"no condition card: {missing}"
@@ -1089,3 +1089,18 @@ def test_the_three_settings_a_user_asked_to_watch_have_triggers():
             f"compare the new value against what it last set"
         )
 
+
+
+@pytest.mark.asyncio
+async def test_measure_alias_condition_is_registered_and_reads_its_own_value(driver_instance):
+    from types import SimpleNamespace
+
+    driver_instance.homey = SimpleNamespace(manifest={
+        "capabilities": {"measure_remaining_minutes": {"type": "number"}}})
+    listeners = {(kind, card): listener
+                 for kind, card, listener in driver_instance._flow_cards()}
+    listener = listeners[("condition", "measure_remaining_minutes_is")]
+    device = SimpleNamespace(get_capability_value=lambda capability: {
+        "measure_remaining_minutes": 44}[capability])
+    assert await listener({"device": device, "value": 40}) is True
+    assert await listener({"device": device, "value": 50}) is False

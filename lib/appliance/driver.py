@@ -68,7 +68,7 @@ class ApplianceDriver(driver.Driver):
         yield ("action", "set_ac_settings", self._on_set_ac_settings)
 
         for capability in self._custom_capabilities():
-            stem = capability[len("localthings_"):]
+            stem = capability.removeprefix("localthings_")
             yield ("condition", f"{stem}_is", self._condition_for(capability))
             yield ("action", f"set_{stem}", self._action_for(capability))
 
@@ -85,7 +85,7 @@ class ApplianceDriver(driver.Driver):
         except Exception as exc:
             self.log(f"reading capabilities from the manifest failed: {exc}")
             return []
-        return [c for c in declared if c.startswith("localthings_")]
+        return list(declared)
 
     # Generic listeners. Each closes over one capability id, so a card knows which
     # value it reads or writes without the listener having to be written out.

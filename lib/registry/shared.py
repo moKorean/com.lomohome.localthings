@@ -432,6 +432,12 @@ OPERATIONAL = (
     Spec("localthings_remaining_minutes", HREF_OPERATIONAL, _remaining_minutes),
 )
 
+# Homey only offers numeric measure_/meter_ capabilities as tile indicators.
+# Keep the original capability (and its Flows/Insights) alongside this alias.
+LAUNDRY_REMAINING_INDICATOR = (
+    Spec("measure_remaining_minutes", HREF_OPERATIONAL, _remaining_minutes),
+)
+
 # --- cycle control -------------------------------------------------------
 # Starting, pausing and stopping a program, by writing the state field the four
 # readings above only read. Taken from the reference field for field: its
