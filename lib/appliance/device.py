@@ -35,6 +35,7 @@ from lib.const import (
     UNAVAILABLE_AFTER_FAILURES,
     WRITE_SETTLE_S,
 )
+from lib.registry import fridge_doors
 from lib.registry.base import ValueNotAdvertised
 from lib.resources import read_serial
 from lib.session import Session
@@ -179,6 +180,9 @@ class ApplianceDevice(device.Device):
         # the loop's transient set can be garbage-collected mid-flight, which would
         # silently drop a pushed update.
         self._tasks: set = set()
+        self._door_timer = None
+        self._door_updates = {}
+        self._door_task = None
 
         # Push state. Starts in poll mode; observe is entered only once enough
         # initial notifications have actually arrived.
@@ -227,6 +231,10 @@ class ApplianceDevice(device.Device):
         self._poll_task = asyncio.create_task(self._poll_loop())
 
     async def on_uninit(self) -> None:
+        self._door_updates = None  # Discard any GET result still in flight.
+        if self._door_timer is not None:
+            self._door_timer.cancel()
+            self._door_timer = None
         if self._poll_task is not None:
             self._poll_task.cancel()
         await self._session.close()
@@ -276,10 +284,14 @@ class ApplianceDevice(device.Device):
         reads.
         """
         own = set(self.get_capabilities())
-        return sorted({
+        hrefs = {
             spec.href for spec in self._registry.specs
             if spec.capability in own and spec.href in self._resources
-        })
+        }
+        if fridge_doors.matches(self._resources):
+            hrefs.discard(fridge_doors.AGGREGATE)
+            hrefs.update(fridge_doors.SOURCES)
+        return sorted(hrefs)
 
     async def _try_observe(self) -> None:
         """Subscribe, then let a later poll judge whether push actually works.
@@ -443,16 +455,66 @@ answers none is a different case, and the living-room air conditioner here
             # Mid-settle after a write: the device may still be reporting the old
             # value, which would undo the optimistic one.
             return
+        if href in fridge_doors.SOURCES and fridge_doors.matches(self._resources):
+            state = fridge_doors.open_state(rep)
+            if state is None or self._door_updates is None:
+                return
+            # Stage separately so a partial door update cannot leak into the cache.
+            self._door_updates[href] = state
+            if self._door_timer is not None:
+                self._door_timer.cancel()
+            self._door_timer = asyncio.get_running_loop().call_later(
+                fridge_doors.DEBOUNCE_S, self._flush_doors)
+            return
         if _replaces_on_notify(href):
             self._resources[href] = dict(rep)
         else:
             merged = self._resources.setdefault(href, {})
             merged.update(rep)
+        self._start_apply(href)
+
+    def _flush_doors(self) -> None:
+        self._door_timer = None
+        if self._door_task is None and self._door_updates:
+            self._door_task = self._track_task(self._publish_doors())
+
+    async def _publish_doors(self) -> None:
+        try:
+            if not self._door_updates or self._door_timer is not None:
+                return  # Shutdown or a new notification landed before the task ran.
+            updates, self._door_updates = self._door_updates, {}
+            if updates.keys() != fridge_doors.SOURCES:
+                # A one-source push can be legitimate or half of a pair. One
+                # direct read of both raw states resolves that ambiguity.
+                path = fridge_doors.AGGREGATE.strip("/").split("/")
+                rep = await self._session.read_resource(path)
+                updates = fridge_doors.aggregate_states(rep)
+                if updates is None:
+                    self.log("door verification GET did not return both raw states")
+                    return
+            if (self._door_updates is None or self._door_updates
+                    or not fridge_doors.matches(self._resources)):
+                return  # Stopped, superseded by newer push, or surface changed.
+            for href, state in updates.items():
+                self._resources[href]["openState"] = state
+            await self._apply_href(fridge_doors.COOLER)
+        except Exception as exc:
+            self.log(f"door verification failed: {exc}")
+        finally:
+            self._door_task = None
+            if self._door_timer is None and self._door_updates:
+                self._flush_doors()
+
+    def _track_task(self, coroutine):
         # A callback, not a coroutine the loop awaits — so the task is kept in a set
         # and discarded on completion rather than left unreferenced.
-        task = asyncio.create_task(self._apply_href(href))
+        task = asyncio.create_task(coroutine)
         self._tasks.add(task)
         task.add_done_callback(self._tasks.discard)
+        return task
+
+    def _start_apply(self, href: str) -> None:
+        self._track_task(self._apply_href(href))
 
     async def _apply_href(self, href: str) -> None:
         if self._registry is None:
@@ -910,8 +972,20 @@ answers none is a different case, and the living-room air conditioner here
         field or a stub rep must not overwrite a good value with a wrong one.
         `only_href` limits the work to one resource, for pushed updates.
         """
+        # One snapshot for the fridge contact and combined alarm, even if a
+        # setter yields. A scheduled poll must not bypass the pending debounce.
+        doors = fridge_doors.values(resources) if fridge_doors.matches(resources) else None
         for spec in self._registry.specs:
-            if only_href is not None and spec.href != only_href:
+            is_door = doors is not None and spec.capability in fridge_doors.CAPABILITIES
+            if is_door:
+                pending = getattr(self, "_door_updates", {})
+                door_task = getattr(self, "_door_task", None)
+                if (pending is None or pending
+                        or (door_task is not None and door_task is not asyncio.current_task())):
+                    continue
+                if only_href is not None and only_href not in fridge_doors.SOURCES:
+                    continue
+            elif only_href is not None and spec.href != only_href:
                 continue
             if spec.capability not in self.get_capabilities():
                 continue
@@ -919,7 +993,7 @@ answers none is a different case, and the living-room air conditioner here
             if not rep:
                 continue
             try:
-                value = spec.read(rep, resources)
+                value = doors[spec.capability] if is_door else spec.read(rep, resources)
             except Exception as exc:
                 self.log(f"read {spec.capability} failed: {exc}")
                 continue

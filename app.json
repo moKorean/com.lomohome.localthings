@@ -369,6 +369,50 @@
       },
       {
         "title": {
+          "en": "Fridge door closed",
+          "ko": "냉장실 문 닫힘"
+        },
+        "titleFormatted": {
+          "en": "Fridge door closed",
+          "ko": "냉장실 문 닫힘"
+        },
+        "hint": {
+          "en": "Fires on a change, not on every reading that repeats the same value.",
+          "ko": "값이 바뀔 때만 실행됩니다. 같은 값을 다시 읽을 때는 실행되지 않습니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_cooler_door_open"
+          }
+        ],
+        "id": "localthings_cooler_door_open_false"
+      },
+      {
+        "title": {
+          "en": "Fridge door opened",
+          "ko": "냉장실 문 열림"
+        },
+        "titleFormatted": {
+          "en": "Fridge door opened",
+          "ko": "냉장실 문 열림"
+        },
+        "hint": {
+          "en": "Fires on a change, not on every reading that repeats the same value.",
+          "ko": "값이 바뀔 때만 실행됩니다. 같은 값을 다시 읽을 때는 실행되지 않습니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_cooler_door_open"
+          }
+        ],
+        "id": "localthings_cooler_door_open_true"
+      },
+      {
+        "title": {
           "en": "A cycle finished",
           "ko": "동작이 끝났을 때"
         },
@@ -1747,6 +1791,28 @@
           }
         ],
         "id": "convertible_mode_is"
+      },
+      {
+        "title": {
+          "en": "Fridge door !{{is|is not}} open",
+          "ko": "냉장실 문 !{{열림|닫힘}}"
+        },
+        "titleFormatted": {
+          "en": "Fridge door !{{is|is not}} open",
+          "ko": "냉장실 문 !{{열림|닫힘}}"
+        },
+        "hint": {
+          "en": "Checks the value as the appliance last reported it.",
+          "ko": "가전이 마지막으로 보고한 값을 확인합니다."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=appliance&capabilities=localthings_cooler_door_open"
+          }
+        ],
+        "id": "cooler_door_open_is"
       },
       {
         "title": {
@@ -9047,6 +9113,26 @@
       },
       "icon": "/assets/capabilities/mdi-thermometer.svg",
       "insights": false
+    },
+    "localthings_cooler_door_open": {
+      "type": "boolean",
+      "title": {
+        "en": "Fridge door",
+        "ko": "냉장실 문"
+      },
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "icon": "/assets/capabilities/mdi-fridge-outline.svg",
+      "insights": true,
+      "insightsTitleTrue": {
+        "en": "Fridge door opened",
+        "ko": "냉장실 문 열림"
+      },
+      "insightsTitleFalse": {
+        "en": "Fridge door closed",
+        "ko": "냉장실 문 닫힘"
+      }
     },
     "localthings_cycle_active": {
       "type": "boolean",
