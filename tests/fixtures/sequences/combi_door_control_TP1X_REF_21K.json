@@ -1,0 +1,347 @@
+{
+  "description": "Projection of nine user-confirmed physical positions and successful direct GETs. Model prefix TP1X_REF_21K was read from the paired Homey device settings; no full device dump is claimed. Push resource values matched the direct reads in all nine samples. Transport smartthings-local 0.1.25.",
+  "model_prefix": "TP1X_REF_21K",
+  "samples": [
+    {
+      "physical": {
+        "cooler_open": false,
+        "freezer_open": false
+      },
+      "resources": {
+        "/door/freezer/0": {
+          "state": "Close"
+        },
+        "/door/cooler/0": {
+          "state": "Close"
+        },
+        "/doors/vs/0": {
+          "0": "Close",
+          "1": "Close"
+        }
+      },
+      "push_before_get": {
+        "/door/freezer/0": {
+          "state": "Close"
+        },
+        "/door/cooler/0": {
+          "state": "Close"
+        },
+        "/doors/vs/0": {
+          "0": "Close",
+          "1": "Close"
+        }
+      },
+      "seconds": 77.39
+    },
+    {
+      "physical": {
+        "cooler_open": true,
+        "freezer_open": false
+      },
+      "resources": {
+        "/door/freezer/0": {
+          "state": "Open"
+        },
+        "/door/cooler/0": {
+          "state": "Open"
+        },
+        "/doors/vs/0": {
+          "0": "Open",
+          "1": "Open"
+        }
+      },
+      "push_before_get": {
+        "/door/freezer/0": {
+          "state": "Open"
+        },
+        "/door/cooler/0": {
+          "state": "Open"
+        },
+        "/doors/vs/0": {
+          "0": "Close",
+          "1": "Close"
+        }
+      },
+      "seconds": 90.81
+    },
+    {
+      "physical": {
+        "cooler_open": true,
+        "freezer_open": true
+      },
+      "resources": {
+        "/door/freezer/0": {
+          "state": "Close"
+        },
+        "/door/cooler/0": {
+          "state": "Open"
+        },
+        "/doors/vs/0": {
+          "0": "Close",
+          "1": "Open"
+        }
+      },
+      "push_before_get": {
+        "/door/freezer/0": {
+          "state": "Close"
+        },
+        "/door/cooler/0": {
+          "state": "Open"
+        },
+        "/doors/vs/0": {
+          "0": "Close",
+          "1": "Close"
+        }
+      },
+      "seconds": 105.44
+    },
+    {
+      "physical": {
+        "cooler_open": false,
+        "freezer_open": true
+      },
+      "resources": {
+        "/door/freezer/0": {
+          "state": "Open"
+        },
+        "/door/cooler/0": {
+          "state": "Close"
+        },
+        "/doors/vs/0": {
+          "0": "Open",
+          "1": "Close"
+        }
+      },
+      "push_before_get": {
+        "/door/freezer/0": {
+          "state": "Open"
+        },
+        "/door/cooler/0": {
+          "state": "Close"
+        },
+        "/doors/vs/0": {
+          "0": "Close",
+          "1": "Close"
+        }
+      },
+      "seconds": 116.17
+    },
+    {
+      "physical": {
+        "cooler_open": false,
+        "freezer_open": false
+      },
+      "resources": {
+        "/door/freezer/0": {
+          "state": "Close"
+        },
+        "/door/cooler/0": {
+          "state": "Close"
+        },
+        "/doors/vs/0": {
+          "0": "Close",
+          "1": "Close"
+        }
+      },
+      "push_before_get": {
+        "/door/freezer/0": {
+          "state": "Close"
+        },
+        "/door/cooler/0": {
+          "state": "Close"
+        },
+        "/doors/vs/0": {
+          "0": "Close",
+          "1": "Close"
+        }
+      },
+      "seconds": 127.77
+    },
+    {
+      "physical": {
+        "cooler_open": false,
+        "freezer_open": true
+      },
+      "resources": {
+        "/door/freezer/0": {
+          "state": "Open"
+        },
+        "/door/cooler/0": {
+          "state": "Close"
+        },
+        "/doors/vs/0": {
+          "0": "Open",
+          "1": "Close"
+        }
+      },
+      "push_before_get": {
+        "/door/freezer/0": {
+          "state": "Open"
+        },
+        "/door/cooler/0": {
+          "state": "Close"
+        },
+        "/doors/vs/0": {
+          "0": "Close",
+          "1": "Close"
+        }
+      },
+      "seconds": 139.23
+    },
+    {
+      "physical": {
+        "cooler_open": true,
+        "freezer_open": true
+      },
+      "resources": {
+        "/door/freezer/0": {
+          "state": "Close"
+        },
+        "/door/cooler/0": {
+          "state": "Open"
+        },
+        "/doors/vs/0": {
+          "0": "Close",
+          "1": "Open"
+        }
+      },
+      "push_before_get": {
+        "/door/freezer/0": {
+          "state": "Close"
+        },
+        "/door/cooler/0": {
+          "state": "Open"
+        },
+        "/doors/vs/0": {
+          "0": "Close",
+          "1": "Close"
+        }
+      },
+      "seconds": 149.84
+    },
+    {
+      "physical": {
+        "cooler_open": true,
+        "freezer_open": false
+      },
+      "resources": {
+        "/door/freezer/0": {
+          "state": "Open"
+        },
+        "/door/cooler/0": {
+          "state": "Open"
+        },
+        "/doors/vs/0": {
+          "0": "Open",
+          "1": "Open"
+        }
+      },
+      "push_before_get": {
+        "/door/freezer/0": {
+          "state": "Open"
+        },
+        "/door/cooler/0": {
+          "state": "Open"
+        },
+        "/doors/vs/0": {
+          "0": "Close",
+          "1": "Close"
+        }
+      },
+      "seconds": 160.28
+    },
+    {
+      "physical": {
+        "cooler_open": false,
+        "freezer_open": false
+      },
+      "resources": {
+        "/door/freezer/0": {
+          "state": "Close"
+        },
+        "/door/cooler/0": {
+          "state": "Close"
+        },
+        "/doors/vs/0": {
+          "0": "Close",
+          "1": "Close"
+        }
+      },
+      "push_before_get": {
+        "/door/freezer/0": {
+          "state": "Close"
+        },
+        "/door/cooler/0": {
+          "state": "Close"
+        },
+        "/doors/vs/0": {
+          "0": "Close",
+          "1": "Close"
+        }
+      },
+      "seconds": 171.12
+    }
+  ],
+  "notifications": [
+    {
+      "seconds": 86.5,
+      "path": "/door/freezer/0",
+      "state": "Open"
+    },
+    {
+      "seconds": 86.5,
+      "path": "/door/cooler/0",
+      "state": "Open"
+    },
+    {
+      "seconds": 99.62,
+      "path": "/door/freezer/0",
+      "state": "Close"
+    },
+    {
+      "seconds": 110.14,
+      "path": "/door/freezer/0",
+      "state": "Open"
+    },
+    {
+      "seconds": 111.78,
+      "path": "/door/cooler/0",
+      "state": "Close"
+    },
+    {
+      "seconds": 121.93,
+      "path": "/door/freezer/0",
+      "state": "Close"
+    },
+    {
+      "seconds": 134.12,
+      "path": "/door/freezer/0",
+      "state": "Open"
+    },
+    {
+      "seconds": 144.04,
+      "path": "/door/cooler/0",
+      "state": "Open"
+    },
+    {
+      "seconds": 146.27,
+      "path": "/door/freezer/0",
+      "state": "Close"
+    },
+    {
+      "seconds": 153.75,
+      "path": "/door/freezer/0",
+      "state": "Open"
+    },
+    {
+      "seconds": 165.92,
+      "path": "/door/freezer/0",
+      "state": "Close"
+    },
+    {
+      "seconds": 166.86,
+      "path": "/door/cooler/0",
+      "state": "Close"
+    }
+  ]
+}

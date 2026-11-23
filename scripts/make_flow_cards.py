@@ -52,6 +52,7 @@ HAND_WRITTEN = {"localthings_display_light"}
 # automation off for a while before taking back over. The three air-conditioner
 # settings below are the ones that request named.
 EVENT_LIKE = {
+    "localthings_cooler_door_open",
     "localthings_alarm_hot_surface",
     "localthings_alarm_dustbag",
     "localthings_safety_shutoff",
@@ -170,6 +171,8 @@ def condition_card(capability: str, definition: dict) -> dict | None:
     unit = (definition.get("units") or {}).get("en") or ""
     if kind == "boolean":
         title = {"en": f"{en} !{{{{is|is not}}}} on", "ko": f"{ko} !{{{{켜짐|꺼짐}}}}"}
+        if capability.endswith("_door_open"):
+            title = {"en": f"{en} !{{{{is|is not}}}} open", "ko": f"{ko} !{{{{열림|닫힘}}}}"}
         args = [device_arg(capability)]
     elif kind == "number":
         suffix = f" {unit}" if unit else ""
@@ -220,6 +223,9 @@ def trigger_cards(capability: str, definition: dict) -> dict:
             else {"en": f"{en} turned on", "ko": f"{ko} 켜짐"}
         off = {"en": f"{en} cleared", "ko": f"{ko} 해제"} if alarm \
             else {"en": f"{en} turned off", "ko": f"{ko} 꺼짐"}
+        if capability.endswith("_door_open"):
+            on = {"en": f"{en} opened", "ko": f"{ko} 열림"}
+            off = {"en": f"{en} closed", "ko": f"{ko} 닫힘"}
         return {
             f"{capability}_true": _trigger(capability, definition, on),
             f"{capability}_false": _trigger(capability, definition, off),

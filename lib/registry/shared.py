@@ -12,6 +12,7 @@ and presence-gated: a given board carries one or the other, so only one binds.
 """
 
 from ..resources import is_stub_rep
+from . import fridge_doors
 from .base import Spec, as_float, as_int
 
 # --- helpers ---------------------------------------------------------------
@@ -629,6 +630,8 @@ def _open_states(resources) -> list:
 
 def read_any_door_open(_rep, resources):
     """True when any door this appliance reports is open."""
+    if fridge_doors.matches(resources):
+        return fridge_doors.values(resources)["alarm_contact"]
     states = _open_states(resources)
     if not states:
         return None
@@ -657,6 +660,11 @@ DOORS = (
     Spec("alarm_contact", "/doors/vs/0", read_any_door_open),
     Spec("alarm_contact", "/door/onedoorfreezer/vs/0", read_any_door_open,
          exists=lambda _rep, resources: "/doors/vs/0" not in resources),
+)
+
+COMBI_DOORS = (
+    Spec(fridge_doors.COOLER_CAP, fridge_doors.COOLER, fridge_doors.read_cooler,
+         exists=lambda _rep, resources: fridge_doors.matches(resources)),
 )
 
 

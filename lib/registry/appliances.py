@@ -642,6 +642,7 @@ REFRIGERATOR = Registry(
         *shared.UNIVERSAL,
         *shared.WATER_FILTER,
         *shared.DOORS,
+        *shared.COMBI_DOORS,
         *shared.SOUND,
         *KIMCHI,
         Spec("localthings_rapid_fridge", "/refrigeration/vs/0",

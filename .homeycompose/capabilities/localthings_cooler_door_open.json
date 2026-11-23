@@ -1,0 +1,20 @@
+{
+  "type": "boolean",
+  "title": {
+    "en": "Fridge door",
+    "ko": "냉장실 문"
+  },
+  "getable": true,
+  "setable": false,
+  "uiComponent": "sensor",
+  "icon": "/assets/capabilities/mdi-fridge-outline.svg",
+  "insights": true,
+  "insightsTitleTrue": {
+    "en": "Fridge door opened",
+    "ko": "냉장실 문 열림"
+  },
+  "insightsTitleFalse": {
+    "en": "Fridge door closed",
+    "ko": "냉장실 문 닫힘"
+  }
+}
